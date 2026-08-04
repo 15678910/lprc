@@ -1,0 +1,40 @@
+# 검색엔진·크롤러 수집 거부
+#
+# 이 사이트는 임금 교섭 당사자가 직접 쓰는 계산 도구입니다.
+# 검색 노출을 목적으로 하지 않으며, 링크를 아는 사람만 이용하도록 둡니다.
+#
+# ⚠️ robots.txt 는 '요청'이지 '차단'이 아닙니다.
+#    규칙을 지키는 크롤러만 따르며, 무시하는 수집기는 막지 못합니다.
+#    HTML 에도 <meta name="robots" content="noindex, nofollow"> 를 함께 넣어 두었습니다.
+#    정말로 접근을 막아야 하는 자료는 애초에 이 사이트에 올리지 않습니다.
+
+User-agent: *
+Disallow: /
+
+# 대형 언어모델 학습용 수집기도 명시적으로 거부
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: PerplexityBot
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
+User-agent: Amazonbot
+Disallow: /
+
+User-agent: meta-externalagent
+Disallow: /

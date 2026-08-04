@@ -1,0 +1,17 @@
+# 시크릿 — 절대 커밋 금지
+.env
+.env.*
+*.local
+*.pem
+*.key
+secrets/
+
+# 파이썬
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# OS
+Thumbs.db
+.DS_Store

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+<meta name="googlebot" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>소개 · 이용 방법 — 실질임금 · 임금단협 · 노동 양극화 해소 계산기</title>
+<style>
+  :root{--bg:#0b1017;--card:#131a24;--line:#20293a;--tx:#e6edf3;--mut:#8b98a9;
+        --grn:#3fb950;--red:#f85149;--amb:#d29922;--acc:#58a6ff;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--tx);
+       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Malgun Gothic",sans-serif;
+       font-size:17px;line-height:1.68}
+  .wrap{max-width:1000px;margin:0 auto;padding:24px 16px 70px}
+  header{border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:22px}
+  h1{font-size:1.62rem;margin:0 0 6px}
+  .sub{color:var(--mut);font-size:.9rem}
+  .nav{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 12px}
+  .nav a{color:var(--mut);text-decoration:none;font-size:.88rem;padding:6px 13px;
+         border:1px solid var(--line);border-radius:20px;background:#0d1219;white-space:nowrap}
+  .nav a:hover{color:var(--tx);border-color:var(--acc)}
+  .nav a.on{color:var(--tx);border-color:var(--acc);background:rgba(88,166,255,.12);font-weight:600}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:16px}
+  .card h2{font-size:1.14rem;margin:0 0 10px}
+  h3{font-size:1rem;margin:20px 0 6px}
+  p,li,td,th{font-size:.93rem}
+  ul,ol{padding-left:20px;margin:6px 0}
+  li{margin-bottom:6px}
+  table{width:100%;border-collapse:collapse;margin-top:8px}
+  th,td{padding:8px 9px;text-align:left;border-top:1px solid var(--line);vertical-align:top}
+  th{color:var(--mut);font-weight:600;font-size:.83rem;border-top:none}
+  a{color:var(--acc)}
+  .note{color:var(--mut);font-size:.86rem;line-height:1.72;border-top:1px solid var(--line);padding-top:12px;margin-top:14px}
+  .step{display:flex;gap:14px;margin-bottom:18px;align-items:flex-start}
+  .num{flex:0 0 34px;height:34px;border-radius:50%;background:rgba(88,166,255,.14);
+       border:1px solid var(--acc);color:var(--acc);display:flex;align-items:center;
+       justify-content:center;font-weight:700;font-size:.95rem}
+  .step-body{flex:1;min-width:0}
+  .step-body h4{margin:4px 0 4px;font-size:1rem}
+  .tip{background:rgba(63,185,80,.08);border:1px solid rgba(63,185,80,.35);
+       border-radius:8px;padding:10px 13px;margin:8px 0;font-size:.89rem}
+  .warn{background:rgba(210,153,34,.09);border:1px solid rgba(210,153,34,.4);
+        border-radius:8px;padding:10px 13px;margin:8px 0;font-size:.89rem}
+  .warn b{color:var(--amb)}
+  code{background:#0d1219;border:1px solid var(--line);border-radius:4px;padding:1px 5px;font-size:.86rem}
+  @media print{ body{background:#fff;color:#000;font-size:14.5px}
+    .card{background:#fff;border-color:#bbb} .note,th{color:#444} a{color:#000} .nav{display:none} }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>소개 · 이용 방법</h1>
+  <nav class="nav">
+    <a href="./">🧮 계산기</a>
+    <a href="./guide.html" class="on">📖 소개 · 이용 방법</a>
+    <a href="./future.html">🤖 AI 시대의 노동</a>
+    <a href="./about.html">📋 출처 · 면책</a>
+  </nav>
+  <div class="sub">처음 오셨다면 이 페이지부터 읽어 주세요. 무엇을 답해주는 도구인지, 무엇을 준비해 오셔야 하는지 정리했습니다.</div>
+</header>
+
+<div class="card">
+  <h2>왜 만들었나</h2>
+  <p>임금 교섭에는 늘 두 개의 숫자가 마주 섭니다. 노동측은 <b>생계비</b>를, 사측은 <b>지불능력</b>을 말합니다.
+    그런데 양쪽 모두 자기 쪽 숫자만 들고 나옵니다. 상대방 숫자를 검증할 방법이 없으니
+    협상은 숫자 싸움이 아니라 목소리 싸움이 됩니다.</p>
+  <p>이 도구는 <b>두 숫자를 같은 화면에 놓습니다.</b> 어느 쪽이 옳은지 판정하지 않습니다.
+    같은 데이터와 같은 계산식을 양쪽이 함께 보면, 최소한 <b>무엇을 두고 다투는지</b>는 분명해집니다.</p>
+
+  <h3>세 가지 질문에 답합니다</h3>
+  <table>
+    <thead><tr><th>질문</th><th>답하는 곳</th><th>쓰이는 데이터</th></tr></thead>
+    <tbody>
+      <tr><td><b>내 임금은 실제로 오른 게 맞나?</b><br>
+        통계는 물가 2%라는데 왜 이렇게 빠듯한가</td>
+        <td>①②③ 실질임금</td>
+        <td>내 소비 구성 + 품목별 물가 + 임금지수</td></tr>
+      <tr><td><b>회사는 얼마나 줄 수 있나?</b><br>
+        "여력이 없다"는 말이 사실인가</td>
+        <td>④ 임금단협</td>
+        <td>전자공시(DART) 매출·영업이익·인건비</td></tr>
+      <tr><td><b>같은 일을 하는데 왜 임금이 다른가?</b><br>
+        그 격차를 좁히려면 얼마가, 몇 년이 필요한가</td>
+        <td>⑤⑥ 노동 양극화</td>
+        <td>공시 인원 구성 + 직접 입력하는 실태</td></tr>
+    </tbody>
+  </table>
+
+  <h3>누구를 위한 것인가</h3>
+  <ul>
+    <li><b>교섭 담당자</b> — 요구안의 근거를 숫자로 만들고, 상대 주장을 검증할 때</li>
+    <li><b>비정규직·하청 노동자</b> — 격차의 크기와 좁히는 데 드는 실제 비용을 특정할 때</li>
+    <li><b>사측 실무자</b> — 인상 시나리오가 손익에 미치는 영향을 미리 볼 때</li>
+    <li><b>연구자·기자</b> — 공시 데이터로 회사별 지불능력을 비교할 때</li>
+    <li><b>그냥 궁금한 사람</b> — 내 체감물가가 공식 통계와 얼마나 다른지 볼 때</li>
+  </ul>
+
+  <div class="warn">
+    <b>중립 원칙</b> — 이 도구는 어느 쪽 주장도 대변하지 않습니다.
+    노동측에 유리한 숫자와 사측에 유리한 숫자를 <b>같은 비중으로</b> 보여주며,
+    한쪽에 불리한 한계도 숨기지 않고 화면에 적습니다.
+    계산 결과가 요구안을 뒷받침하지 않을 수도 있습니다 — 그것도 알아야 할 정보입니다.
+  </div>
+</div>
+
+<div class="card">
+  <h2>미리 준비하면 좋은 것</h2>
+  <p>아무것도 없어도 쓸 수 있지만, 아래를 준비하면 결과가 훨씬 정확해집니다.</p>
+  <table>
+    <thead><tr><th>자료</th><th>어디서</th><th>어디에 쓰나</th></tr></thead>
+    <tbody>
+      <tr><td>카드 이용내역 CSV<br>(최근 1개월)</td>
+        <td>카드사 홈페이지 → 이용내역 다운로드<br>또는 가계부 앱 내보내기</td>
+        <td>① 소비 자동 분류</td></tr>
+      <tr><td>월 대출이자<br>(현재 / 1년 전)</td>
+        <td>은행 앱 → 대출 상세<br><b>원금 상환액은 빼고 이자만</b></td>
+        <td>① 주거 금융비용</td></tr>
+      <tr><td>구독 서비스 월 합계</td><td>결제 내역 (AI·OTT·클라우드 등)</td><td>① 신규 구독 부담</td></tr>
+      <tr><td>단체협약서 · 급여 실태조사</td>
+        <td>노조 자료</td>
+        <td>⑤ 정규직·비정규직 평균 연봉<br>(공시에 없어 <b>직접 입력 필수</b>)</td></tr>
+      <tr><td>사내하도급·용역 인원과 임금</td>
+        <td>현장 파악 · 노조 실태조사</td>
+        <td>⑤Ⓒ 간접고용<br>(어떤 공시에도 없음)</td></tr>
+      <tr><td>도급·용역비 총액</td>
+        <td>감사보고서 주석(외주가공비·특수관계자 거래)<br>또는 정보공개 청구</td>
+        <td>⑤Ⓒ 중간 마진 계산</td></tr>
+    </tbody>
+  </table>
+  <div class="tip">💡 <b>상장사라면 ④의 재무 데이터는 자동으로 채워집니다.</b>
+    비상장이면 감사보고서(전자공시 <code>dart.fss.or.kr</code>)에서 옮겨 적으면 됩니다.</div>
+</div>
+
+<div class="card">
+  <h2>이용 방법 — 여섯 단계</h2>
+
+  <div class="step">
+    <div class="num">①</div>
+    <div class="step-body">
+      <h4>내 소비 입력</h4>
+      <p><b>금액 모드</b>를 권합니다. 품목별 월 소비액을 넣으면 비중이 자동 계산됩니다.
+        비중을 직접 아는 사람은 거의 없기 때문입니다.</p>
+      <p>카드 CSV를 끌어다 놓으면 가맹점명으로 자동 분류됩니다.
+        <b>분류 결과를 꼭 확인하세요</b> — 키워드 기반이라 완벽하지 않고, 못 잡은 건 '기타'로 갑니다.</p>
+      <div class="warn"><b>여기서 결과가 갈립니다.</b> 대출이자와 신규 구독료는 공식 물가에 <b>들어 있지 않습니다</b>.
+        이 두 칸을 비워 두면 "통계는 2%인데 왜 힘든가"의 답이 안 나옵니다.</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="num">②</div>
+    <div class="step-body">
+      <h4>체감물가 확인</h4>
+      <p>공식 물가 · 내 비중 적용 · 구독 부담 · 주거 금융비용을 더한 <b>내 체감물가</b>가 나옵니다.
+        공식 물가와 몇 %p 차이인지가 핵심입니다.</p>
+      <p>차이가 크다면 이유는 대개 셋 중 하나입니다 — 연료·교통 비중이 높거나, 대출이자가 늘었거나,
+        없던 구독이 생겼거나.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="num">③</div>
+    <div class="step-body">
+      <h4>실질임금 계산</h4>
+      <p><b>실질임금 = 명목임금 상승률 − 물가상승률</b>. 마이너스면 임금이 올라도 구매력은 줄었다는 뜻입니다.
+        공식물가 기준과 내 체감물가 기준을 나란히 보여줍니다.</p>
+      <p>같은 카드에 <b>거시 기준선</b>도 있습니다 — 국민경제 전체에서 노동에 돌아가는 몫,
+        그리고 1인당 실질 가계소비. "나만 힘든 건가"를 확인하는 자리입니다.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="num">④</div>
+    <div class="step-body">
+      <h4>회사 지불능력 — 사측 근거</h4>
+      <p>회사를 고르면 공시에서 직원 수·급여총액·매출·영업이익을 가져와
+        <b>인건비/매출 비중</b>과 <b>인상 시나리오</b>를 계산합니다.</p>
+      <p>같은 카드의 <b>임금인상률 산식 비교</b>가 실전에서 가장 많이 쓰입니다.
+        물가 보전 · 물가+생산성 · 성과 배분 · 통화량 기준 등 여섯 가지 산식이
+        각각 몇 %를 가리키는지 한눈에 보여줍니다. 어느 하나가 정답이 아니라
+        <b>요구 가능한 범위</b>를 알려주는 것입니다.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="num">⑤</div>
+    <div class="step-body">
+      <h4>격차 측정 — 정규직·비정규직, 원청·하청, 간접고용</h4>
+      <p>세 종류의 격차를 잽니다. 공시에서 오는 것과 직접 넣어야 하는 것이 다릅니다.</p>
+      <table>
+        <thead><tr><th>구분</th><th>자동</th><th>직접 입력</th></tr></thead>
+        <tbody>
+          <tr><td>Ⓐ 사내 비정규직</td><td>정규직·기간제 <b>인원</b>, 근속연수</td><td>형태별 <b>급여</b> (공시 없음)</td></tr>
+          <tr><td>Ⓑ 사외 하청</td><td>상장 협력사의 재무·인원</td><td>비상장이면 전부</td></tr>
+          <tr><td>Ⓒ 간접고용</td><td>—</td><td>인원·임금·도급비 <b>전부</b></td></tr>
+        </tbody>
+      </table>
+      <div class="tip">💡 Ⓒ가 특히 중요합니다. 간접고용 비용은 회사 손익에서 '인건비'가 아니라 <b>외주비</b>로
+        잡히기 때문에, 사측이 말하는 인건비 비중이 실제보다 낮게 나옵니다.
+        인원을 넣으면 그 왜곡을 되돌려 계산합니다.</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="num">⑥</div>
+    <div class="step-body">
+      <h4>해소 경로 — 얼마가, 몇 년이 필요한가</h4>
+      <p>대상 집단을 고르면 네 경로의 비용을 비교합니다 —
+        단가 인상 · 연대임금 · 기금 출연 · 정규직(직접고용) 전환.
+        <b>목표 충당률</b> 열을 함께 보세요. 금액이 작다고 싼 경로가 아닙니다.</p>
+      <p><b>⏳ 소요 연수</b>가 이 카드의 핵심입니다. 기준 집단도 매년 오르기 때문에,
+        격차는 <b>인상률의 차이로만</b> 좁혀집니다.
+        두 집단에 같은 인상률을 넣으면 "영원히 도달 못함"이 나옵니다 —
+        정률 인상이 격차를 고정시키는 구조를 숫자로 보여주는 것입니다.</p>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>협상 자료로 제출할 때</h2>
+  <ol>
+    <li><b>인쇄 버튼을 쓰세요.</b> 화면 하단의 🖨️ 버튼을 누르면 입력칸과 버튼이 빠지고
+      숫자와 근거만 남은 형태로 인쇄·PDF 저장됩니다.</li>
+    <li><b>산출 근거를 반드시 함께 내세요.</b> 어떤 값을 넣었고 어떤 식으로 계산했는지 밝히지 않으면
+      "조작했다"는 반박을 받습니다. 각 카드의 설명문이 그대로 근거가 됩니다.</li>
+    <li><b>직접 입력한 값은 출처를 밝히세요.</b> 고용형태별 급여, 간접고용 인원 같은 값은
+      공시에 없어 사용자가 넣은 것입니다. 어디서 확인한 숫자인지 적어야 자료로서 힘이 생깁니다.</li>
+    <li><b>공시 값은 원문으로 교차 확인하세요.</b> 연결/별도 기준과 급여 포함 범위가 회사마다 다릅니다.</li>
+    <li><b>협약문에는 금액이 아니라 비율과 기한을 쓰세요.</b> "정규직 평균의 80%까지, 5년 안에" 같은 형식입니다.
+      금액으로 쓰면 기준 집단이 오를 때 목표가 흐려집니다.</li>
+  </ol>
+</div>
+
+<div class="card">
+  <h2>자주 묻는 질문</h2>
+
+  <h3>입력한 내용이 어디로 가나요?</h3>
+  <p>아무 데도 가지 않습니다. 서버가 없고, 모든 계산이 브라우저 안에서 이뤄집니다.
+    카드 CSV는 저장조차 하지 않고 집계 금액만 남습니다. 자세한 건 <a href="./about.html">출처 · 면책</a> 참조.</p>
+
+  <h3>회사 목록에 우리 회사가 없어요</h3>
+  <p>비상장이거나 목록에 없는 회사는 <b>직접 입력</b>을 고르면 됩니다.
+    감사보고서에서 직원 수·평균 연봉·매출·영업이익 네 가지만 옮겨 적으면 나머지는 계산됩니다.</p>
+
+  <h3>계산 결과가 우리 요구보다 낮게 나옵니다</h3>
+  <p>그럴 수 있습니다. 이 도구는 요구를 정당화하는 기계가 아니라 <b>계산기</b>입니다.
+    다만 산식이 여섯 개인 이유가 있습니다 — 어떤 근거를 드느냐에 따라 결과가 크게 달라집니다.
+    ④의 산식 비교에서 최저와 최고를 함께 보고, 어느 근거를 쓸지 정하세요.</p>
+
+  <h3>비정규직 급여를 모르는데 어떻게 넣나요?</h3>
+  <p>공시에 없어서 방법이 없습니다. 단체협약 자료, 급여명세, 노조 실태조사로 확인하셔야 합니다.
+    대신 넣은 값이 공시된 전체 평균과 맞는지 <b>검산해 드립니다</b> —
+    10% 넘게 어긋나면 화면이 경고합니다.</p>
+
+  <h3>데이터가 오래돼 보입니다</h3>
+  <p>각 화면의 기준시점을 확인하세요. 자동 갱신이 항상 성공하지는 않으며,
+    기업 공시는 원래 <b>연 1회</b>라 자주 바뀌지 않습니다.
+    알려진 갱신 취약점은 <a href="./about.html">출처 · 면책</a>에 그대로 공개해 두었습니다.</p>
+
+  <h3>이걸로 노무 상담을 받을 수 있나요?</h3>
+  <p>아닙니다. 이 도구는 산술 계산만 합니다.
+    교섭의무의 범위, 파견·도급 구분, 직접고용 의무 같은 판단은 <b>법률 영역</b>이며
+    공인노무사·변호사의 확인이 필요합니다.</p>
+
+  <div class="note">🚨 이 사이트의 어떤 내용도 투자·노무·법률 자문이 아닙니다.
+    중요한 결정 전에는 반드시 해당 분야의 자격을 갖춘 전문가와 상의하세요.</div>
+</div>
+
+<div class="card" style="text-align:center">
+  <a href="./">🧮 계산기로 이동 →</a>
+</div>
+
+</div>
+</body>
+</html>

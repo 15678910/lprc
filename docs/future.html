@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+<meta name="googlebot" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>AI 시대의 노동 — 실질임금 · 임금단협 · 노동 양극화 해소 계산기</title>
+<style>
+  :root{--bg:#0b1017;--card:#131a24;--line:#20293a;--tx:#e6edf3;--mut:#8b98a9;
+        --grn:#3fb950;--red:#f85149;--amb:#d29922;--acc:#58a6ff;--pur:#a78bfa;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--tx);
+       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Malgun Gothic",sans-serif;
+       font-size:17px;line-height:1.68}
+  .wrap{max-width:1000px;margin:0 auto;padding:24px 16px 70px}
+  header{border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:22px}
+  h1{font-size:1.62rem;margin:0 0 6px}
+  .sub{color:var(--mut);font-size:.9rem}
+  .nav{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 12px}
+  .nav a{color:var(--mut);text-decoration:none;font-size:.88rem;padding:6px 13px;
+         border:1px solid var(--line);border-radius:20px;background:#0d1219;white-space:nowrap}
+  .nav a:hover{color:var(--tx);border-color:var(--acc)}
+  .nav a.on{color:var(--tx);border-color:var(--acc);background:rgba(88,166,255,.12);font-weight:600}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:16px}
+  .card h2{font-size:1.14rem;margin:0 0 10px}
+  h3{font-size:1rem;margin:20px 0 6px}
+  p,li,td,th{font-size:.93rem}
+  ul,ol{padding-left:20px;margin:6px 0}
+  li{margin-bottom:6px}
+  table{width:100%;border-collapse:collapse;margin-top:8px}
+  th,td{padding:8px 9px;text-align:left;border-top:1px solid var(--line);vertical-align:top}
+  th{color:var(--mut);font-weight:600;font-size:.83rem;border-top:none}
+  a{color:var(--acc)}
+  .note{color:var(--mut);font-size:.86rem;line-height:1.72;border-top:1px solid var(--line);padding-top:12px;margin-top:14px}
+  .warn{background:rgba(210,153,34,.09);border:1px solid rgba(210,153,34,.4);
+        border-radius:8px;padding:12px 15px;margin:10px 0;font-size:.9rem}
+  .warn b{color:var(--amb)}
+  .neutral{background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.35);
+           border-radius:8px;padding:12px 15px;margin:10px 0;font-size:.9rem}
+  .neutral b{color:var(--pur)}
+  .data{background:rgba(88,166,255,.08);border:1px solid rgba(88,166,255,.35);
+        border-radius:8px;padding:12px 15px;margin:10px 0;font-size:.9rem}
+  .pos{color:var(--grn)}.neg{color:var(--red)}
+  .mono{font-variant-numeric:tabular-nums}
+  @media print{ body{background:#fff;color:#000;font-size:14.5px}
+    .card{background:#fff;border-color:#bbb} .note,th{color:#444} a{color:#000} .nav{display:none} }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>AI 시대의 노동</h1>
+  <nav class="nav">
+    <a href="./">🧮 계산기</a>
+    <a href="./guide.html">📖 소개 · 이용 방법</a>
+    <a href="./future.html" class="on">🤖 AI 시대의 노동</a>
+    <a href="./about.html">📋 출처 · 면책</a>
+  </nav>
+  <div class="sub">실업 급증 우려, 기본사회 논의, 그리고 공존의 조건.
+    이 계산기가 왜 그 준비와 이어지는지 정리했습니다.</div>
+</header>
+
+<div class="card">
+  <div class="warn">
+    <b>먼저 밝힙니다 — 이 페이지는 예측이 아닙니다.</b><br>
+    AI가 몇 개의 일자리를 없앨지는 <b>아무도 모릅니다.</b> 권위 있는 기관들의 전망도 서로 크게 어긋나고,
+    지금까지 나온 예측 대부분은 시기와 규모를 맞히지 못했습니다.
+    여기서는 <b>확실한 것과 불확실한 것을 구분해서</b> 적고,
+    어느 쪽으로 가든 지금 준비할 수 있는 것을 다룹니다.
+    특정 정책을 지지하거나 반대하지 않습니다.
+  </div>
+</div>
+
+<div class="card">
+  <h2>확실한 것 하나 — 노동의 몫은 이미 재고 있다</h2>
+  <p>"AI가 일자리를 없앤다"는 말은 검증하기 어렵습니다. 실업률은 경기·인구·정책이 뒤섞여 움직이고,
+    없어진 일자리와 새로 생긴 일자리를 구분해 세기도 어렵습니다.</p>
+  <p>그런데 <b>더 근본적인 지표</b>가 이미 오래전부터 측정되고 있습니다.
+    생산된 소득 중 <b>노동에 돌아가는 몫</b>입니다.</p>
+
+  <div class="data">
+    📊 <b>피용자보수 ÷ GDP</b> — 이 계산기의 ③ 카드에서 실제 수치를 볼 수 있습니다.<br>
+    기계가 사람을 대체하면, 실업률이 오르기 전에 <b>이 비율부터 움직입니다.</b>
+    같은 매출을 더 적은 인건비로 만들게 되기 때문입니다.
+  </div>
+
+  <p>이 지표가 중요한 이유는 <b>고용 여부와 무관하게</b> 변화를 잡아내기 때문입니다.
+    사람을 자르지 않고도 신규 채용을 줄이거나, 임금 인상을 억제하거나,
+    정규직 자리를 비정규직으로 바꾸는 방식으로 노동 몫은 줄어듭니다.
+    실업률 통계에는 안 잡히지만 노동 몫에는 잡힙니다.</p>
+
+  <div class="warn">
+    <b>다만 이 지표에도 함정이 있습니다.</b>
+    자영업자의 노동소득은 피용자보수가 아니라 영업잉여에 들어갑니다.
+    자영업 비중이 큰 한국에서는 실제 노동 몫이 과소평가되고,
+    <b>자영업이 줄어들기만 해도 지표가 저절로 올라갑니다.</b>
+    올랐다고 곧바로 분배가 개선됐다고 읽으면 안 됩니다.
+  </div>
+</div>
+
+<div class="card">
+  <h2>불확실한 것 — AI가 고용에 미칠 영향</h2>
+  <p>이 주제에는 서로 반대되는 두 이야기가 있고, <b>둘 다 근거가 있습니다.</b></p>
+
+  <table>
+    <thead><tr><th></th><th>대체론</th><th>보완론</th></tr></thead>
+    <tbody>
+      <tr><td><b>주장</b></td>
+        <td>이번엔 다르다. 인지노동까지 자동화되므로 새 일자리가 생길 여지가 좁다</td>
+        <td>과거의 모든 기술 전환에서 일자리는 사라진 만큼 새로 생겼다</td></tr>
+      <tr><td><b>근거</b></td>
+        <td>대체 대상이 육체노동에서 사무·전문직으로 확장됨.
+          도입 속도가 이전 기술보다 훨씬 빠름</td>
+        <td>ATM 도입 후 은행원이 오히려 늘어난 사례 등.
+          생산성 향상이 수요를 키워 고용을 만듦</td></tr>
+      <tr><td><b>약점</b></td>
+        <td>"이번엔 다르다"는 주장은 기술 전환마다 반복됐고 대체로 틀렸음</td>
+        <td>전환기의 고통은 평균에 묻힘.
+          잃는 사람과 얻는 사람이 <b>다른 사람</b>이라는 점을 설명 못 함</td></tr>
+    </tbody>
+  </table>
+
+  <div class="neutral">
+    <b>양쪽이 실제로 동의하는 지점</b><br>
+    총량이 어떻게 되든, <b>분배는 확실히 바뀝니다.</b>
+    새로 생기는 일자리와 사라지는 일자리는 요구 능력도, 지역도, 연령대도 다릅니다.
+    50대 사무직이 잃은 일자리를 20대 데이터 직군이 얻는 식이라면,
+    통계상 고용은 유지돼도 <b>개인에게는 재난</b>입니다.<br>
+    그래서 논쟁의 실익은 "몇 개가 사라지나"가 아니라
+    <b>"전환의 비용을 누가 감당하나"</b>에 있습니다.
+  </div>
+</div>
+
+<div class="card">
+  <h2>'AI 기본사회' 논의 지형</h2>
+  <p>기술이 생산을 늘리는데 그 과실이 노동으로 가지 않는다면 어떻게 할 것인가.
+    이 질문에 대한 답들이 '기본사회'라는 이름으로 묶여 논의됩니다.
+    <b>서로 다른 제안이며, 장단점도 다릅니다.</b></p>
+
+  <table>
+    <thead><tr><th>제안</th><th>내용</th><th>주된 쟁점</th></tr></thead>
+    <tbody>
+      <tr><td><b>기본소득</b></td>
+        <td>모든 사람에게 조건 없이 정기적으로 현금 지급</td>
+        <td>재원 규모가 매우 큼. 기존 복지를 대체할지 보완할지에 따라
+          <b>취약계층에 오히려 불리해질 수 있음</b></td></tr>
+      <tr><td><b>기본서비스</b></td>
+        <td>의료·주거·교육·교통 등을 현금 대신 무상·저가로 제공</td>
+        <td>현금보다 재원 효율은 높으나 선택권이 줄고 공급 역량이 필요</td></tr>
+      <tr><td><b>로봇세 · AI세</b></td>
+        <td>자동화 설비·AI 이용에 과세해 전환 재원 마련</td>
+        <td>'자동화'의 경계를 정하기 어렵고, 투자 위축과
+          해외 이전 유인이 생길 수 있음</td></tr>
+      <tr><td><b>데이터 배당</b></td>
+        <td>학습에 쓰인 데이터의 기여분을 원 제공자에게 환원</td>
+        <td>기여도를 계산할 방법이 아직 없음</td></tr>
+      <tr><td><b>노동시간 단축</b></td>
+        <td>생산성 향상분을 임금이 아니라 시간으로 배분</td>
+        <td>임금 삭감 없는 단축이어야 의미가 있음.
+          업종별 편차가 큼</td></tr>
+      <tr><td><b>전환 지원</b></td>
+        <td>재교육·이직 지원·소득 보전을 제도화</td>
+        <td>가장 합의가 쉬우나, 재교육이 실제 이직으로 이어지는 비율은 낮음</td></tr>
+    </tbody>
+  </table>
+
+  <div class="warn">
+    <b>이 계산기는 어느 제안도 지지하지 않습니다.</b>
+    각각 재원·형평·부작용의 구조가 다르고, 실증 근거도 아직 부족합니다.
+    다만 어떤 제안이든 <b>"지금 노동의 몫이 얼마이고 어떻게 변하고 있나"</b>를
+    출발점으로 삼습니다. 그 숫자를 재는 것이 이 도구의 역할입니다.
+  </div>
+</div>
+
+<div class="card">
+  <h2>공존의 조건 — 교섭 테이블에서 다룰 수 있는 것</h2>
+  <p>기본소득이나 로봇세는 국가가 결정할 일입니다. 그러나 <b>사업장에서 지금 합의할 수 있는 것</b>도 있습니다.
+    아래는 실제 단체협약에 들어갈 수 있는 형태의 항목들입니다.</p>
+
+  <h3>① 자동화 도입 시 사전 협의</h3>
+  <p>새로운 자동화·AI 시스템을 도입할 때 <b>도입 전에</b> 고용 영향을 노사가 함께 검토한다는 조항.
+    도입 자체를 막는 것이 아니라 영향을 미리 파악하는 절차입니다.
+    사후 대응은 언제나 늦습니다.</p>
+
+  <h3>② 생산성 향상분의 배분 규칙</h3>
+  <p>자동화로 늘어난 생산성을 어떻게 나눌지 <b>미리</b> 정하는 조항.
+    이 계산기 ④의 <b>성과 배분형 산식</b>이 그 계산 방식입니다 —
+    "영업이익 증가율의 몇 %를 임금에 반영한다"는 형태로 씁니다.
+    사후에 다투면 언제나 힘의 문제가 되지만, 규칙을 먼저 정하면 계산의 문제가 됩니다.</p>
+
+  <h3>③ 전환 배치와 재교육</h3>
+  <p>직무가 없어질 때 해고가 아니라 <b>전환 배치</b>를 원칙으로 하고,
+    교육 기간의 임금을 보장하는 조항. 재교육 자체보다
+    <b>교육 기간에 먹고살 수 있는가</b>가 실효성을 가릅니다.</p>
+
+  <h3>④ 고용 형태 전환 금지</h3>
+  <p>자동화로 줄어든 자리를 <b>비정규직·외주로 메우지 않는다</b>는 조항.
+    이것이 없으면 자동화는 총고용을 줄이지 않으면서도
+    노동의 질을 낮추는 방식으로 진행됩니다 —
+    이 계산기 ⑤가 재는 격차가 정확히 그 결과물입니다.</p>
+
+  <h3>⑤ 간접고용까지 포함한 영향 평가</h3>
+  <p>자동화의 첫 타격은 대개 <b>가장 바깥</b>에서 옵니다.
+    원청 정규직이 아니라 용역·하청부터 줄어듭니다.
+    협약의 적용 범위를 직접고용으로만 좁히면, 없어진 자리는 통계에도 협약에도 안 잡힙니다.</p>
+
+  <div class="neutral">
+    <b>사측에도 실익이 있는 항목들입니다.</b><br>
+    도입 후의 저항과 분쟁 비용이 도입 전의 협의 비용보다 훨씬 큽니다.
+    숙련 인력의 이탈을 막는 것도 회사의 이익입니다.
+    이 항목들은 '노동측 요구'라기보다 <b>전환의 예측 가능성</b>을 높이는 장치입니다.
+  </div>
+</div>
+
+<div class="card">
+  <h2>이 계산기가 그 준비와 이어지는 지점</h2>
+  <p>미래 사회를 준비한다는 말은 대개 추상적입니다.
+    이 도구는 그중 <b>측정 가능한 부분</b>만 담당합니다.</p>
+
+  <table>
+    <thead><tr><th>준비해야 할 것</th><th>이 도구가 재는 것</th><th>어디에</th></tr></thead>
+    <tbody>
+      <tr><td>노동 몫이 줄고 있는가</td>
+        <td>피용자보수 ÷ GDP, 4개국 25년 추이</td><td>③ 거시 기준선</td></tr>
+      <tr><td>임금이 물가를 따라가는가</td>
+        <td>실질임금 — 공식물가 기준과 체감물가 기준</td><td>①②③</td></tr>
+      <tr><td>회사에 배분 여력이 있는가</td>
+        <td>인건비/매출, 영업이익률, 인상 시나리오</td><td>④ 지불능력</td></tr>
+      <tr><td>생산성 향상분을 어떻게 나눌 것인가</td>
+        <td>여섯 가지 임금인상 산식 비교</td><td>④ 산식 비교</td></tr>
+      <tr><td>전환의 부담이 어디로 밀려나는가</td>
+        <td>정규직·비정규직, 원청·하청, 간접고용 격차</td><td>⑤ 격차 측정</td></tr>
+      <tr><td>격차를 좁히는 데 얼마·몇 년인가</td>
+        <td>경로별 비용, 충당률, 소요 연수 역산</td><td>⑥ 해소 경로</td></tr>
+    </tbody>
+  </table>
+
+  <div class="data">
+    💡 <b>가장 실용적인 쓸모</b> — ⑥의 소요 연수 계산은
+    "같은 인상률을 두 집단에 적용하면 격차는 <b>영원히</b> 좁혀지지 않는다"는 것을 숫자로 보여줍니다.
+    자동화가 진행되는 동안 이 구조를 그대로 두면,
+    기술 발전의 과실은 이미 나뉜 선을 따라 그대로 흘러갑니다.
+    <b>먼저 재고, 그다음에 정하는</b> 것이 순서입니다.
+  </div>
+</div>
+
+<div class="card">
+  <h2>덧붙임 — 이 페이지를 읽을 때</h2>
+  <ul>
+    <li>여기 적은 것은 <b>논의의 지형</b>이지 결론이 아닙니다.
+      AI와 고용에 관한 실증 연구는 아직 초기이고, 서로 반대되는 결과가 계속 나옵니다.</li>
+    <li>구체적인 수치 전망은 <b>일부러 넣지 않았습니다.</b>
+      기관마다 크게 다르고, 인용하는 순간 근거 없는 확신을 만들기 때문입니다.
+      확인 가능한 숫자는 계산기 안에 있는 것들뿐입니다.</li>
+    <li>정책 제안들의 우열을 가리지 않았습니다.
+      각각 재원과 부작용의 구조가 달라, 어느 것이 낫다고 말할 만한 근거가 이 도구에는 없습니다.</li>
+    <li>교섭 항목으로 적은 것들은 <b>예시</b>입니다.
+      실제 협약문으로 만들 때는 반드시 공인노무사·변호사의 검토를 받으세요.</li>
+  </ul>
+  <div class="note">🚨 이 페이지는 정보 제공과 논의 정리를 위한 것이며,
+    투자·노무·법률 자문이 아닙니다. 특정 정책이나 정치적 입장을 지지하지 않습니다.</div>
+</div>
+
+<div class="card" style="text-align:center">
+  <a href="./">🧮 계산기로 이동 →</a>
+</div>
+
+</div>
+</body>
+</html>
