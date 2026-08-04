@@ -571,6 +571,115 @@ def household_block():
     }
 
 
+# ── 성장과 임금의 격차 ──────────────────────────────────────────────
+# "나라는 돈을 더 버는데 내 월급은 왜 제자리인가"를 숫자로 확인하는 블록.
+#
+# 세 계열을 같은 시점 기준(=100)으로 다시 놓고 누적 성장률을 비교한다.
+#   1인당 실질 GDP  — 나라 전체가 1인당 얼마나 더 생산했나
+#   실질임금        — 명목임금지수 ÷ 소비자물가지수
+#   1인당 실질소비  — 실제로 쓸 수 있었던 돈
+#
+# ⚠️ 해석 주의 — 이 블록은 '임금이 줄었다'를 보여주지 않는다.
+#    한국 실질임금은 장기적으로 '늘었다'. 다만 GDP보다 '덜' 늘었다.
+#    과장하면 반박당하므로, 화면에도 격차(%p)로만 표기하고 감소로 쓰지 않는다.
+#    또한 평균값이라 분포를 말하지 못한다 — 중위·하위 임금은 다를 수 있다.
+KR_WAGE_IDX = "LCEAMN01KRQ661S"          # 한국 분기 임금지수 (FRED, OECD 원자료)
+OECD_HHDASH_IX = ("https://sdmx.oecd.org/public/rest/data/OECD.SDD.NAD,DSD_HHDASH@DF_HHDASH_CTRY,"
+                  "/Q.KOR.B1GQ_R_POP+P3S1M_R_POP.IX?startPeriod=2010&format=csvfilewithlabels")
+OECD_KR_CPI_IX = ("https://sdmx.oecd.org/public/rest/data/OECD.SDD.TPS,DSD_PRICES@DF_PRICES_ALL,"
+                  "/KOR.M.N.CPI.._T.N.?startPeriod=2010-01&format=csvfilewithlabels")
+GAP_ERAS = [("2010-Q1", None, "전 구간"),
+            ("2010-Q1", "2019-Q4", "코로나 이전"),
+            ("2019-Q4", None, "코로나 이후"),
+            ("2022-Q4", None, "최근 3년")]
+
+
+def _to_q(monthly):
+    """월별 {YYYY-MM: v} → 분기 평균 {YYYY-Qn: v}. 3개월이 다 있는 분기만 쓴다."""
+    acc = {}
+    for t, v in monthly.items():
+        y, mo = t.split("-")[0], t.split("-")[1]
+        acc.setdefault(f"{y}-Q{(int(mo) - 1) // 3 + 1}", []).append(v)
+    return {k: sum(v) / len(v) for k, v in acc.items() if len(v) == 3}
+
+
+def growth_gap_block():
+    """1인당 실질 GDP vs 실질임금 vs 1인당 실질소비 — 누적 격차."""
+    txt = _http(OECD_HHDASH_IX, timeout=90)
+    gdp, cons = {}, {}
+    for r in csv.DictReader(io.StringIO(txt or "")):
+        try:
+            v = float(r["OBS_VALUE"])
+        except (ValueError, KeyError, TypeError):
+            continue
+        (gdp if r.get("MEASURE") == "B1GQ_R_POP" else cons)[r["TIME_PERIOD"]] = v
+
+    txt = _http(OECD_KR_CPI_IX, timeout=90)
+    cpim = {}
+    for r in csv.DictReader(io.StringIO(txt or "")):
+        if r.get("MEASURE") != "CPI" or r.get("UNIT_MEASURE") != "IX":
+            continue
+        try:
+            cpim[r["TIME_PERIOD"]] = float(r["OBS_VALUE"])
+        except (ValueError, KeyError, TypeError):
+            pass
+    cpi = _to_q(cpim)
+
+    wage = {}
+    for k, v in fred(KR_WAGE_IDX, "2010-01-01").items():
+        y, mo = k[:4], k[5:7]
+        wage[f"{y}-Q{(int(mo) - 1) // 3 + 1}"] = v
+
+    ks = sorted(set(gdp) & set(cons) & set(cpi) & set(wage))
+    if len(ks) < 20:
+        print(f"  [WARN] 겹치는 분기 부족 {len(ks)}")
+        return None
+    rw = {q: wage[q] / cpi[q] for q in ks}                    # 실질임금 = 명목 ÷ 물가
+    base, last = ks[0], ks[-1]
+
+    def grow(m, a, b):
+        return round((m[b] / m[a] - 1) * 100, 1)
+
+    eras = []
+    for a, b, label in GAP_ERAS:
+        b = b or last
+        if a not in ks or b not in ks:
+            continue
+        g, w_, c = grow(gdp, a, b), grow(rw, a, b), grow(cons, a, b)
+        eras.append({"label": label, "from": a, "to": b,
+                     "gdp_pc_pct": g, "real_wage_pct": w_, "real_cons_pct": c,
+                     "gap_pp": round(g - w_, 1)})
+
+    yrs = (int(last[:4]) - int(base[:4])) + (int(last[-1]) - int(base[-1])) / 4
+    ann = {k: round(((m[last] / m[base]) ** (1 / yrs) - 1) * 100, 2)
+           for k, m in (("gdp_pc", gdp), ("real_wage", rw), ("real_cons", cons))}
+    ann["gap_pp_per_year"] = round(ann["gdp_pc"] - ann["real_wage"], 2)
+
+    def idx(m):                                               # 시작=100 재기준
+        return [{"q": q, "v": round(m[q] / m[base] * 100, 1)} for q in ks]
+
+    out = {"base": base, "asof": last, "eras": eras, "annualized": ann,
+           "series": {"gdp_pc": idx(gdp), "real_wage": idx(rw), "real_cons": idx(cons)},
+           "definition": ("1인당 실질 GDP·1인당 실질 가계소비(OECD, 지수) 와 "
+                          "실질임금(FRED 한국 임금지수 ÷ OECD 한국 소비자물가지수)을 "
+                          "같은 시점 100으로 놓고 누적 비교"),
+           "reading": ("격차가 양수면 '나라가 1인당 생산한 것'이 '노동자가 실제로 받은 것'보다 "
+                       "빠르게 늘었다는 뜻이다. 매년 조금씩 벌어져도 복리로 쌓인다."),
+           "caveat": ("⚠️ 이 표는 임금이 '줄었다'를 말하지 않는다. 실질임금은 늘었고, 다만 GDP보다 덜 늘었다. "
+                      "과장하면 반박당한다. 또한 평균값이라 분포를 말하지 못한다 — "
+                      "중위·하위 임금은 평균과 다르게 움직일 수 있다. "
+                      "1인당 GDP에는 기업 유보·자본소득·감가상각이 모두 들어 있어 "
+                      "'가계로 갈 수 있었던 몫'과 같지 않다는 점도 감안해야 한다."),
+           }
+    e0 = eras[0] if eras else None
+    if e0:
+        print(f"  {e0['from']} → {e0['to']}  1인당 실질GDP {e0['gdp_pc_pct']:+.1f}% · "
+              f"실질임금 {e0['real_wage_pct']:+.1f}% · 격차 {e0['gap_pp']:+.1f}%p")
+        print(f"  연환산 GDP {ann['gdp_pc']:+.2f}% vs 임금 {ann['real_wage']:+.2f}% "
+              f"→ 매년 {ann['gap_pp_per_year']:+.2f}%p 씩 벌어짐")
+    return out
+
+
 # ── 통계 도우미 ─────────────────────────────────────────────────────
 def yoy(d, per):
     ks = sorted(d)
@@ -817,6 +926,8 @@ def main():
     lshare = labor_share_block()
     print("\n[9] 가계 소비 여력 (1인당 실질 가계소비)")
     hh = household_block()
+    print("\n[10] 성장과 임금의 격차 (1인당 실질GDP vs 실질임금)")
+    gap = growth_gap_block()
 
     if not money and not prop:
         print("\n[ERROR] 주요 블록 수집 실패 — 기존 파일 보존.")
@@ -826,7 +937,7 @@ def main():
         "generated_at": now.strftime("%Y-%m-%d %H:%M:%S KST"),
         "money": money, "transmission": trans, "property": prop,
         "seoul_property": seoul, "fiscal": fisc,
-        "cpi_items": cpi_items, "wage": wage, "inequality": ineq, "labor_share": lshare, "household": hh,
+        "cpi_items": cpi_items, "wage": wage, "inequality": ineq, "labor_share": lshare, "household": hh, "growth_gap": gap,
         "sources": {
             "money": "OECD SDMX DF_MONAGG (M3, 월별, 자국통화) — 키 불필요",
             "us_macro": "FRED M2SL·CPIAUCSL·W006RC1Q027SBEA·B235RC1Q027SBEA·DTWEXBGS",
@@ -835,6 +946,7 @@ def main():
             "seoul": "한국은행 ECOS — 통계표·항목 코드를 이름 키워드로 자동 탐색(하드코딩 없음)",
             "labor_share": "OECD SDMX DSD_NAMAIN10@DF_TABLE1 — 피용자보수÷GDP, 키 불필요",
             "household": "OECD SDMX DSD_HHDASH@DF_HHDASH_CTRY — 1인당 실질 가계소비 증가율, 키 불필요",
+            "growth_gap": "OECD 1인당 실질GDP·소비 지수 + FRED 한국 임금지수 ÷ OECD 한국 CPI",
         },
         "caveats": [
             "통화량 '증가율'은 자국통화 기준이라 환율 영향이 없지만, '비중'은 최신 환율로 환산한 근사치다(과거 환율 미반영).",

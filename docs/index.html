@@ -573,6 +573,92 @@ function gapCard(c){
   </div>`;
 }
 
+/* 성장과 임금의 격차 — "나라는 돈을 더 버는데 내 월급은 왜 제자리인가".
+   양극화 문제 제기의 근거이자, 이 계산기 전체의 출발점이 되는 그림이다.
+   ⚠️ 임금이 '줄었다'가 아니라 GDP보다 '덜 늘었다'는 것이 데이터가 말하는 바다.
+      과장하면 협상장에서 반박당하므로 격차(%p)로만 쓴다. */
+function growthGapBlock(){
+  const G=D.growth_gap;
+  if(!G||!G.eras||!G.eras.length)return '';
+  const all=G.eras[0], A=G.annualized||{};
+  const S_=G.series||{};
+  // 미니 차트 — 세 계열을 같은 시점 100으로 놓고 그린다
+  const spark=()=>{
+    const g=S_.gdp_pc||[],w=S_.real_wage||[],c=S_.real_cons||[];
+    if(g.length<4)return '';
+    const vs=[...g,...w,...c].map(x=>x.v), lo=Math.min(...vs), hi=Math.max(...vs);
+    const W=560,H=130,PL=6,PR=6,PT=8,PB=16;
+    const X=i=>PL+(W-PL-PR)*i/(g.length-1);
+    const Y=v=>PT+(H-PT-PB)*(1-(v-lo)/((hi-lo)||1));
+    const path=a=>a.map((d,i)=>`${i?'L':'M'}${X(i).toFixed(1)},${Y(d.v).toFixed(1)}`).join('');
+    const yrs=[...new Set(g.map((d,i)=>[d.q.slice(0,4),i]).filter(x=>x[0]%5===0))];
+    return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;margin:10px 0" role="img"
+        aria-label="1인당 실질GDP·실질임금·실질소비 지수 추이">
+      ${yrs.map(([y,i])=>`<line x1="${X(i)}" y1="${PT}" x2="${X(i)}" y2="${H-PB}" stroke="var(--line)" stroke-width="1"/>
+        <text x="${X(i)}" y="${H-4}" fill="var(--mut)" font-size="9" text-anchor="middle">${y}</text>`).join('')}
+      <path d="${path(c)}" fill="none" stroke="var(--mut)" stroke-width="1.6" stroke-dasharray="3 3"/>
+      <path d="${path(w)}" fill="none" stroke="var(--amb)" stroke-width="2.2"/>
+      <path d="${path(g)}" fill="none" stroke="var(--acc)" stroke-width="2.2"/>
+      <text x="${X(g.length-1)-2}" y="${Y(g[g.length-1].v)-4}" fill="var(--acc)" font-size="10" text-anchor="end">1인당 GDP</text>
+      <text x="${X(w.length-1)-2}" y="${Y(w[w.length-1].v)+12}" fill="var(--amb)" font-size="10" text-anchor="end">실질임금</text>
+    </svg>`;
+  };
+  return `<div class="card" style="border-color:rgba(210,153,34,.45)">
+    <h2>⑦ 성장과 임금의 격차 — 나라는 버는데 나는 왜 제자리인가</h2>
+    <div class="hint">1인당 실질 GDP(나라가 1인당 생산한 것)와 실질임금(노동자가 실제로 받은 것)을
+      <b>같은 시점 100</b>으로 놓고 비교했습니다. 둘의 간격이 <b>양극화가 벌어진 폭</b>입니다.</div>
+    <div class="row">
+      <div class="box"><div class="lab">1인당 실질 GDP</div>
+        <div class="big mono pos" style="font-size:1.35rem">+${fmt(all.gdp_pc_pct,1)}%</div>
+        <div class="lab">${esc(all.from)} → ${esc(all.to)}</div></div>
+      <div class="box"><div class="lab">실질임금</div>
+        <div class="big mono" style="font-size:1.35rem;color:var(--amb)">+${fmt(all.real_wage_pct,1)}%</div>
+        <div class="lab">명목임금 ÷ 소비자물가</div></div>
+      <div class="box" style="border-color:var(--amb)"><div class="lab">벌어진 격차</div>
+        <div class="big mono warn" style="font-size:1.35rem">${fmt(all.gap_pp,1)}%p</div>
+        <div class="lab">${A.gap_pp_per_year!=null?`매년 ${fmt(A.gap_pp_per_year,2)}%p씩 누적`:''}</div></div>
+      <div class="box"><div class="lab">1인당 실질소비</div>
+        <div class="big mono" style="font-size:1.35rem">+${fmt(all.real_cons_pct,1)}%</div>
+        <div class="lab">실제로 쓸 수 있었던 돈</div></div>
+    </div>
+    ${spark()}
+    <div style="overflow-x:auto"><table><thead><tr>
+      <th>구간</th><th>기간</th><th>1인당 실질GDP</th><th>실질임금</th><th>1인당 실질소비</th><th>격차</th>
+    </tr></thead><tbody>${G.eras.map(e=>`<tr>
+      <td><b>${esc(e.label)}</b></td><td class="lab">${esc(e.from)} → ${esc(e.to)}</td>
+      <td class="mono pos">+${fmt(e.gdp_pc_pct,1)}%</td>
+      <td class="mono" style="color:var(--amb)">+${fmt(e.real_wage_pct,1)}%</td>
+      <td class="mono">+${fmt(e.real_cons_pct,1)}%</td>
+      <td class="mono warn">${fmt(e.gap_pp,1)}%p</td></tr>`).join('')}</tbody></table></div>
+
+    <div class="note">📖 <b>무엇이 문제인가</b> —
+      ${A.gdp_pc!=null?`1인당 생산은 연 <b>${fmt(A.gdp_pc,2)}%</b> 늘었는데 실질임금은 연 <b>${fmt(A.real_wage,2)}%</b> 늘었습니다.
+      차이는 한 해 <b>${fmt(A.gap_pp_per_year,2)}%p</b>에 불과하지만, `:''}
+      복리로 쌓여 <b>${fmt(all.gap_pp,1)}%p</b>가 됐습니다.
+      매년은 작아 보이고 누적은 큽니다 — 이것이 양극화가 <b>협상 테이블에서 잘 안 보이는</b> 이유입니다.
+      한 해만 놓고 보면 "겨우 0.6%p인데 뭐가 문제냐"가 되기 때문입니다.<br><br>
+      <b>그 차이는 어디로 갔나</b> — 1인당 GDP에는 임금 말고도 기업의 이익잉여, 자본소득,
+      감가상각이 함께 들어 있습니다. 노동으로 가지 않은 몫이 <b>어디로</b> 갔는지는
+      이 지표만으로 특정할 수 없습니다. 다만 <b>노동으로 오지 않았다</b>는 것은 확인됩니다.</div>
+
+    <div class="note">⚠️ <b>과장하지 마세요 — 반박당합니다</b><br>
+      · 이 표는 임금이 <b>줄었다</b>고 말하지 않습니다. 실질임금은 <b>늘었고</b>, 다만 GDP보다 덜 늘었습니다.
+        "임금이 깎였다"고 쓰면 이 데이터로 반박당합니다. <b>격차</b>로 말하세요.<br>
+      · <b>평균값입니다.</b> 중위·하위 임금은 평균과 다르게 움직일 수 있고,
+        평균은 상위 소수가 끌어올릴 수 있습니다. 분포는 이 지표가 말하지 못합니다.<br>
+      · 1인당 GDP는 인구로 나눈 값이라 <b>고용률·인구구조 변화</b>에도 영향받습니다.<br>
+      · 그럼에도 <b>모든 구간에서 부호가 같습니다</b> — 코로나 이전에도, 이후에도, 최근 3년에도
+        GDP가 임금보다 빨랐습니다. 일시적 현상이 아니라 <b>지속된 방향</b>입니다.<br>
+      · 여기 실질임금은 <b>공식 물가</b> 기준입니다. 위 ②에서 낸 <b>내 체감물가</b>로 다시 계산하면
+        격차는 더 커집니다 — 공식 물가에 없는 대출이자와 구독료 때문입니다.</div>
+
+    <div class="note">🔗 <b>이 문제와 이 계산기의 관계</b><br>
+      ①②③ 이 격차를 <b>내 임금</b>에서 확인합니다 · ④ 우리 회사에 배분 여력이 있는지 봅니다 ·
+      ⑤⑥ 남은 몫이 <b>노동자 사이에서</b> 어떻게 갈렸는지 재고, 좁히는 비용을 계산합니다.<br>
+      격차는 국가 통계로만 보면 추상적입니다. 내 회사, 내 급여명세에서 확인될 때 교섭 근거가 됩니다.</div>
+  </div>`;
+}
+
 /* 국민경제의 노동 몫 — 임금협상에서 가장 오래된 거시 논거.
    회사별 '인건비/매출'과는 분모가 달라(GDP vs 매출) 직접 비교하면 안 된다.
    여기서 보는 것은 수준이 아니라 '추세와 국제 위치'다. */
@@ -1098,8 +1184,10 @@ function render(){
 
   ${pathCard(c)}
 
+  ${growthGapBlock()}
+
   <div class="card">
-    <h2>⑦ 주요국 통화량(M3) 연도별 증가율</h2>
+    <h2>⑧ 주요국 통화량(M3) 연도별 증가율</h2>
     <div class="hint">물가의 배경 조건입니다. 통화량이 실질성장보다 빠르게 늘면 물가 압력이 쌓입니다
       (다만 시차가 길고 시대에 따라 관계가 뒤집히므로 단정은 금물).</div>
     <div style="overflow-x:auto"><table><thead><tr><th>경제권</th><th>최근</th>${years}</tr></thead>
