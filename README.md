@@ -1,4 +1,6 @@
-# 내 실질임금 · 임금단협 · 노동 양극화 해소 계산기
+# lprc
+
+**내 실질임금 · 임금단협 · 노동 양극화 해소 계산기**
 
 임금 교섭에서 **노동측의 생계비 근거**와 **사측의 지불능력 근거**를 같은 화면에 놓는 계산기입니다.
 어느 쪽 주장도 대변하지 않고, 공개 통계와 사용자 입력값으로 계산한 결과만 보여줍니다.
@@ -26,19 +28,20 @@
 ## 구조
 
 ```
-docs/                       GitHub Pages 로 서비스되는 정적 파일
-  index.html                계산기 본체 (단일 파일, 외부 라이브러리 없음)
-  guide.html                소개 · 이용 방법
-  future.html               AI 시대의 노동
-  about.html                이용 안내 · 출처 · 면책
-  robots.txt                검색엔진·LLM 학습 수집기 거부
-  money_macro.json          ← money_macro_monitor.py 생성
-  wage_negotiation.json     ← wage_negotiation.py 생성
+lprc/
+├─ docs/                    GitHub Pages 로 서비스되는 정적 파일
+│    index.html            계산기 본체 (단일 파일, 외부 라이브러리 없음)
+│    guide.html            소개 · 이용 방법
+│    future.html           AI 시대의 노동
+│    about.html            이용 안내 · 출처 · 면책
+│    robots.txt            검색엔진·LLM 학습 수집기 거부
+│    money_macro.json      ← money_macro_monitor.py 생성
+│    wage_negotiation.json ← wage_negotiation.py 생성
 
-money_macro_monitor.py      물가·임금·통화량·노동몫·가계소비 (OECD·FRED·ECOS)
-wage_negotiation.py         회사별 지불능력 (DART 직원현황 + 손익)
-core/                       환경변수·시크릿 로더
-.github/workflows/data.yml  매일 KST 10:00 자동 수집
+├─ money_macro_monitor.py   물가·임금·통화량·노동몫·가계소비·성장임금격차
+├─ wage_negotiation.py      회사별 지불능력 (DART 직원현황 + 손익)
+├─ core/                    환경변수·시크릿 로더
+└─ .github/workflows/data.yml   매일 KST 10:00 자동 수집
 ```
 
 수집기는 **표준 라이브러리만** 사용합니다. 설치할 의존성이 없습니다.
