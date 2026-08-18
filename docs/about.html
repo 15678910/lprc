@@ -19,6 +19,9 @@
   header{border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:22px}
   h1{font-size:1.62rem;margin:0 0 6px}
   .sub{color:var(--mut);font-size:.9rem}
+  a.ext{color:var(--acc);text-decoration:none;border-bottom:1px solid rgba(88,166,255,.35)}
+  a.ext:hover{border-bottom-color:var(--acc);background:rgba(88,166,255,.1)}
+  a.ext::after{content:" ↗";font-size:.85em;opacity:.7}
   .nav{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 12px}
   .nav a{color:var(--mut);text-decoration:none;font-size:.88rem;padding:6px 13px;
          border:1px solid var(--line);border-radius:20px;background:#0d1219;white-space:nowrap}
@@ -139,12 +142,42 @@
   <table>
     <thead><tr><th>출처</th><th>가져오는 것</th><th>키</th></tr></thead>
     <tbody>
-      <tr><td><b>OECD</b> SDMX</td><td>통화량(M3), 품목별 소비자물가, 노동 몫(피용자보수÷GDP), 1인당 실질 가계소비</td><td>불필요</td></tr>
-      <tr><td><b>FRED</b> (세인트루이스 연준)</td><td>미국 M2·CPI·세수·금리·달러지수, BIS 실질주택가격, 한국 임금지수, 연준 분배계정</td><td>일부 필요</td></tr>
-      <tr><td><b>DART</b> (금융감독원 전자공시)</td><td>사업보고서 — 직원현황(인원·급여·고용형태), 매출·영업이익·순이익</td><td>필요</td></tr>
-      <tr><td><b>ECOS</b> (한국은행)</td><td>서울 아파트 매매가격지수, 소비자물가지수, 분배지표</td><td>필요</td></tr>
+      <tr><td><a class="ext" href="https://data.oecd.org" target="_blank" rel="noopener noreferrer"><b>OECD</b> SDMX</a></td><td>통화량(M3), 품목별 소비자물가, 노동 몫(피용자보수÷GDP), 1인당 실질 가계소비</td><td>불필요</td></tr>
+      <tr><td><a class="ext" href="https://fred.stlouisfed.org" target="_blank" rel="noopener noreferrer"><b>FRED</b> (세인트루이스 연준)</a></td><td>미국 M2·CPI·세수·금리·달러지수, BIS 실질주택가격, 한국 임금지수, 연준 분배계정</td><td>일부 필요</td></tr>
+      <tr><td><a class="ext" href="https://dart.fss.or.kr" target="_blank" rel="noopener noreferrer"><b>DART</b> (금융감독원 전자공시)</a></td><td>사업보고서 — 직원현황(인원·급여·고용형태), 매출·영업이익·순이익</td><td>필요</td></tr>
+      <tr><td><a class="ext" href="https://ecos.bok.or.kr" target="_blank" rel="noopener noreferrer"><b>ECOS</b> (한국은행)</a></td><td>서울 아파트 매매가격지수, 소비자물가지수, 분배지표</td><td>필요</td></tr>
     </tbody>
   </table>
+
+  <h3>계산기에 직접 넣어야 하는 값은 여기서 찾습니다</h3>
+  <p>아래는 이 계산기가 <b>자동으로 가져오지 않는</b> 값들의 출처입니다. 모두 외부 기관이며 이 사이트와 무관합니다.</p>
+  <table>
+    <thead><tr><th>찾는 것</th><th>가는 곳</th><th>한계</th></tr></thead>
+    <tbody>
+      <tr><td>비상장사·중견기업 재무·직원현황</td>
+        <td><a class="ext" href="https://dart.fss.or.kr" target="_blank" rel="noopener noreferrer">DART</a> → 공시유형 '외부감사관련' → 감사보고서</td>
+        <td>외부감사 대상만. 소규모는 공시 없음</td></tr>
+      <tr><td>간접고용(파견·용역·사내하도급) 인원</td>
+        <td><a class="ext" href="https://www.work.go.kr/gongsi/empReportInfo/retrieveGongsiList.do" target="_blank" rel="noopener noreferrer">고용노동부 고용형태공시</a></td>
+        <td>상시 300인 이상, <b>인원만</b> — 임금·도급비 없음</td></tr>
+      <tr><td>정규직·비정규직 임금격차 (월임금)</td>
+        <td><a class="ext" href="https://kosis.kr" target="_blank" rel="noopener noreferrer">KOSIS</a> → 경제활동인구조사 근로형태별 부가조사</td>
+        <td>가구 조사 · 전국 평균</td></tr>
+      <tr><td>정규직·비정규직 임금격차 (시간당)</td>
+        <td><a class="ext" href="https://laborstat.moel.go.kr" target="_blank" rel="noopener noreferrer">고용노동통계</a> → 고용형태별 근로실태조사</td>
+        <td>사업체 조사 · 위와 값이 다름</td></tr>
+      <tr><td>공공기관 인원·보수·정규직 전환 실적</td>
+        <td><a class="ext" href="https://www.alio.go.kr" target="_blank" rel="noopener noreferrer">알리오</a>(중앙) ·
+            <a class="ext" href="https://www.cleaneye.go.kr" target="_blank" rel="noopener noreferrer">클린아이</a>(지방)</td>
+        <td>공공부문만. 민간에는 대응 자료가 없음</td></tr>
+      <tr><td>중소기업 일반현황</td>
+        <td><a class="ext" href="https://sminfo.mss.go.kr" target="_blank" rel="noopener noreferrer">중소기업현황정보시스템</a></td>
+        <td>재무 상세는 제한적</td></tr>
+    </tbody>
+  </table>
+  <div class="note">⚠️ 임금격차 통계 두 개는 <b>값이 서로 다릅니다.</b> 가구 조사와 사업체 조사이고 월급·시급
+    기준도 다릅니다. 비정규직은 노동시간이 짧은 경우가 많아 <b>월급 기준 격차가 시급 기준보다 크게 나옵니다.</b>
+    어느 쪽을 인용하든 <b>조사명과 연도</b>를 함께 밝히세요.</div>
   <div class="note">이 계산기는 시세·뉴스를 쓰지 않습니다. 물가·임금·통화량 같은 <b>공식 통계</b>와
     <b>기업 공시</b>만 사용합니다.</div>
 </div>

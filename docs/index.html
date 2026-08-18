@@ -54,11 +54,22 @@
   .drop:hover,.drop.over{border-color:var(--acc);color:var(--tx);background:#0d1219}
   .tag{display:inline-block;background:#0d1219;border:1px solid var(--line);border-radius:20px;
        padding:3px 11px;font-size:.88rem;margin:2px 3px 2px 0}
+  a.ext{color:var(--acc);text-decoration:none;border-bottom:1px solid rgba(88,166,255,.35)}
+  a.ext:hover{border-bottom-color:var(--acc);background:rgba(88,166,255,.1)}
+  a.ext::after{content:" ↗";font-size:.85em;opacity:.7}
+  .srcbox{background:#0d1219;border:1px solid var(--line);border-radius:10px;padding:13px 15px;margin-top:10px}
+  .srcbox dt{font-weight:600;color:var(--tx);margin:10px 0 2px}
+  .srcbox dt:first-child{margin-top:0}
+  .srcbox dd{margin:0 0 2px;color:var(--mut)}
   @media print{
     body{background:#fff;color:#000;font-size:14.5px}
-    .card,.box{background:#fff;border-color:#bbb}
+    .card,.box,.srcbox{background:#fff;border-color:#bbb}
     .noprint{display:none!important}
-    .lab,.hint,.note,th{color:#444}
+    .lab,.hint,.note,th,.srcbox dd{color:#444}
+    .srcbox dt{color:#000}
+    /* 인쇄물에서는 클릭이 안 되므로 주소를 본문에 펼쳐 준다 */
+    a.ext{color:#0b4ea2;border-bottom:none}
+    a.ext::after{content:" (" attr(href) ")";font-size:.85em;color:#555;word-break:break-all}
     .pos{color:#0a6b2b}.neg{color:#a01b12}.cy{color:#0b6b73}
   }
 </style>
@@ -87,6 +98,9 @@ const KEY='__infl_calc_v2';
 const fmt=(v,d)=>v==null||!isFinite(v)?'—':Number(v.toFixed(d==null?2:d)).toLocaleString();
 const won=v=>v==null||!isFinite(v)?'—':Math.round(v).toLocaleString();
 const sc=v=>v==null?'':v>=0?'pos':'neg';
+/* 외부 링크 — 새 탭으로 열고 원본 탭 참조를 넘기지 않는다(noopener).
+   페이지 전체에 no-referrer 를 걸어 두어 어디서 왔는지도 안 넘어간다. */
+const ext=(url,txt)=>`<a class="ext" href="${url}" target="_blank" rel="noopener noreferrer">${txt}</a>`;
 // 부호는 값에서 뽑는다 — '+' 를 하드코딩하면 음수에서 '+-0.1%' 가 된다
 const sgn=v=>v==null||!isFinite(v)?'':v>=0?'+':'';
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -264,7 +278,18 @@ function coCard(c){
       ${mi('headcount','직원 수 (명)')}${mi('avg_pay','1인평균 연봉 (원)')}
       ${mi('revenue','연 매출액 (원)')}${mi('op','연 영업이익 (원)')}
       ${mi('prod','1인당 매출 증가율 (%)')}${mi('opG','영업이익 증가율 (%)')}
-      </div><div class="lab" style="margin-bottom:10px">사업보고서·감사보고서의 '직원 등의 현황'과 손익계산서에서 옮겨 적으세요.</div>`:''}
+      </div><div class="lab" style="margin-bottom:10px">사업보고서·감사보고서의 '직원 등의 현황'과 손익계산서에서 옮겨 적으세요.</div>
+      <div class="srcbox"><dl style="margin:0">
+        <dt>비상장사·중소기업은 어디서 보나</dt>
+        <dd>· <b>사업보고서</b>는 상장사와 제출의무 법인만 냅니다. 없다고 끝이 아닙니다.</dd>
+        <dd>· ${ext('https://dart.fss.or.kr','DART 전자공시')} → 회사명 검색 → 공시유형 <b>'외부감사관련'</b>에서
+            <b>감사보고서</b>를 찾으세요. 외부감사 대상이면 <b>비상장사도 재무제표가 공개</b>됩니다
+            (자산·매출 규모 요건 충족 시). 직원 수·급여총액은 감사보고서 주석에 있는 경우가 많습니다.</dd>
+        <dd>· <b>공공기관</b>이면 ${ext('https://www.alio.go.kr','알리오')}(중앙) ·
+            ${ext('https://www.cleaneye.go.kr','클린아이')}(지방)에 인원·보수가 훨씬 자세히 나옵니다.</dd>
+        <dd>· <b>외부감사 대상도 아닌 소규모</b>는 공시 자체가 없습니다. 단체협약 자료·급여명세로
+            직접 확인하거나 ${ext('https://sminfo.mss.go.kr','중소기업현황정보시스템')}을 참고하세요.</dd>
+      </dl></div>`:''}
     ${!pay||!rev?`<div class="lab">회사를 선택하거나 직접 입력하면 지불능력 지표가 계산됩니다.</div>`:`
     <div class="row">
       <div class="box"><div class="lab">직원 수 / 1인평균 연봉</div>
@@ -404,6 +429,22 @@ function gapCard(c){
     <div class="note" style="margin-top:10px">📌 <b>DART는 고용형태별 급여를 공시하지 않습니다.</b>
       인원만 정규직·기간제로 나뉘고 급여총액·1인평균은 합산입니다.
       아래 두 칸은 단체협약 자료·급여명세·노조 실태조사로 확인해 직접 넣으세요.</div>
+    <div class="srcbox"><dl style="margin:0">
+      <dt>정규직·비정규직 임금격차 — 전국 통계로 대조하기</dt>
+      <dd>회사 숫자를 넣기 전에 전국 평균과 견줘 보면 자기 회사가 어느 쪽에 치우쳤는지 알 수 있습니다.</dd>
+      <dd>· ${ext('https://kosis.kr','KOSIS 국가통계포털')} → <b>경제활동인구조사 근로형태별 부가조사</b>
+          — 정규직·비정규직 <b>월평균임금</b>. 매년 8월 조사분이 가장 널리 인용됩니다.</dd>
+      <dd>· ${ext('https://laborstat.moel.go.kr','고용노동통계')} → <b>고용형태별 근로실태조사</b>
+          — <b>시간당 임금</b> 기준. 사업체 조사라 규모별·형태별로 더 잘게 나옵니다.</dd>
+      <dd>⚠️ <b>두 조사의 격차 값이 다릅니다.</b> 가구 조사와 사업체 조사이고, 월급 기준이냐 시급
+          기준이냐도 다릅니다. 비정규직은 노동시간이 짧은 경우가 많아 <b>월급 기준 격차가 시급 기준보다
+          크게 나옵니다.</b> 인용할 때 조사명과 연도를 반드시 함께 밝히세요 — 안 밝히면 사측이 다른 조사를 들고 옵니다.</dd>
+      <dt>격차가 좁혀지고 있는지 확인하려면</dt>
+      <dd>· 위 두 조사 모두 <b>연도별 시계열</b>이라 KOSIS에서 몇 년치를 한 번에 뽑으면 추이가 보입니다.</dd>
+      <dd>· 공공부문은 ${ext('https://www.alio.go.kr','알리오')}에 기관별 <b>정규직 전환 실적</b>과
+          형태별 인원이 매년 올라옵니다. 민간에는 이에 대응하는 공개 자료가 없습니다.</dd>
+      <dd>· 우리 회사 기준으로는 ⑥에서 목표 수준·연수를 넣어 좁히는 경로를 계산할 수 있습니다.</dd>
+    </dl></div>
     <div class="row" style="margin:10px 0">
       ${num('regPay','정규직 평균 연봉 (원)','예: 120000000')}
       ${num('tmpPay','기간제·비정규직 평균 연봉 (원)','예: 60000000')}
@@ -442,7 +483,9 @@ function gapCard(c){
     ${subSel==='manual'?`<div class="row" style="margin-bottom:10px">
       ${num('headcount','협력사 직원 수 (명)','','sub')}${num('avg_pay','협력사 1인평균 연봉 (원)','','sub')}
       ${num('revenue','협력사 연 매출액 (원)','','sub')}${num('op','협력사 연 영업이익 (원)','','sub')}
-      </div><div class="lab" style="margin-bottom:10px">비상장 협력사는 감사보고서(DART 전자공시 → 감사보고서)나 사업자 제출 자료에서 옮겨 적으세요.</div>`:''}
+      </div><div class="lab" style="margin-bottom:10px">비상장 협력사는 감사보고서
+      (${ext('https://dart.fss.or.kr','DART 전자공시')} → 회사명 검색 → 공시유형 '외부감사관련')나
+      사업자 제출 자료에서 옮겨 적으세요. 외부감사 대상이면 비상장사도 재무제표가 공개됩니다.</div>`:''}
     ${!subD||!mPay?`<div class="lab">④에서 원청을 고르고 여기서 협력사를 고르면 비교가 계산됩니다.</div>`:`
     <div class="row">
       <div class="box"><div class="lab">${esc(mName||'원청')} 1인평균</div>
@@ -495,7 +538,7 @@ function gapCard(c){
     `}
 
     <div class="lab" style="margin:20px 0 6px;font-weight:600;color:var(--tx)">Ⓒ 사내하도급·파견·용역 (간접고용)</div>
-    <div class="hint">공시에 <b>아예 없는 인력</b>입니다. 원청 손익에서 이들의 비용은 인건비가 아니라
+    <div class="hint"><b>DART 공시에는 없는 인력</b>입니다. 원청 손익에서 이들의 비용은 인건비가 아니라
       <b>외주비·지급수수료</b>로 잡히므로, ④의 인건비/매출 비중과 1인당 매출이 모두 실제와 어긋납니다.
       노조가 파악한 인원·임금·도급비를 넣으면 그 왜곡을 되돌려 계산합니다.</div>
     ${!mName?`<div class="lab" style="margin-top:8px">④에서 회사를 먼저 선택하세요.</div>`:`
@@ -504,8 +547,19 @@ function gapCard(c){
       ${num('indPay','간접고용 1인평균 연봉 (원)','노동자 실수령 기준')}
       ${num('indCost','연간 도급·용역비 총액 (원)','원청이 지급하는 계약금액')}
     </div>
-    <div class="lab" style="margin-bottom:10px">인원·임금은 노조 실태조사·업체별 근로계약으로, 도급비는 원청 감사보고서 주석
+    <div class="lab" style="margin-bottom:10px">임금은 노조 실태조사·업체별 근로계약으로, 도급비는 원청 감사보고서 주석
       (특수관계자 거래·외주가공비)이나 정보공개 청구로 확인할 수 있습니다. 도급비는 몰라도 앞의 두 칸만으로 계산됩니다.</div>
+    <div class="srcbox"><dl style="margin:0">
+      <dt>인원은 손으로 셀 필요가 없습니다 — 300인 이상이면 공시됩니다</dt>
+      <dd>· ${ext('https://www.work.go.kr/gongsi/empReportInfo/retrieveGongsiList.do','고용노동부 고용형태공시 — 기업별 공시정보')}
+          에서 사업장명으로 검색하면 <b>소속 외 근로자 수</b>가 바로 나옵니다. 이게 파견·용역·사내하도급 인원입니다.
+          로그인 없이 조회되고, 소속근로자도 기간없음·기간제·단시간으로 나뉘어 있어 Ⓐ의 인원 칸에도 씁니다.</dd>
+      <dd>· 대상은 <b>상시 300인 이상</b> 사업주이고 매년 3월 31일 기준입니다. 그보다 작은 회사는 공시 의무가 없습니다.</dd>
+      <dd>⚠️ 공시는 <b>인원만</b> 있고 <b>임금과 도급비는 없습니다.</b> 위 첫 칸만 공시로 채우고 나머지 둘은
+          여전히 직접 확인해야 합니다.</dd>
+      <dd>⚠️ 공시 기준일(3월 31일)과 ④ DART 사업보고서의 기준 시점이 다를 수 있습니다. 두 숫자를 나란히
+          쓸 때는 각각의 기준일을 함께 밝히세요.</dd>
+    </dl></div>
     ${!iN?'':`
     <div class="row">
       <div class="box"><div class="lab">실질 사업장 인력</div>
@@ -1248,6 +1302,20 @@ function render(){
         결과를 확인하고 직접 조정하세요.<br>
       🚨 정보 제공용이며 투자자문·법률자문이 아닙니다. 입력값은 이 브라우저에만 저장되고 서버로 전송되지 않습니다.
     </div>
+    <div class="srcbox"><dl style="margin:0">
+      <dt>직접 넣어야 하는 값 — 어디서 찾나</dt>
+      <dd>· <b>회사 재무·직원현황</b> — ${ext('https://dart.fss.or.kr','DART 전자공시')}
+          (비상장사는 공시유형 '외부감사관련'의 감사보고서)</dd>
+      <dd>· <b>간접고용 인원</b>(파견·용역·사내하도급) — ${ext('https://www.work.go.kr/gongsi/empReportInfo/retrieveGongsiList.do','고용노동부 고용형태공시')}
+          · 상시 300인 이상, 인원만</dd>
+      <dd>· <b>정규직·비정규직 임금격차</b> — ${ext('https://kosis.kr','KOSIS')} 근로형태별 부가조사(월임금) ·
+          ${ext('https://laborstat.moel.go.kr','고용노동통계')} 고용형태별 근로실태조사(시간당)</dd>
+      <dd>· <b>공공기관</b> 인원·보수·정규직 전환 실적 — ${ext('https://www.alio.go.kr','알리오')}(중앙) ·
+          ${ext('https://www.cleaneye.go.kr','클린아이')}(지방)</dd>
+      <dd>· <b>중소기업 일반현황</b> — ${ext('https://sminfo.mss.go.kr','중소기업현황정보시스템')}</dd>
+      <dd style="margin-top:6px">위 사이트는 모두 외부 기관이며 이 계산기와 무관합니다. 링크는 새 탭에서 열립니다.
+          기준시점·조사명이 서로 달라 그대로 나란히 놓으면 안 되고, 인용할 때 각각의 출처와 기준일을 함께 밝히세요.</dd>
+    </dl></div>
     <div class="row noprint" style="margin-top:12px">
       <button onclick="window.print()">🖨️ 인쇄 / PDF 저장</button>
       <button class="ghost" onclick="reset()">기본값으로 되돌리기</button>
