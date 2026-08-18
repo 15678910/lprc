@@ -37,7 +37,7 @@ OUTPUT_FILE = os.path.join(BASE_DIR, "docs", "wage_negotiation.json")
 DART = "https://opendart.fss.or.kr/api"
 UA = {"User-Agent": "Mozilla/5.0 (compatible; ai-finance-wage)"}
 
-# 관심종목 — 사용자가 소속·비교하려는 회사가 여기 없으면 화면에서 직접 입력한다.
+# 관심종목 — 이용자가 소속·비교하려는 회사가 여기 없으면 화면에서 직접 입력한다.
 WATCH = [
     ("000660", "SK하이닉스"), ("005930", "삼성전자"), ("108490", "로보티즈"),
     ("003550", "LG"), ("066570", "LG전자"), ("042700", "한미반도체"),
@@ -130,7 +130,7 @@ def employees(key, corp, year):
 
     DART는 정규직(rgllbr_co)과 기간제(cnttk_co) '인원'은 구분 공시하지만
     급여는 합산으로만 공시한다. 따라서 고용형태별 임금 격차는 이 API로 알 수 없고,
-    화면에서 사용자가 직접 입력해야 한다(단체협약 자료·급여명세로 확인 가능).
+    화면에서 이용자가 직접 입력해야 한다(단체협약 자료·급여명세로 확인 가능).
 
     ⚠️ rgllbr_abacpt_labrr_co(정규직 단시간)는 rgllbr_co에 **이미 포함된 부분집합**이다.
        더하면 이중 계상된다. 실측으로 확인: 삼성전자 rgllbr_co + cnttk_co = sm 과 정확히 일치.

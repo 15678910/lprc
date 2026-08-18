@@ -29,6 +29,7 @@ VALIDATION (2026-08-04 실측)
 import csv
 import io
 import json
+import math
 import os
 import subprocess
 import sys
@@ -38,6 +39,11 @@ from datetime import datetime, timezone, timedelta
 
 KST = timezone(timedelta(hours=9))
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# 한국 윈도우 콘솔 기본 인코딩이 cp949 라 진행 로그의 '—'·이모지에서 UnicodeEncodeError 로 죽는다.
+# GitHub Actions(리눅스·UTF-8)에서는 안 나지만 README 가 로컬 실행을 안내하므로 막아 둔다.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 OUTPUT_FILE = os.path.join(BASE_DIR, "docs", "money_macro.json")
 
 FRED_CSV = "https://fred.stlouisfed.org/graph/fredgraph.csv"
@@ -378,7 +384,7 @@ def seoul_property_block():
 # ── 품목별 물가·임금 (체감물가 계산기/임금협상 근거용) ──────────────
 OECD_PRICES = ("https://sdmx.oecd.org/public/rest/data/OECD.SDD.TPS,DSD_PRICES@DF_PRICES_ALL,"
                "/all?startPeriod={start}&format=csvfilewithlabels")
-# COICOP 영문 항목명 → 화면 표기. 계산기에서 사용자가 비중을 조정할 축이다.
+# COICOP 영문 항목명 → 화면 표기. 계산기에서 이용자가 비중을 조정할 축이다.
 CPI_ITEMS = [
     ("Food and non-alcoholic beverages", "식료품·비주류음료", 13.0),
     ("Housing, water, electricity, gas and other fuels", "주거·수도·광열", 17.0),
@@ -426,7 +432,7 @@ def cpi_items_block():
         print(f"    {it['name']} {it['yoy_pct']:+.2f}%")
     return {"asof": latest, "total_yoy_pct": round(total, 2) if total is not None else None,
             "items": items,
-            "note": ("가중치는 한국 CPI 실제 가중치의 근사값(기본값)이며 사용자가 조정하는 축이다. "
+            "note": ("가중치는 한국 CPI 실제 가중치의 근사값(기본값)이며 이용자가 조정하는 축이다. "
                      "'자동차 연료'는 교통에 포함된 세부항목이라 기본 가중 0 — 차를 많이 쓰는 경우만 올려 쓴다.")}
 
 
@@ -522,7 +528,7 @@ def labor_share_block():
 
 # ── 가계 소비 여력 (1인당 실질 가계소비) ───────────────────────────
 # 실질임금이 올랐다는 통계와 "쓸 돈이 없다"는 체감이 어긋날 때, 그 사이를 메우는 지표.
-# 임금은 근로자 1인 기준이지만 소비는 인구 1인 기준이라 가구 구성·고용 변화까지 반영된다.
+# 임금은 노동자 1인 기준이지만 소비는 인구 1인 기준이라 가구 구성·고용 변화까지 반영된다.
 #
 # ⚠️ 한국은 OECD 가계 대시보드에 '가처분소득'과 '저축률'이 수록돼 있지 않다(2026-08 확인).
 #    수록된 나라는 있으나 한국은 소비·실업률·소비자심리만 제공된다.
@@ -563,7 +569,7 @@ def household_block():
         "areas": out,
         "definition": "1인당 실질 가계·비영리단체 최종소비지출 증가율(전년동기비)",
         "source": "OECD SDMX DSD_HHDASH@DF_HHDASH_CTRY (키 불필요)",
-        "why": ("실질임금은 '근로자 1인'이지만 이 지표는 '인구 1인'이라 가구원 수·고용률 변화까지 반영한다. "
+        "why": ("실질임금은 '노동자 1인'이지만 이 지표는 '인구 1인'이라 가구원 수·고용률 변화까지 반영한다. "
                 "실질임금이 플러스인데 이 값이 0 부근이면, 오른 임금이 늘어난 부양 부담이나 "
                 "고용 구성 변화로 흡수됐다는 뜻이다."),
         "caveat": ("소비는 저축을 헐거나 빚을 내서도 늘릴 수 있으므로 소득의 대용치로 쓰면 안 된다. "
@@ -588,10 +594,124 @@ OECD_HHDASH_IX = ("https://sdmx.oecd.org/public/rest/data/OECD.SDD.NAD,DSD_HHDAS
                   "/Q.KOR.B1GQ_R_POP+P3S1M_R_POP.IX?startPeriod=2010&format=csvfilewithlabels")
 OECD_KR_CPI_IX = ("https://sdmx.oecd.org/public/rest/data/OECD.SDD.TPS,DSD_PRICES@DF_PRICES_ALL,"
                   "/KOR.M.N.CPI.._T.N.?startPeriod=2010-01&format=csvfilewithlabels")
-GAP_ERAS = [("2010-Q1", None, "전 구간"),
-            ("2010-Q1", "2019-Q4", "코로나 이전"),
+# ⚠️ 시작이 2010-Q1 이 아니라 Q4 인 이유 — 아래 _ma4 가 앞 3분기를 버린다.
+GAP_ERAS = [("2010-Q4", None, "전 구간"),
+            ("2010-Q4", "2019-Q4", "코로나 이전"),
             ("2019-Q4", None, "코로나 이후"),
             ("2022-Q4", None, "최근 3년")]
+
+
+def _ma4(series, ks):
+    """4분기 이동평균.
+
+    한국 임금지수는 상여금이 특정 분기에 몰려 진폭이 크다. 원계열의 단일 분기끼리
+    비교하면 '끝 분기가 상여금 분기냐'에 따라 누적 격차가 10%p 가까이 흔들린다
+    (2025-Q4 기준 12.8%p → 2026-Q1 기준 22.7%p). 교섭 자료로 못 쓰는 성질이라
+    세 계열 모두 평활한다. 같은 이유로 이 파일의 임금 상승률도 4분기 이동평균을 쓴다.
+    창이 안 차는 앞 3분기는 버린다.
+    """
+    return {ks[i]: sum(series[q] for q in ks[i - 3:i + 1]) / 4
+            for i in range(3, len(ks))}
+
+# 격차를 쐐기별로 가른다. 격차 전체를 분배 문제로 읽으면 교섭에서 반박당하므로,
+# 측정 차이로 설명되는 부분을 먼저 떼어내고 남는 것만 분배로 말한다.
+#   ① 교역조건 — 실질임금은 소비자물가로, 실질GDP는 GDP디플레이터로 나눈다.
+#                수입물가가 수출물가보다 빨리 오르면 분배와 무관하게 격차가 생긴다.
+#   ② 비임금 보수 — 임금지수는 현금 임금만 잡는다. 고용주가 내는 사회부담금(D12)은
+#                   노동비용이자 보수(D1)인데 임금(D11)에는 안 들어간다.
+# ⚠️ 국민계정이 연간이라 이 분해만 연 단위다. ⑦ 본표(분기)와 구간이 다르므로 따로 표기한다.
+# ⚠️ 고정자본소모(P51C)는 이 데이터플로우에 없어 감가상각 쐐기는 아직 못 가른다.
+OECD_KR_NA_A = ("https://sdmx.oecd.org/public/rest/data/OECD.SDD.NAD,DSD_NAMAIN10@DF_TABLE1,"
+                "/A.KOR.S1..B1GQ+D1+D11.......?startPeriod=2010&format=csvfilewithlabels")
+
+
+def _to_year(q, need):
+    """{YYYY-Qn 또는 YYYY-MM: v} → 연평균. 관측치가 need 개 다 있는 해만 쓴다."""
+    acc = {}
+    for k, v in q.items():
+        acc.setdefault(k[:4], []).append(v)
+    return {y: sum(v) / len(v) for y, v in acc.items() if len(v) == need}
+
+
+def _gap_wedges(gdp_q, rw_q, cpi_monthly):
+    """격차 = ① 교역조건 + ② 비임금 보수 + 나머지.
+
+    누적 성장률끼리 빼면(예: 108.2% − 102.3%) 구간이 길수록 오차가 커진다.
+    로그로 계산하면 세 항이 정확히 격차에 합쳐지므로 로그로 가르고 %p 로 환산한다.
+    """
+    txt = _http(OECD_KR_NA_A, timeout=120)
+    if not txt:
+        print("  [WARN] OECD 한국 국민계정 조회 실패 — 쐐기 분해 생략")
+        return None
+    nom, vol, d1, d11 = {}, {}, {}, {}
+    for r in csv.DictReader(io.StringIO(txt)):
+        if (r.get("UNIT_MEASURE") != "XDC" or r.get("TRANSFORMATION") != "N"
+                or r.get("SECTOR") != "S1"):
+            continue
+        try:
+            v = float(r["OBS_VALUE"])
+        except (ValueError, KeyError, TypeError):
+            continue
+        tr, tb, y, act = r["TRANSACTION"], r.get("TABLE_IDENTIFIER"), r["TIME_PERIOD"], r.get("ACTIVITY")
+        # 명목(V)과 연쇄물량(LR)의 비가 GDP 디플레이터다. 물량은 T0103 에 없어 T0101 을 쓴다.
+        if tr == "B1GQ" and tb == "T0101" and act == "_Z":
+            if r.get("PRICE_BASE") == "V":
+                nom[y] = v
+            elif r.get("PRICE_BASE") == "LR":
+                vol[y] = v
+        elif tb == "T0103" and act in ("_T", "_Z") and r.get("PRICE_BASE") == "V":
+            if tr == "D1":
+                d1[y] = v
+            elif tr == "D11":
+                d11[y] = v
+
+    defl = {y: nom[y] / vol[y] for y in set(nom) & set(vol) if vol[y]}
+    gdp_a, rw_a = _to_year(gdp_q, 4), _to_year(rw_q, 4)
+    cpi_a = _to_year(cpi_monthly, 12)
+    ys = sorted(set(gdp_a) & set(rw_a) & set(cpi_a) & set(defl) & set(d1) & set(d11))
+    if len(ys) < 8:
+        print(f"  [WARN] 쐐기 분해 표본 부족 {len(ys)}년")
+        return None
+    a, b = ys[0], ys[-1]
+
+    ln = lambda d: math.log(d[b] / d[a])
+    pct = lambda d: round((d[b] / d[a] - 1) * 100, 1)
+    gap_log = ln(gdp_a) - ln(rw_a)
+    if abs(gap_log) < 1e-9:
+        return None
+    w_terms = ln(cpi_a) - ln(defl)          # ① 교역조건
+    w_nonwage = ln(d1) - ln(d11)            # ② 비임금 보수
+    w_rest = gap_log - w_terms - w_nonwage  # 나머지 (분배 + 고용·인구 구성)
+    gap_pp = pct(gdp_a) - pct(rw_a)
+
+    def part(key, label, x, note):
+        return {"key": key, "label": label, "note": note,
+                "pp": round(gap_pp * x / gap_log, 2),
+                "share_pct": round(x / gap_log * 100, 1)}
+
+    out = {
+        "from": a, "to": b, "years": len(ys),
+        "gap_pp": round(gap_pp, 1),
+        "gdp_pc_pct": pct(gdp_a), "real_wage_pct": pct(rw_a),
+        "parts": [
+            part("terms", "① 교역조건 — 물가 기준 차이", w_terms,
+                 f"소비자물가 {pct(cpi_a):+.1f}% vs GDP디플레이터 {pct(defl):+.1f}%"),
+            part("nonwage", "② 비임금 보수 — 사회부담금 등", w_nonwage,
+                 f"보수총액 {pct(d1):+.1f}% vs 임금 {pct(d11):+.1f}%"),
+            part("rest", "나머지 — 분배 + 고용·인구 구성", w_rest,
+                 "여기까지 좁혀야 분배 격차로 말할 수 있다"),
+        ],
+        "method": ("로그 성장률로 갈라 세 항이 격차에 정확히 합쳐지게 한 뒤 %p 로 환산했다. "
+                   "누적 100%대 구간에서 퍼센트끼리 빼면 오차가 커지기 때문이다."),
+        "caveat": ("⚠️ 국민계정이 연간이라 이 분해는 연 단위이며, 위 표(분기)와 구간이 다르다. "
+                   "⚠️ '나머지'는 순수 분배분이 아니다 — 1인당 GDP는 인구 1인, 임금은 노동자 1인 "
+                   "기준이라 고용률·인구구조 변화가 아직 섞여 있고, 감가상각 몫도 빠지지 않았다. "
+                   "따라서 나머지는 분배 격차의 상한선이다."),
+        "source": "OECD SDMX DSD_NAMAIN10@DF_TABLE1 (B1GQ 명목·연쇄물량, D1, D11) — 키 불필요",
+    }
+    print(f"  쐐기 분해 {a}→{b} 격차 {gap_pp:+.1f}%p = " +
+          " + ".join(f"{p['label'].split(' —')[0]} {p['pp']:+.2f}" for p in out["parts"]))
+    return out
 
 
 def _to_q(monthly):
@@ -635,6 +755,8 @@ def growth_gap_block():
         print(f"  [WARN] 겹치는 분기 부족 {len(ks)}")
         return None
     rw = {q: wage[q] / cpi[q] for q in ks}                    # 실질임금 = 명목 ÷ 물가
+    gdp, cons, rw = _ma4(gdp, ks), _ma4(cons, ks), _ma4(rw, ks)   # 계절 변동 제거
+    ks = sorted(rw)
     base, last = ks[0], ks[-1]
 
     def grow(m, a, b):
@@ -659,6 +781,7 @@ def growth_gap_block():
         return [{"q": q, "v": round(m[q] / m[base] * 100, 1)} for q in ks]
 
     out = {"base": base, "asof": last, "eras": eras, "annualized": ann,
+           "wedges": _gap_wedges(gdp, rw, cpim),
            "series": {"gdp_pc": idx(gdp), "real_wage": idx(rw), "real_cons": idx(cons)},
            "definition": ("1인당 실질 GDP·1인당 실질 가계소비(OECD, 지수) 와 "
                           "실질임금(FRED 한국 임금지수 ÷ OECD 한국 소비자물가지수)을 "
