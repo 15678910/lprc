@@ -14,45 +14,46 @@
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--tx);
        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Malgun Gothic",sans-serif;
-       font-size:17px;line-height:1.68}
+       font-size:17px;line-height:1.68;
+       word-break:keep-all;overflow-wrap:break-word}
   .wrap{max-width:1080px;margin:0 auto;padding:20px 16px 60px}
   header{border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:20px}
   h1{font-size:1.62rem;margin:0 0 4px}
-  .sub{color:var(--mut);font-size:.9rem}
+  .sub{color:var(--mut);font-size:1rem}
   .nav{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 12px}
-  .nav a{color:var(--mut);text-decoration:none;font-size:.88rem;padding:6px 13px;
+  .nav a{color:var(--mut);text-decoration:none;font-size:.95rem;padding:6px 13px;
          border:1px solid var(--line);border-radius:20px;background:#0d1219;white-space:nowrap}
   .nav a:hover{color:var(--tx);border-color:var(--acc)}
   .nav a.on{color:var(--tx);border-color:var(--acc);background:rgba(88,166,255,.12);font-weight:600}
   .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:16px}
-  .card h2{font-size:1.14rem;margin:0 0 5px}
-  .hint{color:var(--mut);font-size:.88rem;margin-bottom:12px;line-height:1.7}
+  .card h2{font-size:1.24rem;margin:0 0 5px}
+  .hint{color:var(--mut);font-size:1rem;margin-bottom:12px;line-height:1.7}
   table{width:100%;border-collapse:collapse}
-  th,td{padding:8px 9px;text-align:right;font-size:.93rem;border-top:1px solid var(--line)}
-  th{color:var(--mut);font-weight:600;font-size:.83rem;border-top:none}
+  th,td{padding:8px 9px;text-align:right;font-size:1rem;border-top:1px solid var(--line)}
+  th{color:var(--mut);font-weight:600;font-size:.9rem;border-top:none}
   th:first-child,td:first-child{text-align:left}
-  input[type=number]{width:84px;background:#0d1219;border:1px solid var(--line);color:var(--tx);
-       border-radius:6px;padding:6px 8px;font-size:.93rem;text-align:right;font-variant-numeric:tabular-nums}
-  input.amt{width:118px}
+  input[type=number]{width:92px;background:#0d1219;border:1px solid var(--line);color:var(--tx);
+       border-radius:6px;padding:6px 8px;font-size:1rem;text-align:right;font-variant-numeric:tabular-nums}
+  input.amt{width:128px}
   input:focus{outline:none;border-color:var(--acc)}
   .big{font-size:2rem;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.15}
   .row{display:flex;gap:14px;flex-wrap:wrap}
-  .box{flex:1;min-width:205px;background:#0d1219;border:1px solid var(--line);border-radius:10px;padding:13px 15px}
-  .lab{color:var(--mut);font-size:.84rem;line-height:1.55}
+  .box{flex:1;min-width:228px;background:#0d1219;border:1px solid var(--line);border-radius:10px;padding:13px 15px}
+  .lab{color:var(--mut);font-size:.94rem;line-height:1.55}
   .pos{color:var(--grn)}.neg{color:var(--red)}.warn{color:var(--amb)}.cy{color:var(--cy)}
-  .note{color:var(--mut);font-size:.84rem;line-height:1.72;border-top:1px solid var(--line);padding-top:11px;margin-top:12px}
+  .note{color:var(--mut);font-size:.94rem;line-height:1.72;border-top:1px solid var(--line);padding-top:11px;margin-top:12px}
   button{background:#1f6feb;color:#fff;border:none;border-radius:7px;padding:7px 14px;
-         font-size:.9rem;cursor:pointer;font-weight:600}
+         font-size:.95rem;cursor:pointer;font-weight:600}
   button.ghost{background:transparent;color:var(--mut);border:1px solid var(--line)}
   button.on{background:#238636}
   .mono{font-variant-numeric:tabular-nums}
   .bar{height:7px;background:#0d1219;border-radius:4px;overflow:hidden;min-width:52px}
   .bar>i{display:block;height:100%}
   .drop{border:2px dashed var(--line);border-radius:10px;padding:18px;text-align:center;
-        color:var(--mut);font-size:.9rem;cursor:pointer;transition:.15s}
+        color:var(--mut);font-size:.95rem;cursor:pointer;transition:.15s}
   .drop:hover,.drop.over{border-color:var(--acc);color:var(--tx);background:#0d1219}
   .tag{display:inline-block;background:#0d1219;border:1px solid var(--line);border-radius:20px;
-       padding:3px 11px;font-size:.8rem;margin:2px 3px 2px 0}
+       padding:3px 11px;font-size:.88rem;margin:2px 3px 2px 0}
   @media print{
     body{background:#fff;color:#000;font-size:14.5px}
     .card,.box{background:#fff;border-color:#bbb}
@@ -86,12 +87,14 @@ const KEY='__infl_calc_v2';
 const fmt=(v,d)=>v==null||!isFinite(v)?'—':Number(v.toFixed(d==null?2:d)).toLocaleString();
 const won=v=>v==null||!isFinite(v)?'—':Math.round(v).toLocaleString();
 const sc=v=>v==null?'':v>=0?'pos':'neg';
+// 부호는 값에서 뽑는다 — '+' 를 하드코딩하면 음수에서 '+-0.1%' 가 된다
+const sgn=v=>v==null||!isFinite(v)?'':v>=0?'+':'';
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let D=null,S=null,LASTMAP=null,CO=null;
 
 /* 가맹점명 → 품목 분류 사전.
    카드 내역의 가맹점명은 표기가 제각각이라 완벽 분류는 불가능하다.
-   흔한 상호·업종 키워드만 잡고, 못 잡은 건 '미분류'로 남겨 사용자가 확인하게 한다. */
+   흔한 상호·업종 키워드만 잡고, 못 잡은 건 '미분류'로 남겨 이용자가 확인하게 한다. */
 const RULES=[
   ['__subs', ['openai','chatgpt','anthropic','claude','gemini','google one','copilot','cursor',
               'midjourney','perplexity','notion','adobe','icloud','dropbox','github']],
@@ -154,7 +157,7 @@ function calc(){
   let tw=0,acc=0;
   items.forEach(i=>{const w=raw(i.key);tw+=w;acc+=w*i.yoy_pct});
   const basket=tw>0?acc/tw:null;
-  // 소비 총액: 금액모드면 입력 합계(원), 비중모드면 사용자가 넣은 만원 단위
+  // 소비 총액: 금액모드면 입력 합계(원), 비중모드면 이용자가 넣은 만원 단위
   const spendWon=amtMode?tw:(S.spendManual*10000);
   const subAdd=spendWon>0?(S.subs/spendWon)*100:0;
   /* 주거 금융비용(대출이자) — CPI에 없는 항목이다.
@@ -255,7 +258,7 @@ function coCard(c){
     <div class="hint">임금협상에서 노동측은 <b>생계비(물가)</b>를, 사측은 <b>지불능력(재무)</b>을 근거로 듭니다.
       위 ②③이 앞의 절반이라면 여기가 뒤의 절반입니다. 상장사는 DART 사업보고서에서 자동으로 채워집니다.</div>
     <div class="row noprint" style="margin-bottom:10px">
-      <select onchange="setCo(this.value)" style="background:#0d1219;border:1px solid var(--line);color:var(--tx);border-radius:7px;padding:7px 10px;font-size:.85rem;min-width:230px">${opts}</select>
+      <select onchange="setCo(this.value)" style="background:#0d1219;border:1px solid var(--line);color:var(--tx);border-radius:7px;padding:7px 10px;font-size:.93rem;min-width:230px">${opts}</select>
     </div>
     ${sel==='manual'?`<div class="row" style="margin-bottom:12px">
       ${mi('headcount','직원 수 (명)')}${mi('avg_pay','1인평균 연봉 (원)')}
@@ -297,7 +300,7 @@ function coCard(c){
 
 /* ⑤ 고용형태·원하청 격차 — 같은 회사 안의 정규직/기간제, 그리고 원청과 하청.
    DART가 자동으로 주는 것은 '인원'뿐이다(rgllbr_co·cnttk_co). 급여는 합산 공시라
-   고용형태별 임금은 공시에 없고, 사용자가 단체협약 자료·급여명세로 넣어야 한다.
+   고용형태별 임금은 공시에 없고, 이용자가 단체협약 자료·급여명세로 넣어야 한다.
    대신 넣은 값이 공시된 1인평균과 맞는지 검산해 주고, 격차를 좁히는 데 드는 돈을
    재무제표 대비로 환산한다 — 협상장에서 '얼마면 되는가'를 숫자로 놓기 위한 것이다. */
 window.setGap=(k,v)=>{S.gap=S.gap||{};S.gap[k]=(v===''||v==null)?null:Math.max(0,parseFloat(v)||0);save();render()};
@@ -345,7 +348,7 @@ function gapCtx(){
   // ── 간접고용(사내하도급·파견·용역) ────────────────────────────
   // 공시에는 아예 없는 인력이다. 원청 손익에서 이들의 비용은 '인건비'가 아니라
   // 외주비·지급수수료로 잡히므로, ④의 인건비/매출 비중이 실제보다 낮게 나온다.
-  // 사용자가 인원·임금·도급비를 넣으면 그 왜곡을 되돌려 계산한다.
+  // 이용자가 인원·임금·도급비를 넣으면 그 왜곡을 되돌려 계산한다.
   const iN=G.indN,iPay=G.indPay,iCost=G.indCost;
   const iWage=(iN&&iPay)?iN*iPay:null;                       // 노동자가 실제 받는 총액
   const realHead=(mHead&&iN)?mHead+iN:null;                  // 실질 사업장 인력
@@ -434,7 +437,7 @@ function gapCard(c){
 
     <div class="lab" style="margin:20px 0 6px;font-weight:600;color:var(--tx)">Ⓑ 원청 ↔ 하청·협력사 격차</div>
     <div class="row noprint" style="margin-bottom:10px">
-      <select onchange="setGapCo(this.value)" style="background:#0d1219;border:1px solid var(--line);color:var(--tx);border-radius:7px;padding:7px 10px;font-size:.85rem;min-width:250px">${opts}</select>
+      <select onchange="setGapCo(this.value)" style="background:#0d1219;border:1px solid var(--line);color:var(--tx);border-radius:7px;padding:7px 10px;font-size:.93rem;min-width:250px">${opts}</select>
     </div>
     ${subSel==='manual'?`<div class="row" style="margin-bottom:10px">
       ${num('headcount','협력사 직원 수 (명)','','sub')}${num('avg_pay','협력사 1인평균 연봉 (원)','','sub')}
@@ -564,7 +567,7 @@ function gapCard(c){
     `}
 
     <div class="note">⚠️ <b>이 카드의 한계</b><br>
-      · 고용형태별 급여는 DART 미공시 → 사용자 입력값에 전적으로 의존합니다. 출처를 함께 제시하세요.<br>
+      · 고용형태별 급여는 DART 미공시 → 이용자 입력값에 전적으로 의존합니다. 출처를 함께 제시하세요.<br>
       · 하청 비교는 <b>협력사도 공시 대상</b>이거나 감사보고서를 구할 수 있을 때만 가능합니다.<br>
       · 사내하도급·파견·용역은 어떤 공시에도 없습니다 → Ⓒ에 직접 넣어야 하며, 그 값의 정확도가 Ⓒ 전체를 좌우합니다.<br>
       · Ⓒ의 '실질' 지표는 <b>회계 기준이 아닙니다</b>. 회사 공식 재무제표와 다른 값이므로 근거를 명시해 제시하세요.<br>
@@ -573,7 +576,7 @@ function gapCard(c){
   </div>`;
 }
 
-/* 성장과 임금의 격차 — "나라는 돈을 더 버는데 내 월급은 왜 제자리인가".
+/* 성장과 임금의 격차 — "나라는 부유해지는데 나는 왜 점점 가난해지는가".
    양극화 문제 제기의 근거이자, 이 계산기 전체의 출발점이 되는 그림이다.
    ⚠️ 임금이 '줄었다'가 아니라 GDP보다 '덜 늘었다'는 것이 데이터가 말하는 바다.
       과장하면 협상장에서 반박당하므로 격차(%p)로만 쓴다. */
@@ -591,34 +594,68 @@ function growthGapBlock(){
     const X=i=>PL+(W-PL-PR)*i/(g.length-1);
     const Y=v=>PT+(H-PT-PB)*(1-(v-lo)/((hi-lo)||1));
     const path=a=>a.map((d,i)=>`${i?'L':'M'}${X(i).toFixed(1)},${Y(d.v).toFixed(1)}`).join('');
-    const yrs=[...new Set(g.map((d,i)=>[d.q.slice(0,4),i]).filter(x=>x[0]%5===0))];
-    return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;margin:10px 0" role="img"
+    /* 5년 눈금 — 분기 계열이라 같은 해가 네 번 나온다. 배열은 참조가 매번 달라
+       Set 으로 걸러지지 않으므로 연도 문자열로 직접 중복을 없앤다.
+       양 끝 연도는 라벨이 SVG 밖으로 잘리므로 x 를 안쪽으로 당긴다. */
+    const seen=new Set(), yrs=[];
+    g.forEach((d,i)=>{const y=d.q.slice(0,4);
+      if(+y%5===0&&!seen.has(y)){seen.add(y);yrs.push([y,i]);}});
+    /* 계열명은 선 끝에 붙이지 않는다 — 선끼리 붙는 구간에서 서로 가리고,
+       최고점에 닿으면 위쪽이 잘린다. 범례로 빼면 둘 다 생기지 않는다. */
+    const key=(col,dash,txt)=>`<span style="display:inline-flex;align-items:center;gap:6px">`
+      +`<i style="display:inline-block;width:20px;height:0;`
+      +`border-top:3px ${dash?'dashed':'solid'} ${col}"></i>${txt}</span>`;
+    return `<div class="lab" style="display:flex;gap:18px;flex-wrap:wrap;margin:12px 0 0">
+        ${key('var(--acc)',0,'1인당 실질 GDP')}${key('var(--amb)',0,'실질임금')}${key('var(--mut)',1,'1인당 실질소비')}
+      </div>
+      <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;margin:6px 0 0" role="img"
         aria-label="1인당 실질GDP·실질임금·실질소비 지수 추이">
       ${yrs.map(([y,i])=>`<line x1="${X(i)}" y1="${PT}" x2="${X(i)}" y2="${H-PB}" stroke="var(--line)" stroke-width="1"/>
-        <text x="${X(i)}" y="${H-4}" fill="var(--mut)" font-size="9" text-anchor="middle">${y}</text>`).join('')}
+        <text x="${Math.min(Math.max(X(i),13),W-13).toFixed(1)}" y="${H-4}" fill="var(--mut)" font-size="9" text-anchor="middle">${y}</text>`).join('')}
       <path d="${path(c)}" fill="none" stroke="var(--mut)" stroke-width="1.6" stroke-dasharray="3 3"/>
       <path d="${path(w)}" fill="none" stroke="var(--amb)" stroke-width="2.2"/>
       <path d="${path(g)}" fill="none" stroke="var(--acc)" stroke-width="2.2"/>
-      <text x="${X(g.length-1)-2}" y="${Y(g[g.length-1].v)-4}" fill="var(--acc)" font-size="10" text-anchor="end">1인당 GDP</text>
-      <text x="${X(w.length-1)-2}" y="${Y(w[w.length-1].v)+12}" fill="var(--amb)" font-size="10" text-anchor="end">실질임금</text>
     </svg>`;
   };
+  /* 격차 분해 — 격차 전체를 분배로 읽으면 교섭에서 반박당한다.
+     측정 방식 차이로 설명되는 몫을 먼저 떼어내고 남는 것만 분배로 말한다. */
+  const wedges=()=>{
+    const W_=G.wedges;
+    if(!W_||!W_.parts||!W_.parts.length)return '';
+    const col={terms:'var(--cy)',nonwage:'var(--acc)',rest:'var(--amb)'};
+    const tot=W_.parts.reduce((s,p)=>s+Math.abs(p.pp),0)||1;
+    return `<div class="lab" style="margin:18px 0 6px;font-weight:600;color:var(--tx)">
+        격차 분해 — ${fmt(W_.gap_pp,1)}%p 중 얼마가 분배인가
+        <span style="font-weight:400;color:var(--mut)">(${esc(W_.from)} → ${esc(W_.to)} · 연 단위)</span></div>
+      <div class="hint" style="margin-bottom:10px">격차 전체를 분배 문제로 말하면 반박당합니다.
+        <b>측정 방식 차이로 설명되는 부분</b>을 먼저 떼어내고, 남는 것만 분배로 말해야 합니다.</div>
+      <div style="display:flex;height:20px;border-radius:6px;overflow:hidden;margin-bottom:12px">
+        ${W_.parts.map(p=>`<div style="width:${Math.abs(p.pp)/tot*100}%;background:${col[p.key]||'var(--mut)'}"
+          title="${esc(p.label)}"></div>`).join('')}</div>
+      <div class="row">${W_.parts.map(p=>`
+        <div class="box" style="border-color:${col[p.key]||'var(--line)'}">
+          <div class="lab">${esc(p.label)}</div>
+          <div class="big mono" style="font-size:1.2rem;color:${col[p.key]||'var(--tx)'}">${fmt(p.pp,2)}%p</div>
+          <div class="lab">격차의 ${fmt(p.share_pct,1)}%<br>${esc(p.note)}</div>
+        </div>`).join('')}</div>
+      <div class="note">📖 <b>읽는 법</b> — ${esc(W_.method)}<br>${esc(W_.caveat)}</div>`;
+  };
   return `<div class="card" style="border-color:rgba(210,153,34,.45)">
-    <h2>⑦ 성장과 임금의 격차 — 나라는 버는데 나는 왜 제자리인가</h2>
+    <h2>⑦ 성장과 임금의 격차 — 나라는 부유해지는데 나는 왜 점점 가난해지는가</h2>
     <div class="hint">1인당 실질 GDP(나라가 1인당 생산한 것)와 실질임금(노동자가 실제로 받은 것)을
       <b>같은 시점 100</b>으로 놓고 비교했습니다. 둘의 간격이 <b>양극화가 벌어진 폭</b>입니다.</div>
     <div class="row">
       <div class="box"><div class="lab">1인당 실질 GDP</div>
-        <div class="big mono pos" style="font-size:1.35rem">+${fmt(all.gdp_pc_pct,1)}%</div>
+        <div class="big mono ${sc(all.gdp_pc_pct)}" style="font-size:1.35rem">${sgn(all.gdp_pc_pct)}${fmt(all.gdp_pc_pct,1)}%</div>
         <div class="lab">${esc(all.from)} → ${esc(all.to)}</div></div>
       <div class="box"><div class="lab">실질임금</div>
-        <div class="big mono" style="font-size:1.35rem;color:var(--amb)">+${fmt(all.real_wage_pct,1)}%</div>
+        <div class="big mono" style="font-size:1.35rem;color:var(--amb)">${sgn(all.real_wage_pct)}${fmt(all.real_wage_pct,1)}%</div>
         <div class="lab">명목임금 ÷ 소비자물가</div></div>
       <div class="box" style="border-color:var(--amb)"><div class="lab">벌어진 격차</div>
         <div class="big mono warn" style="font-size:1.35rem">${fmt(all.gap_pp,1)}%p</div>
         <div class="lab">${A.gap_pp_per_year!=null?`매년 ${fmt(A.gap_pp_per_year,2)}%p씩 누적`:''}</div></div>
       <div class="box"><div class="lab">1인당 실질소비</div>
-        <div class="big mono" style="font-size:1.35rem">+${fmt(all.real_cons_pct,1)}%</div>
+        <div class="big mono" style="font-size:1.35rem">${sgn(all.real_cons_pct)}${fmt(all.real_cons_pct,1)}%</div>
         <div class="lab">실제로 쓸 수 있었던 돈</div></div>
     </div>
     ${spark()}
@@ -626,17 +663,17 @@ function growthGapBlock(){
       <th>구간</th><th>기간</th><th>1인당 실질GDP</th><th>실질임금</th><th>1인당 실질소비</th><th>격차</th>
     </tr></thead><tbody>${G.eras.map(e=>`<tr>
       <td><b>${esc(e.label)}</b></td><td class="lab">${esc(e.from)} → ${esc(e.to)}</td>
-      <td class="mono pos">+${fmt(e.gdp_pc_pct,1)}%</td>
-      <td class="mono" style="color:var(--amb)">+${fmt(e.real_wage_pct,1)}%</td>
-      <td class="mono">+${fmt(e.real_cons_pct,1)}%</td>
+      <td class="mono ${sc(e.gdp_pc_pct)}">${sgn(e.gdp_pc_pct)}${fmt(e.gdp_pc_pct,1)}%</td>
+      <td class="mono" style="color:var(--amb)">${sgn(e.real_wage_pct)}${fmt(e.real_wage_pct,1)}%</td>
+      <td class="mono">${sgn(e.real_cons_pct)}${fmt(e.real_cons_pct,1)}%</td>
       <td class="mono warn">${fmt(e.gap_pp,1)}%p</td></tr>`).join('')}</tbody></table></div>
-
+    ${wedges()}
     <div class="note">📖 <b>무엇이 문제인가</b> —
       ${A.gdp_pc!=null?`1인당 생산은 연 <b>${fmt(A.gdp_pc,2)}%</b> 늘었는데 실질임금은 연 <b>${fmt(A.real_wage,2)}%</b> 늘었습니다.
       차이는 한 해 <b>${fmt(A.gap_pp_per_year,2)}%p</b>에 불과하지만, `:''}
       복리로 쌓여 <b>${fmt(all.gap_pp,1)}%p</b>가 됐습니다.
-      매년은 작아 보이고 누적은 큽니다 — 이것이 양극화가 <b>협상 테이블에서 잘 안 보이는</b> 이유입니다.
-      한 해만 놓고 보면 "겨우 0.6%p인데 뭐가 문제냐"가 되기 때문입니다.<br><br>
+      매년 격차는 작아 보이지만 누적 격차는 점점 커집니다 — 이것이 양극화가 <b>협상 테이블에서 잘 안 보이는</b> 이유입니다.
+      한 해만 놓고 보면 "겨우 ${fmt(A.gap_pp_per_year,2)}%p인데 뭐가 문제냐"가 되기 때문입니다.<br><br>
       <b>그 차이는 어디로 갔나</b> — 1인당 GDP에는 임금 말고도 기업의 이익잉여, 자본소득,
       감가상각이 함께 들어 있습니다. 노동으로 가지 않은 몫이 <b>어디로</b> 갔는지는
       이 지표만으로 특정할 수 없습니다. 다만 <b>노동으로 오지 않았다</b>는 것은 확인됩니다.</div>
@@ -673,7 +710,8 @@ function laborShareBlock(){
       <b class="${a.chg_since_start_pp>=0?'pos':'neg'}">${a.chg_since_start_pp>=0?'+':''}${fmt(a.chg_since_start_pp,1)}%p</b>
       · 10년 ${a.chg_10y_pp>=0?'+':''}${fmt(a.chg_10y_pp,1)}%p</div></div>`;
   return `<div class="lab" style="margin:18px 0 6px;font-weight:600;color:var(--tx)">거시 기준선 — 국민경제의 노동 몫</div>
-    <div class="hint" style="margin-bottom:8px">생산된 소득(GDP) 중 <b>피용자보수</b>가 차지하는 비율입니다.
+    <div class="hint" style="margin-bottom:8px">생산된 소득(GDP) 중 <b>노동자에게 돌아간 보수</b>가 차지하는 비율입니다
+      (공식 통계명은 '피용자보수' — OECD·한국은행이 쓰는 이름이라 출처 대조를 위해 병기합니다).
       "회사가 아니라 나라 전체에서 노동 몫이 어떻게 변했나"를 보는 지표로, 단협에서 가장 오래 쓰인 거시 논거입니다.</div>
     <div class="row">${L.areas.map(box).join('')}</div>
     <div class="note">📖 <b>읽는 법</b> — ${kr?`한국은 ${esc(kr.start_year)}년 ${fmt(kr.start_pct,1)}%에서 ${esc(kr.asof)}년 ${fmt(kr.share_pct,1)}%로
@@ -685,14 +723,14 @@ function laborShareBlock(){
 }
 
 /* 1인당 실질 가계소비 — "통계는 올랐다는데 왜 쓸 돈이 없나"의 간극을 메우는 지표.
-   실질임금은 '근로자 1인', 이 지표는 '인구 1인'이라 부양 부담·고용 구성까지 반영된다. */
+   실질임금은 '노동자 1인', 이 지표는 '인구 1인'이라 부양 부담·고용 구성까지 반영된다. */
 function householdBlock(c){
   const H=D.household;
   if(!H||!H.areas||!H.areas.length)return '';
   const kr=H.areas.find(a=>a.code==='KOR');
   const rw=(c&&c.realFelt!=null&&kr)?c.realFelt-kr.avg4q_pct:null;
   return `<div class="lab" style="margin:18px 0 6px;font-weight:600;color:var(--tx)">체감 대조 — 1인당 실질 가계소비</div>
-    <div class="hint" style="margin-bottom:8px">실질임금은 <b>근로자 1인</b> 기준이지만 이 지표는 <b>인구 1인</b> 기준입니다.
+    <div class="hint" style="margin-bottom:8px">실질임금은 <b>노동자 1인</b> 기준이지만 이 지표는 <b>인구 1인</b> 기준입니다.
       부양 가족 수와 고용 구성 변화까지 들어가서, 통계상 임금이 올라도 이 값이 제자리면 체감이 나아지지 않습니다.</div>
     <div class="row">
       ${H.areas.map(a=>`<div class="box"${a.code==='KOR'?' style="border-color:var(--amb)"':''}>
@@ -819,7 +857,7 @@ function pathCard(c){
   ];
 
   const tsel=TARGETS.length>1?`<div class="row noprint" style="margin-bottom:10px">
-    <select onchange="setGap('target',this.value)" style="background:#0d1219;border:1px solid var(--line);color:var(--tx);border-radius:7px;padding:7px 10px;font-size:.9rem;min-width:280px">
+    <select onchange="setGap('target',this.value)" style="background:#0d1219;border:1px solid var(--line);color:var(--tx);border-radius:7px;padding:7px 10px;font-size:.95rem;min-width:280px">
     ${TARGETS.map(t=>`<option value="${t.k}"${t.k===T.k?' selected':''}>${esc(t.label)} (${won(t.n)}명)</option>`).join('')}
     </select></div>`:'';
 
@@ -1016,7 +1054,7 @@ function formulaTable(c,D_,picked){
   const lo=Math.min(...vals),hi=Math.max(...vals);
   const src=picked?`${esc(picked.name)} ${picked.year}년 공시`:'직접 입력값';
   return `<div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px">
-    <h2 style="font-size:.98rem;margin:0 0 4px">임금인상률 산식 비교</h2>
+    <h2 style="font-size:1.06rem;margin:0 0 4px">임금인상률 산식 비교</h2>
     <div class="hint">협상에서 실제로 인용되는 산식들입니다. <b>어느 하나가 정답이 아니라</b>,
       무엇을 근거로 삼느냐에 따라 결과가 달라진다는 것을 보여줍니다. 재무 수치 출처: <b>${src}</b>
       ${picked?`<br>매출 ${fmt(picked.revenue_yoy_pct)}% · 영업이익 ${fmt(picked.op_yoy_pct)}% · 순이익 ${fmt(picked.net_yoy_pct)}% · 1인당매출 ${fmt(picked.productivity_yoy_pct)}% (전년비)`:''}
@@ -1029,7 +1067,7 @@ function formulaTable(c,D_,picked){
       ${F.map(([nm,v,desc])=>`<tr>
         <td>${esc(nm)}</td>
         <td class="mono" style="font-weight:800;color:${v===hi?'var(--red)':v===lo?'var(--cy)':'var(--tx)'}">${fmt(v)}%</td>
-        <td style="text-align:left;font-size:.76rem;color:var(--mut)">${esc(desc)}</td></tr>`).join('')}
+        <td style="text-align:left;font-size:.85rem;color:var(--mut)">${esc(desc)}</td></tr>`).join('')}
     </tbody></table>
     <div class="row" style="margin-top:12px">
       <div class="box"><div class="lab">산식별 범위</div>
@@ -1071,7 +1109,7 @@ function render(){
     const an=(m.annual||[]).slice(-10);
     return `<tr><td>${esc(m.flag)} ${esc(m.name)}</td>
       <td class="mono ${sc(m.yoy_pct)}">${m.yoy_pct>=0?'+':''}${fmt(m.yoy_pct)}%</td>
-      ${an.map(a=>`<td class="mono" style="font-size:.76rem;color:${a.yoy_pct>=8?'var(--red)':a.yoy_pct<0?'var(--cy)':'var(--mut)'}">${a.yoy_pct>=0?'+':''}${fmt(a.yoy_pct,1)}</td>`).join('')}
+      ${an.map(a=>`<td class="mono" style="font-size:.85rem;color:${a.yoy_pct>=8?'var(--red)':a.yoy_pct<0?'var(--cy)':'var(--mut)'}">${a.yoy_pct>=0?'+':''}${fmt(a.yoy_pct,1)}</td>`).join('')}
     </tr>`}).join('');
   const years=((A[0]||{}).annual||[]).slice(-10).map(a=>`<th>${a.year}</th>`).join('');
 
@@ -1095,7 +1133,7 @@ function render(){
     </div>
     <div class="drop noprint" id="dz" onclick="document.getElementById('fi').click()">
       📂 <b>카드 이용내역 CSV를 여기에 올리면 자동 분류됩니다</b><br>
-      <span style="font-size:.76rem">클릭하거나 파일을 끌어다 놓으세요 · 카드사 홈페이지 [이용내역 다운로드] 또는 가계부 앱 내보내기<br>
+      <span style="font-size:.85rem">클릭하거나 파일을 끌어다 놓으세요 · 카드사 홈페이지 [이용내역 다운로드] 또는 가계부 앱 내보내기<br>
       🔒 파일은 <b>이 브라우저 안에서만</b> 읽힙니다 — 서버로 전송되지 않고 원본도 저장되지 않습니다(집계 금액만 남습니다)</span>
     </div>
     <input type="file" id="fi" accept=".csv,text/csv" style="display:none">
@@ -1205,7 +1243,7 @@ function render(){
         '주거·수도·광열'에 들어가는 것은 집세(전세·월세)와 수도·전기·가스요금뿐이며,
         대출이자와 자가주거비(귀속임대료)는 제외됩니다.<br>
       · 신규 구독 부담은 <b>공식 CPI에 없는 항목</b>입니다. CPI는 '같은 물건의 가격 변화'를 재고
-        '없던 지출이 새로 생긴 것'은 재지 않기 때문에, 사용자가 직접 입력하는 값입니다.<br>
+        '없던 지출이 새로 생긴 것'은 재지 않기 때문에, 이용자가 직접 입력하는 값입니다.<br>
       · CSV 자동 분류는 <b>가맹점명 키워드</b> 기반이라 완벽하지 않습니다. 분류 실패분은 '기타'로 들어가니
         결과를 확인하고 직접 조정하세요.<br>
       🚨 정보 제공용이며 투자자문·법률자문이 아닙니다. 입력값은 이 브라우저에만 저장되고 서버로 전송되지 않습니다.
@@ -1213,7 +1251,7 @@ function render(){
     <div class="row noprint" style="margin-top:12px">
       <button onclick="window.print()">🖨️ 인쇄 / PDF 저장</button>
       <button class="ghost" onclick="reset()">기본값으로 되돌리기</button>
-      <a href="./guide.html" style="color:var(--acc);font-size:.85rem;align-self:center;margin-left:auto">📖 처음이신가요? 이용 방법 보기</a>
+      <a href="./guide.html" style="color:var(--acc);font-size:.93rem;align-self:center;margin-left:auto">📖 처음이신가요? 이용 방법 보기</a>
     </div>
   </div>`;
 
