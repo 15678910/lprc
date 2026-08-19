@@ -741,6 +741,60 @@ function gapCard(c){
    양극화 문제 제기의 근거이자, 이 계산기 전체의 출발점이 되는 그림이다.
    ⚠️ 임금이 '줄었다'가 아니라 GDP보다 '덜 늘었다'는 것이 데이터가 말하는 바다.
       과장하면 협상장에서 반박당하므로 격차(%p)로만 쓴다. */
+/* ⑧ 부양 구조 — "아버지 혼자 벌어 대가족을 먹여 살렸는데 지금은 온 가족이 일한다".
+   ⑦ 이 '나라가 번 것과 내가 받은 것의 격차'라면, 여기는 '한 사람의 노동이
+   몇 명을 감당하는가'다. 서로 다른 질문이라 카드를 나눈다.
+   ⚠️ 이 숫자만으로 '가난해졌다'를 단정하면 반박당한다 — 원인 넷을 함께 적는다. */
+function dependencyBlock(){
+  const P=D.dependency;
+  if(!P||!P.series||P.series.length<5)return '';
+  const s=P.series, lo=Math.min(...s.map(x=>x.v)), hi=Math.max(...s.map(x=>x.v));
+  const W=560,H=120,PL=6,PR=6,PT=8,PB=16;
+  const X=i=>PL+(W-PL-PR)*i/(s.length-1);
+  const Y=v=>PT+(H-PT-PB)*(1-(v-lo)/((hi-lo)||1));
+  const path=s.map((d,i)=>`${i?'L':'M'}${X(i).toFixed(1)},${Y(d.v).toFixed(1)}`).join('');
+  const seen=new Set(), yrs=[];
+  s.forEach((d,i)=>{if(+d.y%5===0&&!seen.has(d.y)){seen.add(d.y);yrs.push([d.y,i])}});
+  return `<div class="card" style="border-color:rgba(88,166,255,.45)">
+    <h2>⑧ 부양 구조 — 한 사람의 노동이 몇 명을 감당하나</h2>
+    <div class="hint">"예전엔 한 사람이 벌어 온 식구가 살았는데 지금은 다 일해야 한다"를 숫자로 옮긴 것입니다.
+      <b>총인구 ÷ 취업자 수</b> — 취업자 한 사람이 부양하는 인구입니다. 이 값이 줄면 같은 인구를
+      먹여 살리는 데 더 많은 사람이 일해야 한다는 뜻입니다.</div>
+    <div class="row">
+      <div class="box"><div class="lab">${esc(P.base)}년 · 취업자 1인당</div>
+        <div class="big mono" style="font-size:1.35rem">${fmt(P.base_dep,2)}명</div>
+        <div class="lab">한 사람이 부양하던 인구</div></div>
+      <div class="box"><div class="lab">${esc(P.asof)}년 · 취업자 1인당</div>
+        <div class="big mono" style="font-size:1.35rem;color:var(--amb)">${fmt(P.dep,2)}명</div>
+        <div class="lab">지금 한 사람이 부양하는 인구</div></div>
+      <div class="box" style="border-color:var(--amb)"><div class="lab">같은 인구를 부양하려면</div>
+        <div class="big mono warn" style="font-size:1.35rem">${fmt(P.workers_x,2)}배</div>
+        <div class="lab">${esc(P.base)}년 대비 필요한 노동자 수</div></div>
+      <div class="box"><div class="lab">${esc(P.asof)}년 취업자</div>
+        <div class="big mono" style="font-size:1.35rem">${won(Math.round(P.emp/1e4))}만명</div>
+        <div class="lab">총인구 ${won(Math.round(P.pop/1e4))}만명</div></div>
+    </div>
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;margin:12px 0 0" role="img"
+      aria-label="취업자 1인당 부양 인구 추이">
+      ${yrs.map(([y,i])=>`<line x1="${X(i)}" y1="${PT}" x2="${X(i)}" y2="${H-PB}" stroke="var(--line)" stroke-width="1"/>
+        <text x="${Math.min(Math.max(X(i),13),W-13).toFixed(1)}" y="${H-4}" fill="var(--mut)" font-size="9" text-anchor="middle">${y}</text>`).join('')}
+      <path d="${path}" fill="none" stroke="var(--acc)" stroke-width="2.2"/>
+    </svg>
+    ${P.eras&&P.eras.length?`<div style="overflow-x:auto"><table><thead><tr>
+      <th>구간</th><th>시작</th><th>현재</th><th>필요 노동자</th></tr></thead><tbody>
+      ${P.eras.map(e=>`<tr><td><b>${esc(e.label)}</b></td>
+        <td class="mono">${fmt(e.from_dep,2)}명 (${esc(e.from)})</td>
+        <td class="mono">${fmt(e.to_dep,2)}명 (${esc(e.to)})</td>
+        <td class="mono warn">${fmt(e.workers_x,2)}배</td></tr>`).join('')}
+    </tbody></table></div>`:''}
+    <div class="note">📖 <b>읽는 법</b> — ${esc(P.reading||'')}<br>
+      ⑦과 겹쳐 보면 이렇게 됩니다. <b>한 사람이 감당할 수 있는 범위가 줄었고</b>(이 카드),
+      <b>그 한 사람의 임금도 나라의 성장에 못 미쳤습니다</b>(⑦). 두 가지가 함께 일어났습니다.</div>
+    <div class="note">${esc(P.caveat||'')}<br>
+      · 출처: ${esc(P.source||'')} · ${esc(P.definition||'')}</div>
+  </div>`;
+}
+
 function growthGapBlock(){
   const G=D.growth_gap;
   if(!G||!G.eras||!G.eras.length)return '';
@@ -1348,7 +1402,7 @@ function formulaTable(c,D_,picked){
 let navObs=null;
 function sideNav(){
   const nav=$('snav'); if(!nav)return;
-  const marks='①②③④⑤⑥⑦⑧';
+  const marks='①②③④⑤⑥⑦⑧⑨';
   const hs=[...document.querySelectorAll('#app .card>h2')]
     .filter(h=>marks.indexOf((h.textContent.trim()[0]||''))>=0);
   if(!hs.length){nav.innerHTML='';return}
@@ -1512,8 +1566,10 @@ function render(){
 
   ${growthGapBlock()}
 
+  ${dependencyBlock()}
+
   <div class="card">
-    <h2>⑧ 주요국 통화량(M3) 연도별 증가율</h2>
+    <h2>⑨ 주요국 통화량(M3) 연도별 증가율</h2>
     <div class="hint">물가의 배경 조건입니다. 통화량이 실질성장보다 빠르게 늘면 물가 압력이 쌓입니다
       (다만 시차가 길고 시대에 따라 관계가 뒤집히므로 단정은 금물).</div>
     <div style="overflow-x:auto"><table><thead><tr><th>경제권</th><th>최근</th>${years}</tr></thead>

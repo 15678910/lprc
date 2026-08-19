@@ -608,6 +608,71 @@ def household_block():
     }
 
 
+# ── 한 사람의 임금이 감당하는 몫 ────────────────────────────────────
+# "1970년대엔 아버지 혼자 벌어 대가족을 먹여 살렸는데 지금은 온 가족이 일해야 한다"
+# 는 물음을 숫자로 옮긴다. ⑦ 의 성장-임금 격차와는 다른 지표다.
+#   취업자 1인당 부양 인구 = 총인구 ÷ 취업자 수
+# 이 값이 줄면 같은 인구를 먹여 살리는 데 더 많은 사람이 일해야 한다는 뜻이다.
+#
+# ⚠️ 이 지표만으로 '가난해졌다'를 단정하면 안 된다. 여러 원인이 겹쳐 있다.
+#    · 여성 경제활동 참가 증가 — 교육 수준 상승과 기회 확대의 결과이기도 하다.
+#      생계 압박만으로 읽으면 틀리고, 여성 노동을 폄하하는 해석이 된다.
+#    · 가구원 수 감소(대가족 → 핵가족 → 1인가구) — 부양할 사람 수 자체가 줄었다.
+#    · 고령화 — 비취업 인구가 늘어 반대 방향으로 작용한다.
+#    · 생활 수준 기준 상승 — 1983년의 '먹고 산다'와 지금의 그것은 다르다.
+#    화면에 이 넷을 모두 적어 과장을 막는다.
+KR_EMP = "LFEMTTTTKRQ647S"      # 취업자 수(분기, 명) — 1983~
+KR_POP = "POPTOTKRA647NWDB"     # 총인구(연, 명) — 1960~
+
+
+def dependency_block():
+    """취업자 1인당 부양 인구 — 한 사람이 몇 명을 먹여 살리는가."""
+    emp_q = fred(KR_EMP, "1980-01-01")
+    pop_y = fred(KR_POP, "1960-01-01")
+    if not emp_q or not pop_y:
+        print("  [WARN] 취업자·인구 수집 실패")
+        return None
+    acc = {}
+    for k, v in emp_q.items():
+        acc.setdefault(k[:4], []).append(v)
+    emp = {y: sum(v) / len(v) for y, v in acc.items() if len(v) == 4}   # 연평균(4분기 완비만)
+    pop = {k[:4]: v for k, v in pop_y.items()}
+    ys = sorted(set(emp) & set(pop))
+    if len(ys) < 10:
+        print(f"  [WARN] 겹치는 연도 부족 {len(ys)}")
+        return None
+    dep = {y: pop[y] / emp[y] for y in ys if emp[y]}
+    a, b = ys[0], ys[-1]
+    eras = []
+    for y0, y1, label in (("1997", None, "외환위기 이후"), ("2010", None, "최근 15년")):
+        y1 = y1 or b
+        if y0 in dep and y1 in dep:
+            eras.append({"label": label, "from": y0, "to": y1,
+                         "from_dep": round(dep[y0], 2), "to_dep": round(dep[y1], 2),
+                         "workers_x": round(dep[y0] / dep[y1], 2)})
+    out = {
+        "base": a, "asof": b,
+        "base_dep": round(dep[a], 2), "dep": round(dep[b], 2),
+        "workers_x": round(dep[a] / dep[b], 2),          # 같은 인구 부양에 필요한 노동자 배수
+        "emp": round(emp[b]), "pop": round(pop[b]),
+        "eras": eras,
+        "series": [{"y": y, "v": round(dep[y], 3)} for y in ys],
+        "definition": "총인구 ÷ 취업자 수 — 취업자 한 사람이 부양하는 인구",
+        "source": f"FRED {KR_EMP}(취업자, OECD 원자료) · {KR_POP}(총인구, World Bank)",
+        "reading": (f"{a}년에는 취업자 한 사람이 {dep[a]:.2f}명을 부양했고 {b}년에는 {dep[b]:.2f}명이다. "
+                    f"같은 인구를 먹여 살리는 데 {dep[a] / dep[b]:.2f}배의 노동자가 필요해졌다는 뜻이다."),
+        "caveat": ("⚠️ 이 지표만으로 '가난해졌다'를 단정하면 반박당한다. 원인이 여럿 겹쳐 있다. "
+                   "① 여성 경제활동 참가 증가 — 생계 압박만이 아니라 교육 수준 상승과 기회 확대의 결과이기도 하다. "
+                   "② 가구원 수 감소(대가족→핵가족→1인가구) — 부양할 사람 수 자체가 줄었다. "
+                   "③ 고령화 — 비취업 인구가 늘어 반대 방향으로 작용한다. "
+                   "④ 생활 수준 기준 상승 — 1983년의 '먹고 산다'와 지금의 그것은 다르다. "
+                   "⚠️ '인구 1인당'이지 '가구당'이 아니다. 가구 단위 통계는 국내 조사(가계동향)를 봐야 한다."),
+    }
+    print(f"  취업자 1인당 부양 {dep[a]:.2f}명({a}) → {dep[b]:.2f}명({b}) "
+          f"· 같은 인구 부양에 노동자 {dep[a] / dep[b]:.2f}배 필요")
+    return out
+
+
 # ── 임시직 비중 국제비교 ────────────────────────────────────────────
 # ⑤ 는 '우리 회사 안의 격차'를 재는데, 그 수치가 큰지 작은지 판단할 기준이 없었다.
 # 임시직 비중은 OECD 가 같은 정의로 공표하므로 국제 대조가 가능하다.
@@ -1153,6 +1218,9 @@ def main():
     print("\n[11] 임시직 비중 국제비교 (⑤ 격차의 판단 기준선)")
     temp = temp_share_block()
 
+    print("\n[12] 부양 구조 (취업자 1인당 부양 인구)")
+    dep = dependency_block()
+
     if not money and not prop:
         print("\n[ERROR] 주요 블록 수집 실패 — 기존 파일 보존.")
         return 1
@@ -1161,7 +1229,7 @@ def main():
         "generated_at": now.strftime("%Y-%m-%d %H:%M:%S KST"),
         "money": money, "transmission": trans, "property": prop,
         "seoul_property": seoul, "fiscal": fisc,
-        "cpi_items": cpi_items, "wage": wage, "inequality": ineq, "labor_share": lshare, "household": hh, "growth_gap": gap, "temp_share": temp,
+        "cpi_items": cpi_items, "wage": wage, "inequality": ineq, "labor_share": lshare, "household": hh, "growth_gap": gap, "temp_share": temp, "dependency": dep,
         "sources": {
             "money": "OECD SDMX DF_MONAGG (M3, 월별, 자국통화) — 키 불필요",
             "us_macro": "FRED M2SL·CPIAUCSL·W006RC1Q027SBEA·B235RC1Q027SBEA·DTWEXBGS",
@@ -1172,6 +1240,7 @@ def main():
             "household": "OECD SDMX DSD_HHDASH@DF_HHDASH_CTRY — 1인당 실질 가계소비 증가율, 키 불필요",
             "growth_gap": "OECD 1인당 실질GDP·소비 지수 + FRED 한국 임금지수 ÷ OECD 한국 CPI",
             "temp_share": "OECD SDMX DSD_TEMP@DF_TEMP_I — 임시직 비중, 키 불필요",
+            "dependency": "FRED LFEMTTTTKRQ647S(취업자)·POPTOTKRA647NWDB(총인구) — 1인당 부양 인구",
         },
         "caveats": [
             "통화량 '증가율'은 자국통화 기준이라 환율 영향이 없지만, '비중'은 최신 환율로 환산한 근사치다(과거 환율 미반영).",
