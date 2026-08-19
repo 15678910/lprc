@@ -72,6 +72,15 @@ ECOS_TARGETS = {
         "item_kw_any": ["아파트"],            # 이 중 하나 포함
         "label": "서울 아파트 매매가격지수",
     },
+    # 4.4 주택전세가격지수 → 서울 아파트 전세
+    # 매매가보다 이쪽이 '먹고 사는 데 드는 주거비'에 가깝다 — 집을 사는 사람보다
+    # 빌리는 사람이 많고, 매달 나가는 돈이 생계를 직접 누른다.
+    "seoul_jeonse": {
+        "table_kw": ["주택전세가격", "전세가격"],
+        "item_kw_all": ["서울"],
+        "item_kw_any": ["아파트"],
+        "label": "서울 아파트 전세가격지수",
+    },
     # 4.2 소비자물가지수 → 총지수 (실질화 분모)
     "kr_cpi": {
         "table_kw": ["소비자물가지수"],
@@ -385,8 +394,11 @@ def seoul_property_block():
     fc = ecos_find(key, ECOS_TARGETS["kr_cpi"])
     if not fa or not fc:
         return None
-    apt = ecos_series(key, fa[0], fa[1], prefixes=fa[3])
-    cpi = ecos_series(key, fc[0], fc[1], prefixes=fc[3])
+    # ⚠️ 기본 시작이 2010-01 이라 그동안 KB 계열의 1986~2009 구간을 통째로 버리고 있었다.
+    #    하필 2010 년은 2008 년 고점 직후라, 거기서 100 으로 놓으면 이후 급등이
+    #    '회복'으로 보여 집값-임금 비교가 실제와 반대로 읽혔다. 있는 만큼 다 받는다.
+    apt = ecos_series(key, fa[0], fa[1], start="198601", prefixes=fa[3])
+    cpi = ecos_series(key, fc[0], fc[1], start="198601", prefixes=fc[3])
     ks = sorted(set(apt) & set(cpi))
     if len(ks) < 24:
         print(f"  [WARN] 서울 아파트 겹치는 표본 부족 {len(ks)}")
@@ -406,20 +418,25 @@ def seoul_property_block():
         "source": {"apt": f"{fa[0]}/{fa[1]} {fa[2][:30]}", "cpi": f"{fc[0]}/{fc[1]} {fc[2][:20]}"},
         "spark": [round(real[k], 1) for k in ks[-60:]],
         "note": "ECOS 자동 탐색으로 통계표·항목 코드를 찾아 수집(코드 하드코딩 없음).",
-        "vs_wage": _apt_vs_wage(apt),
+        "vs_wage": _vs_wage(apt, "매매"),
+        "jeonse_vs_wage": (lambda f: _vs_wage(
+            ecos_series(key, f[0], f[1], start="198601", prefixes=f[3]), "전세") if f else None
+        )(ecos_find(key, ECOS_TARGETS["seoul_jeonse"])),
     }
     print(f"  🏙️ 서울 아파트: 실질 {out['real_index']} · 10년 실질 {out['chg_10y_pct']:+.1f}% "
           f"(명목 {out['nominal_10y_pct']:+.1f}%)")
     return out
 
 
-def _apt_vs_wage(apt):
-    """집값 ÷ 임금 — 같은 집을 사는 데 필요한 노동의 양이 어떻게 변했나.
+def _vs_wage(apt, kind="매매"):
+    """주거비 ÷ 임금 — 같은 집을 얻는 데 필요한 노동의 양이 어떻게 변했나.
 
     명목 아파트지수 ÷ 명목 임금지수. 둘 다 물가로 나눈 실질끼리 비교해도 같은 값이다
     (물가가 약분된다). 시작 시점을 100 으로 놓아 '몇 배로 벌어졌나'만 본다.
     ⚠️ 지수 대 지수라 '연봉 몇 배'가 아니다. 절대 배수는 KB·국민은행 PIR 을 봐야 한다.
     """
+    if not apt:
+        return None
     wq = {}
     for k, v in fred(KR_WAGE_IDX, "1990-01-01").items():
         wq[f"{k[:4]}-Q{(int(k[5:7]) - 1) // 3 + 1}"] = v
@@ -429,26 +446,36 @@ def _apt_vs_wage(apt):
     aq = {q: sum(v) / len(v) for q, v in acc.items() if len(v) == 3}   # 3개월 다 있는 분기만
     qs = sorted(set(aq) & set(wq))
     if len(qs) < 20:
-        print(f"  [WARN] 집값-임금 비교 표본 부족 {len(qs)}분기")
+        print(f"  [WARN] {kind}-임금 비교 표본 부족 {len(qs)}분기")
         return None
     r0 = aq[qs[0]] / wq[qs[0]]
     rat = {q: aq[q] / wq[q] / r0 * 100 for q in qs}
     a, b = qs[0], qs[-1]
     pk = max(qs, key=lambda q: rat[q])
+    tr = min(qs, key=lambda q: rat[q])
+    # 국면을 나눠 함께 낸다. 전 구간 하나만 내면 시작점이 어디냐에 따라 정반대로 읽힌다.
+    eras = [{"label": "전 구간", "from": a, "to": b, "x": round(rat[b] / rat[a], 2)}]
+    if tr < pk:
+        eras.append({"label": "최저→최고", "from": tr, "to": pk, "x": round(rat[pk] / rat[tr], 2)})
+    eras.append({"label": "최고→현재", "from": pk, "to": b, "x": round(rat[b] / rat[pk], 2)})
     out = {
-        "base": a, "asof": b,
+        "kind": kind, "base": a, "asof": b,
         "index": round(rat[b], 1), "chg_pct": round(rat[b] - 100, 1),
         "peak": pk, "peak_index": round(rat[pk], 1),
+        "trough": tr, "trough_index": round(rat[tr], 1),
+        "eras": eras,
         "series": [{"q": q, "v": round(rat[q], 1)} for q in qs],
-        "definition": "서울 아파트 매매가격지수 ÷ 임금지수 — 시작 분기 = 100",
+        "definition": f"서울 아파트 {kind}가격지수 ÷ 임금지수 — 시작 분기 = 100",
         "reading": (f"{a} 를 100 으로 놓으면 {b} 는 {rat[b]:.0f} 이다. "
-                    f"같은 집을 사는 데 드는 노동의 양이 {rat[b] / 100:.2f}배가 됐다는 뜻이다."),
+                    f"같은 집을 {kind}로 얻는 데 드는 노동의 양이 {rat[b] / 100:.2f}배가 됐다는 뜻이다."),
         "caveat": ("⚠️ 지수 대 지수라 '연봉 몇 배'가 아니다 — 절대 배수(PIR)는 별도 통계를 봐야 한다. "
+                   "⚠️ 시작 시점을 어디로 잡느냐로 그림이 크게 달라진다. 그래서 국면별로도 함께 낸다. "
                    "⚠️ 서울 아파트 기준이라 지역·주택유형에 따라 크게 다르다. "
                    "⚠️ 임금지수는 상용근로자 기준 평균이라 분포를 말하지 못한다."),
     }
-    print(f"  🏠 집값÷임금: {a}=100 → {b} {rat[b]:.0f} "
-          f"(최고 {rat[pk]:.0f} @{pk}) · 같은 집에 드는 노동 {rat[b] / 100:.2f}배")
+    print(f"  🏠 {kind}÷임금: {a}=100 → {b} {rat[b]:.0f} · "
+          f"최저 {rat[tr]:.0f}@{tr} → 최고 {rat[pk]:.0f}@{pk} "
+          f"({rat[pk] / rat[tr]:.2f}배) · 현재 노동량 {rat[b] / 100:.2f}배")
     return out
 
 
