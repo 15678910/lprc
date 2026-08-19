@@ -330,6 +330,8 @@ function coCard(c){
    재무제표 대비로 환산한다 — 협상장에서 '얼마면 되는가'를 숫자로 놓기 위한 것이다. */
 window.setGap=(k,v)=>{S.gap=S.gap||{};S.gap[k]=(v===''||v==null)?null:Math.max(0,parseFloat(v)||0);save();render()};
 window.setGapCo=v=>{S.gap=S.gap||{};S.gap.sub=v;save();render()};
+// 탭 이름은 문자열이라 setGap(숫자 변환)을 쓰면 안 된다 — parseFloat('alloc')은 NaN 이다
+window.setGapTab=v=>{S.gap=S.gap||{};S.gap.tab=v;save();render()};
 window.setGapSubF=(k,v)=>{S.gapSubM=S.gapSubM||{};S.gapSubM[k]=Math.max(0,parseFloat(v)||0);save();render()};
 
 /* 격차 계산의 공통 입력·파생값 — ⑤(측정)와 ⑥(대안)이 같은 숫자를 쓰도록 한 곳에서 만든다.
@@ -765,7 +767,7 @@ function laborShareBlock(){
       · 10년 ${a.chg_10y_pp>=0?'+':''}${fmt(a.chg_10y_pp,1)}%p</div></div>`;
   return `<div class="lab" style="margin:18px 0 6px;font-weight:600;color:var(--tx)">거시 기준선 — 국민경제의 노동 몫</div>
     <div class="hint" style="margin-bottom:8px">생산된 소득(GDP) 중 <b>노동자에게 돌아간 보수</b>가 차지하는 비율입니다
-      (공식 통계명은 '피용자보수' — OECD·한국은행이 쓰는 이름이라 출처 대조를 위해 병기합니다).
+      (국민계정 거래코드 <b>D1</b> — OECD·한국은행이 같은 항목을 공표하므로 이 코드로 대조하면 됩니다).
       "회사가 아니라 나라 전체에서 노동 몫이 어떻게 변했나"를 보는 지표로, 단협에서 가장 오래 쓰인 거시 논거입니다.</div>
     <div class="row">${L.areas.map(box).join('')}</div>
     <div class="note">📖 <b>읽는 법</b> — ${kr?`한국은 ${esc(kr.start_year)}년 ${fmt(kr.start_pct,1)}%에서 ${esc(kr.asof)}년 ${fmt(kr.share_pct,1)}%로
@@ -915,8 +917,100 @@ function pathCard(c){
     ${TARGETS.map(t=>`<option value="${t.k}"${t.k===T.k?' selected':''}>${esc(t.label)} (${won(t.n)}명)</option>`).join('')}
     </select></div>`:'';
 
-  return `<div class="card">
+  /* ⚖️ 총액 배분 — ④는 '회사가 얼마를 올릴 수 있나', 위 경로 비교는 '격차를 좁히려면
+     얼마가 드나'를 답한다. 그런데 실제 교섭은 그 둘이 아니라 '따낸 총액 하나를 어떻게
+     나눌 것인가'다. 두 계산을 한 화면에서 잇는다.
+     핵심은 하나다 — 총액이 같아도 배분이 다르면 도달 연수가 달라지고, 회사 부담은 그대로다.
+     그래서 '재원이 없다'와 '격차를 못 좁힌다'는 서로 다른 문제라는 것이 드러난다. */
+  const payT=T.n*T.pay, payG=(T.giverN&&T.giverPay)?T.giverN*T.giverPay:0, payAll=payT+payG;
+  const r1=v=>Math.round(v*10)/10;
+  const R=G.allocR!=null?G.allocR:rBase;                    // 총 인상 재원(전체 인건비 대비 %)
+  const sEq=payAll?payT/payAll*100:0;                       // 균등 정률 인상이면 이 비중이 된다
+  const S_=G.allocS!=null?G.allocS:r1(sEq);
+  const pool=payAll*R/100;
+  // 배분 s 를 넣으면 두 집단 인상률과 도달 연수가 나온다. 총액(pool)은 s 와 무관하게 고정.
+  const calcA=s=>{
+    const tt=pool*s/100, gg=pool-tt;
+    const b=payT?tt/payT*100:null, a=payG?gg/payG*100:null;
+    const g=(a!=null&&b!=null)?(1+b/100)/(1+a/100):null;
+    return {s,a,b,y:(g&&g>1&&goal>ratioNow)?Math.log(goal/ratioNow)/Math.log(g):null};
+  };
+  const AL=calcA(S_);
+  /* 배분 입력은 소수 첫째 자리까지만 받으므로 기본값(=정률)에서도 sEq 와 미세하게 어긋난다.
+     그 차이로 '정률 대비 1인 +225원' 같은 무의미한 값이 뜨지 않게 근사 동일로 본다. */
+  const isEq=Math.abs(S_-sEq)<0.1;
+  const giveHead=(payG&&AL.a!=null&&!isEq)?T.giverPay*(R-AL.a)/100:null;  // 기준집단 1인 양보액
+  const getHead=(AL.b!=null&&!isEq)?T.pay*(AL.b-R)/100:null;              // 대상 1인 추가 취득액
+  const scen=[...new Set([r1(sEq),r1(sEq*1.5),r1(sEq*2),r1(sEq*3),r1(S_)])]
+    .filter(x=>x>0&&x<=100).sort((a,b)=>a-b).map(calcA);
+
+  const allocBody=`
+    <div class="hint">④가 <b>"회사가 얼마를 올릴 수 있나"</b>를, 경로 비교 탭이 <b>"격차를 좁히려면 얼마가 드나"</b>를
+      답합니다. 그런데 실제 교섭은 그 둘이 아니라 <b>따낸 총액 하나를 어떻게 나눌 것인가</b>입니다.</div>
+    ${tsel}
+    <div class="row" style="align-items:center;margin:6px 0 4px">
+      <div class="lab">총 인상 재원: 전체 인건비의 ${inp('allocR',R,0.1)} % ·
+        그중 <b>${esc(T.label.split('(')[0])}</b>에 ${inp('allocS',S_,1)} % 배분</div>
+    </div>
+    <div class="lab" style="margin-bottom:12px">모두에게 같은 비율로 올리면(정률 인상) 배분 비중은
+      <b>${fmt(sEq,1)}%</b>가 됩니다 — 인건비 비중과 같습니다.
+      이보다 높이면 차등 인상이고, 낮추면 격차가 더 벌어집니다.</div>
+    <div class="row">
+      <div class="box"><div class="lab">회사 부담 (연간)</div>
+        <div class="big mono" style="font-size:1.15rem">${eok(pool)}원</div>
+        <div class="lab">${opPct(pool)} · <b>배분을 바꿔도 이 값은 그대로입니다</b></div></div>
+      <div class="box" style="border-color:var(--acc)"><div class="lab">${esc(T.giverLabel)} 인상률</div>
+        <div class="big mono" style="font-size:1.15rem;color:var(--acc)">${AL.a!=null?fmt(AL.a,2)+'%':'—'}</div>
+        <div class="lab">${isEq?'정률 인상 — 격차 그대로':giveHead==null?'':giveHead>0
+          ?`정률 대비 1인 ${won(giveHead)}원 양보`:`정률 대비 1인 +${won(-giveHead)}원`}</div></div>
+      <div class="box" style="border-color:var(--amb)"><div class="lab">${esc(T.label.split('(')[0])} 인상률</div>
+        <div class="big mono" style="font-size:1.15rem;color:var(--amb)">${AL.b!=null?fmt(AL.b,2)+'%':'—'}</div>
+        <div class="lab">${isEq?'정률 인상 — 격차 그대로':getHead==null?'':getHead>0
+          ?`정률 대비 1인 +${won(getHead)}원`:`정률 대비 1인 ${won(-getHead)}원 적게`}</div></div>
+      <div class="box" style="border-color:${AL.y==null?'var(--red)':'var(--grn)'}">
+        <div class="lab">목표(${fmt(goal,0)}%) 도달까지</div>
+        <div class="big mono ${AL.y==null?'neg':'pos'}" style="font-size:${AL.y==null?'1.02rem':'1.5rem'}">
+          ${AL.y==null?(goal<=ratioNow?'이미 달성':'영원히'):fmt(AL.y,1)+'년'}</div>
+        <div class="lab">${AL.y!=null?`${nowY+Math.ceil(AL.y)}년경 · 인상률 차이 ${fmt(AL.b-AL.a,2)}%p`
+          :(goal<=ratioNow?'목표를 더 높게 잡으세요':'두 인상률이 같거나 역전 — 격차가 안 줄어듭니다')}</div></div>
+    </div>
+
+    <div class="lab" style="margin:22px 0 6px;font-weight:600;color:var(--tx)">같은 총액, 다른 배분 — 도달 연수가 이렇게 갈립니다</div>
+    <div style="overflow-x:auto"><table><thead><tr>
+      <th>배분 비중</th><th>${esc(T.giverLabel)} 인상률</th><th>${esc(T.label.split('(')[0])} 인상률</th>
+      <th>인상률 차이</th><th>도달 연수</th><th>회사 부담</th>
+    </tr></thead><tbody>${scen.map(x=>`<tr${Math.abs(x.s-S_)<0.05?' style="background:rgba(88,166,255,.10)"':''}>
+      <td class="mono"><b>${fmt(x.s,1)}%</b>${Math.abs(x.s-sEq)<0.05?' <span class="lab">(정률)</span>':''}</td>
+      <td class="mono">${x.a!=null?fmt(x.a,2)+'%':'—'}</td>
+      <td class="mono" style="color:var(--amb)">${x.b!=null?fmt(x.b,2)+'%':'—'}</td>
+      <td class="mono">${(x.a!=null&&x.b!=null)?fmt(Math.abs(x.b-x.a)<0.005?0:x.b-x.a,2)+'%p':'—'}</td>
+      <td class="mono ${x.y==null?'neg':'pos'}"><b>${x.y==null?'영원히':fmt(x.y,1)+'년'}</b></td>
+      <td class="mono">${eok(pool)}원</td></tr>`).join('')}</tbody></table></div>
+    <div class="note">📖 <b>맨 오른쪽 열이 전부 같습니다</b> — 배분을 어떻게 바꿔도 회사가 내는 돈은
+      ${eok(pool)}원으로 동일합니다. 그런데 도달 연수는 크게 달라집니다.
+      <b>"재원이 없다"와 "격차를 못 좁힌다"는 서로 다른 문제</b>라는 뜻입니다.
+      총액을 더 따내지 못하더라도 배분만으로 격차 속도를 바꿀 수 있습니다.<br>
+      ⚠️ 정률(${fmt(sEq,1)}%) 행을 보세요 — 두 집단 인상률이 같아 <b>격차가 영원히 그대로</b>입니다.
+      모두에게 공평해 보이는 정률 인상이 실제로는 격차를 고정시킵니다.</div>
+
+    <div class="note">⚠️ <b>이 탭이 답하지 않는 것</b><br>
+      · 총액을 어떻게 나눌지는 계산 문제가 아니라 <b>노동자 사이의 결정</b>입니다.
+        차등 인상은 ${esc(T.giverLabel)}이 자기 몫을 실제로 양보하는 것이고, 그 합의는 총회에서 나옵니다.
+        이 표는 <b>"이 배분이면 이런 결과"</b>까지만 보여줍니다.<br>
+      · 인상 재원을 인건비 대비 정률로만 봅니다. 정액 인상·호봉제·성과급 비중은 반영하지 않았습니다.
+        정액 인상은 저임금 구간에 유리해 여기 계산보다 격차를 빨리 줄입니다.<br>
+      · ${esc(T.direct?'같은 회사 소속이라 임금을 직접 정할 수 있습니다.'
+          :'대상 집단이 원청과 근로계약이 없으면 인상률을 직접 정할 수 없습니다 — 도급단가를 통해서만 닿습니다. 경로 비교 탭 ①을 함께 보세요.')}<br>
+      ⚖️ 어떤 배분도 권하지 않습니다.</div>`;
+
+  const TAB=G.tab==='alloc'?'alloc':'path';
+  const tabBtn=(k,t)=>`<button class="${TAB===k?'on':'ghost'}" onclick="setGapTab('${k}')">${t}</button>`;
+  const head=`<div class="card">
     <h2>⑥ 격차 해소 경로 — 대안 비교와 소요 연수</h2>
+    <div class="row noprint" style="gap:6px;margin:2px 0 12px">
+      ${tabBtn('path','📊 경로 비교')}${tabBtn('alloc','⚖️ 총액 배분')}</div>`;
+  if(TAB==='alloc')return head+allocBody+`</div>`;
+  return head+`
     <div class="hint">⑤가 격차를 <b>재는</b> 카드라면 여기는 <b>좁히는</b> 카드입니다.
       경로별 비용을 비교하고, <b>인상률 차이로 몇 년이 걸리는지</b>를 역산합니다.</div>
     ${tsel}
