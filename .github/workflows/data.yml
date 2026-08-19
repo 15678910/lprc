@@ -2,6 +2,12 @@ name: Update data
 
 # 원 통계가 월간·분기·연간이라 하루 1회면 충분하다.
 # 기업 공시(사업보고서)는 연 1회 갱신되지만, 정정공시가 있을 수 있어 같이 돌린다.
+#
+# 필요한 시크릿 — Settings > Secrets and variables > Actions
+#   DART_API_KEY  없으면 ④⑤⑥ 회사 목록이 비고 직접 입력만 가능      (opendart.fss.or.kr)
+#   BOK_API_KEY   없으면 서울 아파트 실질가격·한국 분배지표가 빠짐    (ecos.bok.or.kr)
+#   FRED_API_KEY  없으면 일부 미국 계열이 빠짐                        (fred.stlouisfed.org)
+# 셋 다 없어도 OECD 기반 블록(물가·노동몫·격차·임시직 비중)은 그대로 수집된다.
 on:
   schedule:
     - cron: '0 1 * * *'      # 매일 KST 10:00 (UTC 01:00)
