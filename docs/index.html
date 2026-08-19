@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
 <meta name="googlebot" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
-<title>내 실질임금 · 임금단협 · 노동 양극화 해소 계산기</title>
+<title>나의 실질임금 · 임금단협 · 노동 양극화 해소 계산기</title>
 <meta name="description" content="카드 이용내역 CSV로 체감물가·실질임금을 계산하고, 회사 지불능력과 임금인상률 산식을 비교합니다. 정규직·비정규직, 원청·하청, 사내하도급 임금격차와 그 해소 경로까지 숫자로 냅니다.">
 <style>
   :root{--bg:#0b1017;--card:#131a24;--line:#20293a;--tx:#e6edf3;--mut:#8b98a9;
@@ -77,14 +77,14 @@
 <body>
 <div class="wrap">
 <header>
-  <h1>내 실질임금 · 임금단협 · 노동 양극화 해소 계산기</h1>
+  <h1>나의 실질임금 · 임금단협 · 노동 양극화 해소 계산기</h1>
   <nav class="nav noprint">
     <a href="./" class="on">🧮 계산기</a>
     <a href="./guide.html">📖 소개 · 이용 방법</a>
     <a href="./future.html">🤖 AI 시대의 노동</a>
     <a href="./about.html">📋 출처 · 면책</a>
   </nav>
-  <div class="sub">①②③ <b>내 실질임금</b> — 카드내역 CSV로 체감물가를 내고 명목임금과 비교합니다.<br>
+  <div class="sub">①②③ <b>나의 실질임금</b> — 카드내역 CSV로 체감물가를 내고 명목임금과 비교합니다.<br>
     ④ <b>임금단협</b> — 회사 지불능력(DART)과 인상률 산식 여섯 가지를 같은 화면에 놓습니다.<br>
     ⑤⑥ <b>노동 양극화 해소</b> — 정규직·비정규직, 원청·하청, 사내하도급 격차를 재고 좁히는 경로별 비용을 계산합니다.<br>
     입력값은 이 브라우저에만 저장되며 서버로 전송되지 않습니다. 단체협약 근거자료로 인쇄할 수 있습니다.</div>
@@ -848,7 +848,7 @@ function laborShareBlock(){
     <div class="row">${L.areas.map(box).join('')}</div>
     <div class="note">📖 <b>읽는 법</b> — ${kr?`한국은 ${esc(kr.start_year)}년 ${fmt(kr.start_pct,1)}%에서 ${esc(kr.asof)}년 ${fmt(kr.share_pct,1)}%로
       ${kr.chg_since_start_pp>=0?'올랐습니다':'내렸습니다'}. `:''}수준 자체보다 <b>방향</b>이 중요합니다.
-      노동 몫이 오르는데 내 실질임금이 제자리라면, 늘어난 몫이 고용 증가나 다른 계층으로 갔다는 뜻입니다.<br>
+      노동 몫이 오르는데 나의 실질임금이 제자리라면, 늘어난 몫이 고용 증가나 다른 계층으로 갔다는 뜻입니다.<br>
       ⚠️ <b>④의 '인건비/매출'과 직접 비교하지 마세요</b> — 분모가 GDP와 매출로 완전히 다릅니다.<br>
       ⚠️ ${esc(L.caveat||'')}<br>
       ⚠️ ${esc(L.bok_note||'')}</div>`;
