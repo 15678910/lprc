@@ -61,6 +61,21 @@
   .srcbox dt{font-weight:600;color:var(--tx);margin:10px 0 2px}
   .srcbox dt:first-child{margin-top:0}
   .srcbox dd{margin:0 0 2px;color:var(--mut)}
+  /* 좌측 목차 — 카드가 여덟 개라 스크롤이 길다. 화면이 넉넉할 때만 띄우고
+     본문 폭(1080px)을 침범하지 않도록 body 를 그만큼 밀어 준다.
+     목록은 하드코딩하지 않고 렌더 후 DOM 의 카드 제목에서 만든다(sideNav). */
+  .sidenav{display:none}
+  @media (min-width:1240px){
+    body{padding-left:200px}
+    .sidenav{display:block;position:fixed;left:0;top:0;bottom:0;width:200px;z-index:50;
+             background:#0d1219;border-right:1px solid var(--line);padding:16px 10px;overflow-y:auto}
+    .sidenav b{display:block;color:var(--mut);font-size:.82rem;letter-spacing:.02em;
+               padding:0 10px 8px;border-bottom:1px solid var(--line);margin-bottom:8px}
+    .sidenav a{display:block;color:var(--mut);text-decoration:none;font-size:.92rem;line-height:1.35;
+               padding:8px 10px;border-radius:8px;margin-bottom:2px;border-left:3px solid transparent}
+    .sidenav a:hover{color:var(--tx);background:rgba(88,166,255,.10)}
+    .sidenav a.on{color:var(--tx);background:rgba(88,166,255,.15);border-left-color:var(--acc);font-weight:600}
+  }
   /* 휴대폰 — 컴퓨터를 쓰지 않는 사람이 링크로 받아 여는 경로가 주력이다.
      품목 표가 5칸이라 좁은 화면에서 100px 잘려 나가는데 가로 스크롤도 안 돼
      '환산 비율'을 아예 볼 수 없었다. 막대는 장식이므로 좁은 화면에서 지운다.
@@ -88,6 +103,7 @@
 </style>
 </head>
 <body>
+<nav class="sidenav noprint" id="snav" aria-label="화면 목차"></nav>
 <div class="wrap">
 <header>
   <h1>나의 실질임금 · 임금단협 · 노동 양극화 해소 계산기</h1>
@@ -1326,6 +1342,41 @@ function formulaTable(c,D_,picked){
   </div>`;
 }
 
+/* 좌측 목차 — 목록을 코드에 박지 않고 렌더된 카드 제목에서 만든다.
+   ⑥ 처럼 상태에 따라 제목이 달라지는 카드가 있어, 박아 두면 곧 어긋난다.
+   render() 가 #app 을 통째로 다시 그리므로 그때마다 다시 만든다. */
+let navObs=null;
+function sideNav(){
+  const nav=$('snav'); if(!nav)return;
+  const marks='①②③④⑤⑥⑦⑧';
+  const hs=[...document.querySelectorAll('#app .card>h2')]
+    .filter(h=>marks.indexOf((h.textContent.trim()[0]||''))>=0);
+  if(!hs.length){nav.innerHTML='';return}
+  nav.innerHTML='<b>화면 목차</b>'+hs.map((h,i)=>{
+    const id='sec'+i; h.parentElement.id=id;
+    const t=h.textContent.trim();
+    // 번호와 이름을 나눈다. 부제(— 뒤)는 목차에서 빼야 한 줄에 들어온다.
+    return `<a href="#${id}">${esc(t[0])} ${esc(t.slice(1).split('—')[0].trim())}</a>`;
+  }).join('');
+  const links=[...nav.querySelectorAll('a')];
+  nav.onclick=e=>{
+    const a=e.target.closest('a'); if(!a)return;
+    e.preventDefault();
+    const el=document.getElementById(a.getAttribute('href').slice(1));
+    if(el)el.scrollIntoView({behavior:'smooth',block:'start'});
+  };
+  // 현재 보고 있는 카드를 표시한다. 화면 위쪽 15~30% 구간에 걸친 카드를 '현재'로 본다.
+  if(navObs)navObs.disconnect();
+  navObs=new IntersectionObserver(es=>{
+    es.forEach(en=>{
+      if(!en.isIntersecting)return;
+      const i=hs.findIndex(h=>h.parentElement===en.target);
+      links.forEach((a,k)=>a.classList.toggle('on',k===i));
+    });
+  },{rootMargin:'-15% 0px -70% 0px'});
+  hs.forEach(h=>navObs.observe(h.parentElement));
+}
+
 function render(){
   const c=calc(),W=D.wage||{},A=(D.money||[]);
   const mx=Math.max(...c.items.map(x=>Math.abs(x.yoy_pct)),1);
@@ -1359,7 +1410,7 @@ function render(){
 
   $('app').innerHTML=`
   <div class="card">
-    <h2>① 내 소비 입력</h2>
+    <h2>① 나의 소비 입력</h2>
     <div class="hint">
       <b>금액 모드</b>를 권합니다 — 월 소비액을 품목별로 넣으면 비중이 자동 계산됩니다.
       <b>자동차 연료</b>는 교통에 포함된 세부항목이라 별도 칸입니다(연료비를 여기 넣으면 교통에서 빼세요).
@@ -1505,6 +1556,8 @@ function render(){
       <a href="./guide.html" style="color:var(--acc);font-size:.93rem;align-self:center;margin-left:auto">📖 처음이신가요? 이용 방법 보기</a>
     </div>
   </div>`;
+
+  sideNav();
 
   const fi=$('fi'),dz=$('dz');
   if(fi){fi.onchange=e=>{if(e.target.files[0])onCSV(e.target.files[0]);e.target.value=''}}
