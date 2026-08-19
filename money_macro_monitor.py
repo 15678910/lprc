@@ -218,6 +218,7 @@ def ecos_series(key, stat, item, start="201001", end=None, cycles=("M", "Q", "A"
        항목을 제대로 찾고도 빈 응답이 와서 '데이터 없음'으로 오판했다.
        주기가 맞아야 값이 나온다 — 이 폴백이 그 오판을 막는다."""
     now = datetime.now(KST)
+    tried = []          # 주기별로 무슨 응답이 왔는지 — 전부 실패했을 때만 찍는다
     for cyc in cycles:
         if cyc == "A":
             s, e = start[:4], (end or now.strftime("%Y"))[:4]
@@ -228,6 +229,12 @@ def ecos_series(key, stat, item, start="201001", end=None, cycles=("M", "Q", "A"
             s, e = start, (end or now.strftime("%Y%m"))
         d = _ecos(key, f"StatisticSearch/{key}/json/kr/1/1000/{stat}/{cyc}/{s}/{e}/{item}/")
         rows = (d.get("StatisticSearch") or {}).get("row") or []
+        if not rows:
+            # 빈 응답의 이유는 본문 RESULT 에만 있다(항목코드 오류·해당자료 없음 등).
+            # 버리면 '주기가 틀렸나 / 항목이 틀렸나 / 기간이 없나'를 구분할 수 없다.
+            r = d.get("RESULT") or {}
+            tried.append(f"{cyc}({s}~{e}): " +
+                         (" ".join(x for x in (r.get("CODE"), r.get("MESSAGE")) if x) or "행 0건"))
         out = {}
         for r in rows:
             t, v = r.get("TIME"), r.get("DATA_VALUE")
@@ -244,6 +251,8 @@ def ecos_series(key, stat, item, start="201001", end=None, cycles=("M", "Q", "A"
             if cyc != "M":
                 print(f"    (주기 {cyc}로 확보 — {len(out)}개)")
             return out
+    if tried:
+        print(f"    [WARN] {stat}/{item} 시계열 없음 — " + " | ".join(tried))
     return {}
 
 
