@@ -454,10 +454,12 @@ def _vs_wage(apt, kind="매매"):
     pk = max(qs, key=lambda q: rat[q])
     tr = min(qs, key=lambda q: rat[q])
     # 국면을 나눠 함께 낸다. 전 구간 하나만 내면 시작점이 어디냐에 따라 정반대로 읽힌다.
-    eras = [{"label": "전 구간", "from": a, "to": b, "x": round(rat[b] / rat[a], 2)}]
+    eras = [{"label": "전 구간", "from": a, "to": b, "x": round(rat[b] / rat[a], 2)},
+            {"label": "최저 이후", "from": tr, "to": b, "x": round(rat[b] / rat[tr], 2)},
+            {"label": "최고 이후", "from": pk, "to": b, "x": round(rat[b] / rat[pk], 2)}]
     if tr < pk:
-        eras.append({"label": "최저→최고", "from": tr, "to": pk, "x": round(rat[pk] / rat[tr], 2)})
-    eras.append({"label": "최고→현재", "from": pk, "to": b, "x": round(rat[b] / rat[pk], 2)})
+        eras.insert(1, {"label": "최저→최고", "from": tr, "to": pk,
+                        "x": round(rat[pk] / rat[tr], 2)})
     out = {
         "kind": kind, "base": a, "asof": b,
         "index": round(rat[b], 1), "chg_pct": round(rat[b] - 100, 1),

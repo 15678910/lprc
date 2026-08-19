@@ -790,9 +790,41 @@ function dependencyBlock(){
     <div class="note">📖 <b>읽는 법</b> — ${esc(P.reading||'')}<br>
       ⑦과 겹쳐 보면 이렇게 됩니다. <b>한 사람이 감당할 수 있는 범위가 줄었고</b>(이 카드),
       <b>그 한 사람의 임금도 나라의 성장에 못 미쳤습니다</b>(⑦). 두 가지가 함께 일어났습니다.</div>
+    ${housing()}
     <div class="note">${esc(P.caveat||'')}<br>
       · 출처: ${esc(P.source||'')} · ${esc(P.definition||'')}</div>
   </div>`;
+}
+
+/* 주거비 ÷ 임금 — ⑧ 의 나머지 절반.
+   ⚠️ 이 지표는 시작 시점에 따라 결론이 뒤집힌다. 주택가격이 순환하기 때문이다.
+      1992 년(80년대 말 폭등 직후)에서 재면 지금이 더 싸고, 2001 년 저점에서
+      재면 훨씬 비싸다. 둘 다 사실이다. 그래서 한 숫자만 내지 않고 국면을 모두
+      보여주고, '단독으로 쓰지 말라'를 화면에 못박는다. */
+function housing(){
+  const S=D.seoul_property; if(!S)return '';
+  const sets=[['매매',S.vs_wage],['전세',S.jeonse_vs_wage]].filter(x=>x[1]&&x[1].eras);
+  if(!sets.length)return '';
+  const col=x=>x>1?'var(--red)':x<1?'var(--cy)':'var(--mut)';
+  return `<div class="lab" style="margin:22px 0 6px;font-weight:600;color:var(--tx)">
+      🏠 주거비 대비 임금 — 같은 집을 얻는 데 드는 노동의 양</div>
+    <div class="hint" style="margin-bottom:10px">서울 아파트 가격지수를 임금지수로 나눈 값입니다.
+      <b>1보다 크면 집값이 임금보다 빨리 올랐다</b>는 뜻입니다.</div>
+    ${sets.map(([k,v])=>`<div class="srcbox">
+      <div class="lab" style="font-weight:600;color:var(--tx);margin-bottom:6px">
+        서울 아파트 ${k} · ${esc(v.base)} = 100 → ${esc(v.asof)} <b>${fmt(v.index,0)}</b>
+        <span style="font-weight:400">(최저 ${fmt(v.trough_index,0)}@${esc(v.trough)} ·
+        최고 ${fmt(v.peak_index,0)}@${esc(v.peak)})</span></div>
+      <div class="row">${v.eras.map(e=>`<div class="box" style="min-width:120px;padding:9px 11px">
+        <div class="lab">${esc(e.label)}</div>
+        <div class="big mono" style="font-size:1.05rem;color:${col(e.x)}">${fmt(e.x,2)}배</div>
+        <div class="lab">${esc(e.from)} → ${esc(e.to)}</div></div>`).join('')}</div></div>`).join('')}
+    <div class="note">⚠️ <b>이 지표는 단독으로 쓰지 마세요 — 시작 시점에 따라 결론이 뒤집힙니다.</b>
+      주택가격이 순환하기 때문입니다. 1992년(80년대 말 폭등 직후)을 기준으로 재면 지금이 더 싸고,
+      2001년 저점을 기준으로 재면 훨씬 비쌉니다. <b>둘 다 사실입니다.</b>
+      인용하실 때는 반드시 기준 시점을 함께 밝히고, 왜 그 시점을 골랐는지도 말해야 합니다.
+      안 그러면 상대가 다른 시점을 들고 나와 그대로 뒤집힙니다.<br>
+      ${esc((sets[0][1]||{}).caveat||'')}</div>`;
 }
 
 function growthGapBlock(){
