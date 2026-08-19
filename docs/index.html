@@ -61,6 +61,19 @@
   .srcbox dt{font-weight:600;color:var(--tx);margin:10px 0 2px}
   .srcbox dt:first-child{margin-top:0}
   .srcbox dd{margin:0 0 2px;color:var(--mut)}
+  /* 휴대폰 — 컴퓨터를 쓰지 않는 사람이 링크로 받아 여는 경로가 주력이다.
+     품목 표가 5칸이라 좁은 화면에서 100px 잘려 나가는데 가로 스크롤도 안 돼
+     '환산 비율'을 아예 볼 수 없었다. 막대는 장식이므로 좁은 화면에서 지운다.
+     입력칸 높이는 손가락으로 누를 수 있게 44px 로 올린다(기존 32px). */
+  @media (max-width:520px){
+    .items th:nth-child(5),.items td:nth-child(5){display:none}
+    .items th,.items td{padding:8px 4px}
+    /* 좌우 패딩을 줄이지 않으면 900000 같은 여섯 자리가 칸 안에서 잘린다 */
+    input[type=number]{width:100%;min-width:0;padding:6px 3px}
+    input.amt{width:100%}
+    input[type=number],select,button{min-height:44px}
+    .box{min-width:100%}
+  }
   @media print{
     body{background:#fff;color:#000;font-size:14.5px}
     .card,.box,.srcbox{background:#fff;border-color:#bbb}
@@ -1362,7 +1375,7 @@ function render(){
     </div>
     <input type="file" id="fi" accept=".csv,text/csv" style="display:none">
     ${mapInfo}
-    <table style="margin-top:12px"><thead><tr>
+    <table class="items" style="margin-top:12px"><thead><tr>
       <th>품목</th><th>물가(전년비)</th><th>${c.amtMode?'월 소비액(원)':'내 비중'}</th><th>환산 비율</th><th></th>
     </tr></thead><tbody>${rows}</tbody></table>
     <div class="row" style="margin-top:14px">
