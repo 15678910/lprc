@@ -20,13 +20,17 @@ jobs:
   update:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.11'
 
-      # 두 수집기 모두 표준 라이브러리만 쓴다 — 설치할 의존성이 없다.
+      # 두 수집기 모두 표준 라이브러리로 동작한다 — 설치할 의존성이 없다.
+      # 예외가 하나 있다. money_macro_monitor 의 통화량 블록이 달러 환산 비중을
+      # 낼 때만 yfinance 를 쓰는데, 없으면 그 비중만 빼고 나머지는 그대로 수집한다.
+      # 환율 표시 하나 때문에 pandas·numpy 까지 끌고 오는 건 손해라 설치하지 않는다.
+      # (로그의 "yfinance 없음" 경고는 정상 동작이다.)
 
       # 물가·임금·통화량·노동몫·가계소비 (+ ECOS 키가 있으면 서울 아파트·분배지표)
       - name: Collect macro data
