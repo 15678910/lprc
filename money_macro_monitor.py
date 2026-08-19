@@ -406,9 +406,49 @@ def seoul_property_block():
         "source": {"apt": f"{fa[0]}/{fa[1]} {fa[2][:30]}", "cpi": f"{fc[0]}/{fc[1]} {fc[2][:20]}"},
         "spark": [round(real[k], 1) for k in ks[-60:]],
         "note": "ECOS 자동 탐색으로 통계표·항목 코드를 찾아 수집(코드 하드코딩 없음).",
+        "vs_wage": _apt_vs_wage(apt),
     }
     print(f"  🏙️ 서울 아파트: 실질 {out['real_index']} · 10년 실질 {out['chg_10y_pct']:+.1f}% "
           f"(명목 {out['nominal_10y_pct']:+.1f}%)")
+    return out
+
+
+def _apt_vs_wage(apt):
+    """집값 ÷ 임금 — 같은 집을 사는 데 필요한 노동의 양이 어떻게 변했나.
+
+    명목 아파트지수 ÷ 명목 임금지수. 둘 다 물가로 나눈 실질끼리 비교해도 같은 값이다
+    (물가가 약분된다). 시작 시점을 100 으로 놓아 '몇 배로 벌어졌나'만 본다.
+    ⚠️ 지수 대 지수라 '연봉 몇 배'가 아니다. 절대 배수는 KB·국민은행 PIR 을 봐야 한다.
+    """
+    wq = {}
+    for k, v in fred(KR_WAGE_IDX, "1990-01-01").items():
+        wq[f"{k[:4]}-Q{(int(k[5:7]) - 1) // 3 + 1}"] = v
+    acc = {}
+    for k, v in apt.items():
+        acc.setdefault(f"{k[:4]}-Q{(int(k[5:7]) - 1) // 3 + 1}", []).append(v)
+    aq = {q: sum(v) / len(v) for q, v in acc.items() if len(v) == 3}   # 3개월 다 있는 분기만
+    qs = sorted(set(aq) & set(wq))
+    if len(qs) < 20:
+        print(f"  [WARN] 집값-임금 비교 표본 부족 {len(qs)}분기")
+        return None
+    r0 = aq[qs[0]] / wq[qs[0]]
+    rat = {q: aq[q] / wq[q] / r0 * 100 for q in qs}
+    a, b = qs[0], qs[-1]
+    pk = max(qs, key=lambda q: rat[q])
+    out = {
+        "base": a, "asof": b,
+        "index": round(rat[b], 1), "chg_pct": round(rat[b] - 100, 1),
+        "peak": pk, "peak_index": round(rat[pk], 1),
+        "series": [{"q": q, "v": round(rat[q], 1)} for q in qs],
+        "definition": "서울 아파트 매매가격지수 ÷ 임금지수 — 시작 분기 = 100",
+        "reading": (f"{a} 를 100 으로 놓으면 {b} 는 {rat[b]:.0f} 이다. "
+                    f"같은 집을 사는 데 드는 노동의 양이 {rat[b] / 100:.2f}배가 됐다는 뜻이다."),
+        "caveat": ("⚠️ 지수 대 지수라 '연봉 몇 배'가 아니다 — 절대 배수(PIR)는 별도 통계를 봐야 한다. "
+                   "⚠️ 서울 아파트 기준이라 지역·주택유형에 따라 크게 다르다. "
+                   "⚠️ 임금지수는 상용근로자 기준 평균이라 분포를 말하지 못한다."),
+    }
+    print(f"  🏠 집값÷임금: {a}=100 → {b} {rat[b]:.0f} "
+          f"(최고 {rat[pk]:.0f} @{pk}) · 같은 집에 드는 노동 {rat[b] / 100:.2f}배")
     return out
 
 
@@ -1254,6 +1294,22 @@ def main():
         ],
         "note": "공개 데이터(OECD·FRED·BIS)의 규칙기반 요약 · 투자자문 아님",
     }
+    # 키가 없는 환경에서 돌리면 그 블록만 None 이 된다. 그대로 덮어쓰면 이미 수집해
+    # 둔 값이 지워진다 — 실제로 로컬 실행(BOK 키 없음)이 서울 아파트와 분배지표를
+    # 날린 적이 있다. 새 값이 비었는데 기존 파일에 값이 있으면 기존 것을 지킨다.
+    # 되살린 블록은 반드시 로그에 남긴다. 조용히 옛 데이터를 쓰는 게 더 위험하다.
+    try:
+        with open(OUTPUT_FILE, encoding="utf-8") as f:
+            prev = json.load(f)
+    except (OSError, ValueError):
+        prev = {}
+    kept = [k for k, v in out.items()
+            if not v and prev.get(k) and k not in ("generated_at", "sources", "caveats", "note")]
+    for k in kept:
+        out[k] = prev[k]
+    if kept:
+        print(f"  [INFO] 이번 수집에서 비어 이전 값을 유지: {', '.join(kept)}")
+
     os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         json.dump(out, f, ensure_ascii=False, separators=(",", ":"))
