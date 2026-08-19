@@ -684,16 +684,22 @@ def household_block():
 KOSIS_SEARCH_KW = ["평균 가구원수", "평균가구원수", "가구원수"]
 
 
-def _kosis_json(path, params, timeout=45):
+def _kosis_json(path, params, timeout=45, label=""):
+    """KOSIS 호출. 실패 원인을 못 좁히는 게 제일 비싸므로 응답 앞부분을 그대로 남긴다.
+    키는 params 안에 있으므로 URL 은 절대 찍지 않는다."""
     q = urllib.parse.urlencode(params)
     txt = _http(f"{KOSIS_BASE}/{path}?{q}", timeout=timeout)
     if not txt:
+        print(f"    [WARN] KOSIS {path} {label} 응답 없음(빈 본문)")
         return None
     try:
-        return json.loads(txt)
+        d = json.loads(txt)
     except ValueError:
-        print(f"    [WARN] KOSIS 응답이 JSON 이 아님: {txt[:100]}")
+        print(f"    [WARN] KOSIS {path} {label} JSON 아님: {txt[:160]}")
         return None
+    if not isinstance(d, list) or not d:
+        print(f"    [WARN] KOSIS {path} {label} 목록 아님/비어 있음: {str(d)[:200]}")
+    return d
 
 
 def household_size_block():
@@ -706,7 +712,7 @@ def household_size_block():
     for kw in KOSIS_SEARCH_KW:
         d = _kosis_json("statisticsSearch.do",
                         {"method": "getList", "apiKey": key, "searchNm": kw,
-                         "format": "json", "jsonVD": "Y"})
+                         "format": "json", "jsonVD": "Y"}, label=f"검색'{kw}'")
         if isinstance(d, dict) and d.get("err"):
             print(f"    [WARN] KOSIS 검색 오류 {d.get('err')}: {str(d.get('errMsg'))[:60]}")
             continue
