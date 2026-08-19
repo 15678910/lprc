@@ -156,8 +156,14 @@ def _ecos(key, path):
 
 
 def ecos_find(key, spec):
-    """통계표·항목 코드를 이름 키워드로 탐색 → (stat_code, item_code, 라벨) 또는 None.
-    코드를 하드코딩하지 않으므로 한국은행이 코드를 바꿔도 계속 동작한다."""
+    """통계표·항목 코드를 이름 키워드로 탐색 → (stat_code, item_code, 라벨, 선행코드들) 또는 None.
+    코드를 하드코딩하지 않으므로 한국은행이 코드를 바꿔도 계속 동작한다.
+
+    네 번째 값은 '앞 차원 후보'다. ECOS 통계표는 차원이 여럿일 수 있고, 그때는
+    조회 경로에 코드를 순서대로 다 넘겨야 한다(예: 소득분배지표는 I38B/10).
+    항목 목록이 앞 차원부터 나열되므로, 매칭된 항목보다 앞에 있는 코드를 후보로 넘긴다.
+      I38A 시장소득 · I38B 처분가능소득 · 10 지니계수 · 20 5분위배율 …
+    이걸 안 넘기면 코드를 정확히 찾고도 INFO-200(해당 자료 없음)이 난다."""
     d = _ecos(key, f"StatisticTableList/{key}/json/kr/1/1000/")
     tables = (d.get("StatisticTableList") or {}).get("row") or []
     if not tables:
@@ -175,14 +181,20 @@ def ecos_find(key, spec):
         code = t["STAT_CODE"]
         d2 = _ecos(key, f"StatisticItemList/{key}/json/kr/1/500/{code}/")
         items = (d2.get("StatisticItemList") or {}).get("row") or []
-        for it in items:
+        for idx, it in enumerate(items):
             nm = it.get("ITEM_NAME") or ""
             if spec["item_kw_all"] and not all(k in nm for k in spec["item_kw_all"]):
                 continue
             if spec["item_kw_any"] and not any(k in nm for k in spec["item_kw_any"]):
                 continue
+            # 앞 차원 후보 — 매칭 항목보다 앞에 나온 코드들. spec 에 선호 키워드가
+            # 있으면 그것부터 시도한다(지니계수는 '처분가능소득' 기준이 표준이다).
+            pre = [(p.get("ITEM_CODE"), p.get("ITEM_NAME") or "")
+                   for p in items[:idx] if p.get("ITEM_CODE")]
+            kw = spec.get("prefix_kw") or []
+            pre.sort(key=lambda x: 0 if any(k in x[1] for k in kw) else 1)
             print(f"    ✅ 채택 {code} / {it.get('ITEM_CODE')} — {nm[:34]} ({t.get('STAT_NAME','')[:20]})")
-            return code, it.get("ITEM_CODE"), nm
+            return code, it.get("ITEM_CODE"), nm, [c for c, _ in pre]
     print(f"    [WARN] 조건에 맞는 항목 없음 ({spec['label']})")
     return None
 
@@ -211,48 +223,53 @@ def _ecos_time(t):
     return None
 
 
-def ecos_series(key, stat, item, start="201001", end=None, cycles=("M", "Q", "A")):
+def ecos_series(key, stat, item, start="201001", end=None, cycles=("M", "Q", "A"), prefixes=()):
     """시계열 → {ISO날짜: value}. 주기를 모르면 월→분기→연 순으로 시도한다.
 
     ⚠️ 예전엔 월(M)로 고정 호출했는데, 연간 통계(가계금융복지조사 등)에서는
        항목을 제대로 찾고도 빈 응답이 와서 '데이터 없음'으로 오판했다.
        주기가 맞아야 값이 나온다 — 이 폴백이 그 오판을 막는다."""
     now = datetime.now(KST)
-    tried = []          # 주기별로 무슨 응답이 왔는지 — 전부 실패했을 때만 찍는다
-    for cyc in cycles:
-        if cyc == "A":
-            s, e = start[:4], (end or now.strftime("%Y"))[:4]
-        elif cyc == "Q":
-            s = f"{start[:4]}Q{(int(start[4:6] or 1) - 1) // 3 + 1}" if len(start) >= 6 else f"{start[:4]}Q1"
-            e = end or f"{now.year}Q{(now.month - 1) // 3 + 1}"
-        else:
-            s, e = start, (end or now.strftime("%Y%m"))
-        d = _ecos(key, f"StatisticSearch/{key}/json/kr/1/1000/{stat}/{cyc}/{s}/{e}/{item}/")
-        rows = (d.get("StatisticSearch") or {}).get("row") or []
-        if not rows:
-            # 빈 응답의 이유는 본문 RESULT 에만 있다(항목코드 오류·해당자료 없음 등).
-            # 버리면 '주기가 틀렸나 / 항목이 틀렸나 / 기간이 없나'를 구분할 수 없다.
-            r = d.get("RESULT") or {}
-            tried.append(f"{cyc}({s}~{e}): " +
-                         (" ".join(x for x in (r.get("CODE"), r.get("MESSAGE")) if x) or "행 0건"))
-        out = {}
-        for r in rows:
-            t, v = r.get("TIME"), r.get("DATA_VALUE")
-            if not t or v in (None, "", "-"):
+    tried = []          # 무슨 응답이 왔는지 — 전부 실패했을 때만 찍는다
+    # 단일 코드로 먼저 시도하고, 안 되면 앞 차원 코드를 붙여 본다(다차원 통계표).
+    # 호출 수가 불어나지 않게 앞 차원 후보는 4개까지만 쓴다.
+    paths = [item] + [f"{p}/{item}" for p in list(prefixes)[:4]]
+    for path in paths:
+        for cyc in cycles:
+            if cyc == "A":
+                s, e = start[:4], (end or now.strftime("%Y"))[:4]
+            elif cyc == "Q":
+                s = f"{start[:4]}Q{(int(start[4:6] or 1) - 1) // 3 + 1}" if len(start) >= 6 else f"{start[:4]}Q1"
+                e = end or f"{now.year}Q{(now.month - 1) // 3 + 1}"
+            else:
+                s, e = start, (end or now.strftime("%Y%m"))
+            d = _ecos(key, f"StatisticSearch/{key}/json/kr/1/1000/{stat}/{cyc}/{s}/{e}/{path}/")
+            rows = (d.get("StatisticSearch") or {}).get("row") or []
+            if not rows:
+                # 빈 응답의 이유는 본문 RESULT 에만 있다(항목코드 오류·해당자료 없음 등).
+                # 버리면 '주기가 틀렸나 / 항목이 틀렸나 / 기간이 없나'를 구분할 수 없다.
+                r = d.get("RESULT") or {}
+                tried.append(f"{path} {cyc}({s}~{e}): " +
+                             (" ".join(x for x in (r.get("CODE"), r.get("MESSAGE")) if x) or "행 0건"))
                 continue
-            iso = _ecos_time(t)
-            if not iso:
-                continue
-            try:
-                out[iso] = float(v)
-            except ValueError:
-                pass
-        if out:
-            if cyc != "M":
-                print(f"    (주기 {cyc}로 확보 — {len(out)}개)")
-            return out
+            out = {}
+            for r in rows:
+                t, v = r.get("TIME"), r.get("DATA_VALUE")
+                if not t or v in (None, "", "-"):
+                    continue
+                iso = _ecos_time(t)
+                if not iso:
+                    continue
+                try:
+                    out[iso] = float(v)
+                except ValueError:
+                    pass
+            if out:
+                if cyc != "M" or path != item:
+                    print(f"    (주기 {cyc} · 경로 {path} 로 확보 — {len(out)}개)")
+                return out
     if tried:
-        print(f"    [WARN] {stat}/{item} 시계열 없음 — " + " | ".join(tried))
+        print(f"    [WARN] {stat}/{item} 시계열 없음 — " + " | ".join(tried[:4]))
     return {}
 
 
@@ -264,6 +281,7 @@ ECOS_INEQ = {
     "table_kw": ["가계금융", "가계 금융", "소득분배", "가계자산"],
     "item_kw_all": [],
     "item_kw_any": ["지니", "5분위", "분위", "순자산"],
+    "prefix_kw": ["처분가능"],
     "label": "가계 분배지표(지니·분위)",
 }
 
@@ -319,7 +337,7 @@ def inequality_block():
         print("  🇰🇷 ECOS에서 분배지표 탐색:")
         f = ecos_find(bok, ECOS_INEQ)
         if f:
-            s = ecos_series(bok, f[0], f[1], start="201001")
+            s = ecos_series(bok, f[0], f[1], start="201001", prefixes=f[3])
             if len(s) >= 3:
                 kk = sorted(s)
                 out["kr"] = {"asof": kk[-1][:7], "value": round(s[kk[-1]], 3),
@@ -367,8 +385,8 @@ def seoul_property_block():
     fc = ecos_find(key, ECOS_TARGETS["kr_cpi"])
     if not fa or not fc:
         return None
-    apt = ecos_series(key, fa[0], fa[1])
-    cpi = ecos_series(key, fc[0], fc[1])
+    apt = ecos_series(key, fa[0], fa[1], prefixes=fa[3])
+    cpi = ecos_series(key, fc[0], fc[1], prefixes=fc[3])
     ks = sorted(set(apt) & set(cpi))
     if len(ks) < 24:
         print(f"  [WARN] 서울 아파트 겹치는 표본 부족 {len(ks)}")
