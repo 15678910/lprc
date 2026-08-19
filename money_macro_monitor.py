@@ -577,6 +577,73 @@ def household_block():
     }
 
 
+# ── 임시직 비중 국제비교 ────────────────────────────────────────────
+# ⑤ 는 '우리 회사 안의 격차'를 재는데, 그 수치가 큰지 작은지 판단할 기준이 없었다.
+# 임시직 비중은 OECD 가 같은 정의로 공표하므로 국제 대조가 가능하다.
+#
+# ⚠️ 이것은 '임금 격차'가 아니라 '비중'이다. 고용형태별 임금은 국제 비교 가능한
+#    공통 통계가 없다 — 나라마다 조사 방식과 비정규직 정의가 달라서다.
+#    그래서 여기서는 비중만 낸다. 임금 격차는 국내 통계(경활 부가조사)를 봐야 한다.
+# ⚠️ 미국은 표본이 4개년뿐이고 정의도 달라 뺐다. 한국의 '기간제'와 대응하지 않는다.
+OECD_TEMP = ("https://sdmx.oecd.org/public/rest/data/OECD.ELS.SAE,DSD_TEMP@DF_TEMP_I,"
+             "/all?startPeriod=2000&format=csvfilewithlabels")
+TEMP_AREAS = [("KOR", "한국", "🇰🇷"), ("JPN", "일본", "🇯🇵"), ("DEU", "독일", "🇩🇪"),
+              ("FRA", "프랑스", "🇫🇷"), ("ESP", "스페인", "🇪🇸"),
+              ("NLD", "네덜란드", "🇳🇱"), ("OECD", "OECD 평균", "🌐")]
+
+
+def temp_share_block():
+    """임시직(기간제) 비중 — 전체 임금노동자 대비 %. OECD 공통 정의."""
+    txt = _http(OECD_TEMP, timeout=180)
+    if not txt:
+        print("  [WARN] OECD 임시직 비중 조회 실패")
+        return None
+    got = {}
+    for r in csv.DictReader(io.StringIO(txt)):
+        # 성별·연령 전체(_T), 임시직(EMP_TEMP), 비율(PT_POP_SUB) 한 조합만 쓴다
+        if (r.get("MEASURE") != "EMP_TEMP" or r.get("SEX") != "_T"
+                or r.get("AGE") != "_T" or r.get("UNIT_MEASURE") != "PT_POP_SUB"):
+            continue
+        try:
+            got.setdefault(r["REF_AREA"], {})[r["TIME_PERIOD"]] = float(r["OBS_VALUE"])
+        except (ValueError, KeyError):
+            pass
+    out = []
+    for code, name, flag in TEMP_AREAS:
+        d = got.get(code) or {}
+        ys = sorted(d)
+        if len(ys) < 5:
+            print(f"  [WARN] {name} 표본 부족 {len(ys)}")
+            continue
+        last = ys[-1]
+        y10 = ys[-11] if len(ys) >= 11 else ys[0]
+        out.append({
+            "code": code, "name": name, "flag": flag, "asof": last,
+            "pct": round(d[last], 1),
+            "base_year": y10, "base_pct": round(d[y10], 1),
+            "chg_10y_pp": round(d[last] - d[y10], 1),
+            "series": [{"y": y, "v": round(d[y], 1)} for y in ys],
+        })
+        print(f"  {flag} {name} {d[last]:.1f}% ({last}) · {y10} 대비 {d[last] - d[y10]:+.1f}%p")
+    if not out:
+        return None
+    kr = next((a for a in out if a["code"] == "KOR"), None)
+    oe = next((a for a in out if a["code"] == "OECD"), None)
+    return {
+        "areas": out,
+        "kr_vs_oecd_x": (round(kr["pct"] / oe["pct"], 1) if kr and oe and oe["pct"] else None),
+        "definition": "임시직(기간의 정함이 있는 고용) ÷ 전체 임금노동자 — OECD 공통 정의, 성별·연령 전체",
+        "source": "OECD SDMX DSD_TEMP@DF_TEMP_I (키 불필요)",
+        "caveat": ("⚠️ 이것은 '임금 격차'가 아니라 '비중'이다. 고용형태별 임금은 나라마다 조사 방식과 "
+                   "비정규직 정의가 달라 국제 비교 가능한 공통 통계가 없다 — 임금 격차는 국내 통계"
+                   "(통계청 경제활동인구조사 근로형태별 부가조사)로 봐야 한다. "
+                   "⚠️ 한국의 '비정규직'은 기간제 외에 시간제·파견·용역·특수고용을 포함해 국내 기준 "
+                   "비중(30%대)이 이 수치보다 크다. 여기 값은 국제 비교용 기간제 기준이다. "
+                   "⚠️ 네덜란드는 비중이 높지만 시간제·유연근무가 제도적으로 정착돼 처우 격차가 작다 — "
+                   "비중만으로 좋고 나쁨을 판단하면 안 된다."),
+    }
+
+
 # ── 성장과 임금의 격차 ──────────────────────────────────────────────
 # "나라는 돈을 더 버는데 내 월급은 왜 제자리인가"를 숫자로 확인하는 블록.
 #
@@ -1052,6 +1119,9 @@ def main():
     print("\n[10] 성장과 임금의 격차 (1인당 실질GDP vs 실질임금)")
     gap = growth_gap_block()
 
+    print("\n[11] 임시직 비중 국제비교 (⑤ 격차의 판단 기준선)")
+    temp = temp_share_block()
+
     if not money and not prop:
         print("\n[ERROR] 주요 블록 수집 실패 — 기존 파일 보존.")
         return 1
@@ -1060,7 +1130,7 @@ def main():
         "generated_at": now.strftime("%Y-%m-%d %H:%M:%S KST"),
         "money": money, "transmission": trans, "property": prop,
         "seoul_property": seoul, "fiscal": fisc,
-        "cpi_items": cpi_items, "wage": wage, "inequality": ineq, "labor_share": lshare, "household": hh, "growth_gap": gap,
+        "cpi_items": cpi_items, "wage": wage, "inequality": ineq, "labor_share": lshare, "household": hh, "growth_gap": gap, "temp_share": temp,
         "sources": {
             "money": "OECD SDMX DF_MONAGG (M3, 월별, 자국통화) — 키 불필요",
             "us_macro": "FRED M2SL·CPIAUCSL·W006RC1Q027SBEA·B235RC1Q027SBEA·DTWEXBGS",
@@ -1070,6 +1140,7 @@ def main():
             "labor_share": "OECD SDMX DSD_NAMAIN10@DF_TABLE1 — 노동자 보수÷GDP, 키 불필요",
             "household": "OECD SDMX DSD_HHDASH@DF_HHDASH_CTRY — 1인당 실질 가계소비 증가율, 키 불필요",
             "growth_gap": "OECD 1인당 실질GDP·소비 지수 + FRED 한국 임금지수 ÷ OECD 한국 CPI",
+            "temp_share": "OECD SDMX DSD_TEMP@DF_TEMP_I — 임시직 비중, 키 불필요",
         },
         "caveats": [
             "통화량 '증가율'은 자국통화 기준이라 환율 영향이 없지만, '비중'은 최신 환율로 환산한 근사치다(과거 환율 미반영).",

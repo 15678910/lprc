@@ -402,6 +402,34 @@ function gapCard(c){
     <input type="number" step="1" min="0" value="${(setter==='sub'?(SM[k]!=null?SM[k]:''):(G[k]!=null?G[k]:''))}"
       oninput="${setter==='sub'?`setGapSubF('${k}',this.value)`:`setGap('${k}',this.value)`}"
       style="width:100%" placeholder="${ph||''}"></div>`;
+
+  /* 해외 대조 — ⑤가 낸 사내 비중이 큰 건지 작은 건지 판단할 기준선이 없었다.
+     OECD 가 같은 정의로 공표하는 임시직 비중을 나란히 둔다.
+     ⚠️ '임금 격차'가 아니라 '비중'이다. 고용형태별 임금은 국제 비교 가능한 공통 통계가 없다. */
+  const tempShare=()=>{
+    const P=D.temp_share;
+    if(!P||!P.areas||!P.areas.length)return '';
+    const kr=P.areas.find(a=>a.code==='KOR');
+    const hi=Math.max(...P.areas.map(a=>a.pct))||1;
+    const bar=a=>`<div class="box" style="min-width:150px;border-color:${a.code==='KOR'?'var(--amb)':'var(--line)'}">
+      <div class="lab"><span style="font-size:1.15em">${a.flag}</span> ${esc(a.name)}</div>
+      <div class="big mono" style="font-size:1.2rem;color:${a.code==='KOR'?'var(--amb)':'var(--tx)'}">${fmt(a.pct,1)}%</div>
+      <div class="bar" style="margin:5px 0 4px"><i style="width:${a.pct/hi*100}%;background:${
+        a.code==='KOR'?'var(--amb)':a.code==='OECD'?'var(--cy)':'var(--acc)'}"></i></div>
+      <div class="lab">${esc(a.asof)} · ${esc(a.base_year)} 대비
+        <b class="${a.chg_10y_pp>0?'neg':a.chg_10y_pp<0?'pos':''}">${sgn(a.chg_10y_pp)}${fmt(a.chg_10y_pp,1)}%p</b></div></div>`;
+    return `<div class="lab" style="margin:22px 0 6px;font-weight:600;color:var(--tx)">🌍 해외 사례 — 임시직 비중 국제비교</div>
+      <div class="hint" style="margin-bottom:10px">사내 비중이 큰 건지 작은 건지 판단하려면 기준선이 필요합니다.
+        OECD가 <b>같은 정의</b>로 공표하는 임시직(기간의 정함이 있는 고용) 비중입니다.</div>
+      <div class="row">${P.areas.map(bar).join('')}</div>
+      ${kr&&P.kr_vs_oecd_x?`<div class="note">📖 <b>한국은 OECD 평균의 ${fmt(P.kr_vs_oecd_x,1)}배</b>이고,
+        <b>방향도 반대</b>입니다 — 한국은 ${esc(kr.base_year)}년 ${fmt(kr.base_pct,1)}%에서
+        ${fmt(kr.pct,1)}%로 <b class="neg">올랐고</b>, OECD 평균은 내렸습니다.<br>
+        ${(()=>{const es=P.areas.find(a=>a.code==='ESP');return es?`🇪🇸 <b>스페인</b>은 ${esc(es.base_year)}년 ${fmt(es.base_pct,1)}% → ${fmt(es.pct,1)}%로
+        <b class="pos">${fmt(es.chg_10y_pp,1)}%p</b> 내렸습니다. 비중은 <b>정책으로 바뀝니다</b> — 구조적 숙명이 아닙니다.`:''})()}</div>`:''}
+      <div class="note">${esc(P.caveat||'')}<br>
+        · 출처: ${esc(P.source||'')} · ${esc(P.definition||'')}</div>`;
+  };
   const opts=`<option value="">— 비교할 하청·협력사 선택 —</option>`+
     list.filter(x=>x.code!==S.co).map(x=>`<option value="${esc(x.code)}"${x.code===subSel?' selected':''}>${esc(x.name)} (${x.year}년)</option>`).join('')+
     `<option value="manual"${subSel==='manual'?' selected':''}>직접 입력 (비상장 협력사)</option>`;
@@ -621,7 +649,7 @@ function gapCard(c){
       원청의 교섭의무 범위, 파견·도급 구분, 직접고용 의무는 <b>법률 판단 영역</b>이라 이 계산기로 다투지 마세요 —
       노무사·변호사 확인이 필요합니다.</div>`}
     `}
-
+    ${tempShare()}
     <div class="note">⚠️ <b>이 카드의 한계</b><br>
       · 고용형태별 급여는 DART 미공시 → 이용자 입력값에 전적으로 의존합니다. 출처를 함께 제시하세요.<br>
       · 하청 비교는 <b>협력사도 공시 대상</b>이거나 감사보고서를 구할 수 있을 때만 가능합니다.<br>
