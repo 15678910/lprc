@@ -677,6 +677,89 @@ def household_block():
     }
 
 
+# ── 평균 가구원 수 (KOSIS) ──────────────────────────────────────────
+# 집값이 그대로여도 한 채를 나눠 지던 사람이 줄면 1인당 주거부담은 커진다.
+# 대가족 → 핵가족 → 1인가구 변화를 숫자로 잡아 주거비를 1인 기준으로 환산한다.
+# ECOS 와 같은 방식으로 통계표 코드를 하드코딩하지 않고 이름으로 탐색한다.
+KOSIS_SEARCH_KW = ["평균 가구원수", "평균가구원수", "가구원수"]
+
+
+def _kosis_json(path, params, timeout=45):
+    q = urllib.parse.urlencode(params)
+    txt = _http(f"{KOSIS_BASE}/{path}?{q}", timeout=timeout)
+    if not txt:
+        return None
+    try:
+        return json.loads(txt)
+    except ValueError:
+        print(f"    [WARN] KOSIS 응답이 JSON 이 아님: {txt[:100]}")
+        return None
+
+
+def household_size_block():
+    """평균 가구원 수 — 1인당 주거부담 환산의 분모."""
+    key = _kosis_key()
+    if not key:
+        print("  [INFO] KOSIS_API_KEY 없음 — 평균 가구원 수 생략")
+        return None
+    cands = []
+    for kw in KOSIS_SEARCH_KW:
+        d = _kosis_json("statisticsSearch.do",
+                        {"method": "getList", "apiKey": key, "searchNm": kw,
+                         "format": "json", "jsonVD": "Y"})
+        if isinstance(d, dict) and d.get("err"):
+            print(f"    [WARN] KOSIS 검색 오류 {d.get('err')}: {str(d.get('errMsg'))[:60]}")
+            continue
+        for it in (d or []) if isinstance(d, list) else []:
+            cands.append(it)
+        if cands:
+            break
+    if not cands:
+        print("    [WARN] KOSIS 에서 가구원수 통계표를 못 찾음")
+        return None
+    # 무엇이 잡혔는지 반드시 남긴다 — 다음 회차에 코드를 좁힐 근거가 된다.
+    for it in cands[:6]:
+        print(f"    후보 {it.get('ORG_ID')}/{it.get('TBL_ID')} — {str(it.get('TBL_NM'))[:38]} "
+              f"({it.get('PRD_DE_FR')}~{it.get('PRD_DE_TO')})")
+    it = cands[0]
+    d = _kosis_json("statisticsData.do",
+                    {"method": "getList", "apiKey": key,
+                     "orgId": it.get("ORG_ID"), "tblId": it.get("TBL_ID"),
+                     "objL1": "ALL", "itmId": "ALL", "prdSe": "Y",
+                     "startPrdDe": "1970", "endPrdDe": str(datetime.now(KST).year),
+                     "format": "json", "jsonVD": "Y"})
+    if isinstance(d, dict) and d.get("err"):
+        print(f"    [WARN] KOSIS 자료 조회 오류 {d.get('err')}: {str(d.get('errMsg'))[:80]}")
+        return None
+    rows = d if isinstance(d, list) else []
+    if not rows:
+        print("    [WARN] KOSIS 자료 0건")
+        return None
+    print(f"    자료 {len(rows)}건 · 예시: " +
+          ", ".join(f"{r.get('PRD_DE')}={r.get('DT')}({str(r.get('ITM_NM'))[:10]}/{str(r.get('C1_NM'))[:10]})"
+                    for r in rows[:3]))
+    ser = {}
+    for r in rows:
+        try:
+            v = float(r.get("DT"))
+        except (TypeError, ValueError):
+            continue
+        if 1.0 < v < 8.0:                       # 가구원 수의 물리적 범위
+            ser[str(r.get("PRD_DE"))[:4]] = v
+    if len(ser) < 5:
+        print(f"    [WARN] 가구원 수로 볼 값이 부족 {len(ser)}건")
+        return None
+    ys = sorted(ser)
+    a, b = ys[0], ys[-1]
+    out = {"base": a, "asof": b, "base_size": round(ser[a], 2), "size": round(ser[b], 2),
+           "shrink_x": round(ser[a] / ser[b], 2),
+           "series": [{"y": y, "v": round(ser[y], 2)} for y in ys],
+           "source": f"KOSIS {it.get('ORG_ID')}/{it.get('TBL_ID')} {str(it.get('TBL_NM'))[:30]}",
+           "definition": "평균 가구원 수 — 1인당 주거부담 환산의 분모"}
+    print(f"  👪 평균 가구원 {ser[a]:.2f}명({a}) → {ser[b]:.2f}명({b}) · 1인당 부담 {ser[a] / ser[b]:.2f}배")
+    return out
+
+
 # ── 한 사람의 임금이 감당하는 몫 ────────────────────────────────────
 # "1970년대엔 아버지 혼자 벌어 대가족을 먹여 살렸는데 지금은 온 가족이 일해야 한다"
 # 는 물음을 숫자로 옮긴다. ⑦ 의 성장-임금 격차와는 다른 지표다.
@@ -1290,6 +1373,9 @@ def main():
     print("\n[12] 부양 구조 (취업자 1인당 부양 인구)")
     dep = dependency_block()
 
+    print("\n[13] 평균 가구원 수 (1인당 주거부담 환산)")
+    hh_size = household_size_block()
+
     if not money and not prop:
         print("\n[ERROR] 주요 블록 수집 실패 — 기존 파일 보존.")
         return 1
@@ -1298,7 +1384,7 @@ def main():
         "generated_at": now.strftime("%Y-%m-%d %H:%M:%S KST"),
         "money": money, "transmission": trans, "property": prop,
         "seoul_property": seoul, "fiscal": fisc,
-        "cpi_items": cpi_items, "wage": wage, "inequality": ineq, "labor_share": lshare, "household": hh, "growth_gap": gap, "temp_share": temp, "dependency": dep,
+        "cpi_items": cpi_items, "wage": wage, "inequality": ineq, "labor_share": lshare, "household": hh, "growth_gap": gap, "temp_share": temp, "dependency": dep, "household_size": hh_size,
         "sources": {
             "money": "OECD SDMX DF_MONAGG (M3, 월별, 자국통화) — 키 불필요",
             "us_macro": "FRED M2SL·CPIAUCSL·W006RC1Q027SBEA·B235RC1Q027SBEA·DTWEXBGS",
