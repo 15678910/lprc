@@ -161,7 +161,11 @@ def ecos_find(key, spec):
     d = _ecos(key, f"StatisticTableList/{key}/json/kr/1/1000/")
     tables = (d.get("StatisticTableList") or {}).get("row") or []
     if not tables:
-        print(f"    [WARN] 통계표 목록 조회 실패 ({spec['label']})")
+        # ECOS 는 실패를 HTTP 상태가 아니라 본문 RESULT 로 알려준다(예: INFO-100 인증키 오류).
+        # 그걸 버리면 '키가 틀렸나 / 망이 막혔나 / API 가 바뀌었나'를 구분할 수 없다.
+        r = d.get("RESULT") or {}
+        why = " ".join(x for x in (r.get("CODE"), r.get("MESSAGE")) if x) or "응답이 비었거나 JSON 이 아님"
+        print(f"    [WARN] 통계표 목록 조회 실패 ({spec['label']}) — {why}")
         return None
     cands = [t for t in tables
              if any(k in (t.get("STAT_NAME") or "") for k in spec["table_kw"]) and t.get("STAT_CODE")]
