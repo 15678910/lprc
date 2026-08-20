@@ -346,10 +346,59 @@ function coCard(c){
         예컨대 비중이 10%면 5% 인상 시 영업이익률은 0.5%p만 내려갑니다.
         시나리오는 <b>다른 조건이 그대로일 때</b>의 산술 계산이며 매출 변동·생산성 향상은 반영하지 않았습니다.</div>`:''}
     `}
+    ${industryBench(D_)}
     ${formulaTable(c,D_,picked)}
     <div class="note">⚠️ ${esc(((CO||{}).caveats||[]).join(' / '))}<br>
       ⚖️ ${esc((CO||{}).neutrality||'')}</div>
   </div>`;
+}
+
+/* 업종 내 위치 — ④ 의 가장 큰 빈칸이었다. 회사 숫자 하나만 보여주면 그게 높은지
+   낮은지 알 수 없어 "형평성" 근거를 못 만든다. 사측이 '인건비 비중이 이미 높다'고
+   할 때 업종 중위값을 그 자리에서 대는 것이 실전에서 제일 세다.
+   분위는 집계값이 아니라 같은 업종 회사 전체에서 그때그때 계산한다. */
+function industryBench(D_){
+  const all=(CO||{}).companies||[];
+  if(!D_||!D_.induty||!all.length)return '';
+  const peers=all.filter(x=>x.induty===D_.induty);
+  if(peers.length<5)return '';
+  // 낮을수록 좋은 지표(인건비 비중)는 방향을 뒤집어 '상위 N%' 의미를 맞춘다
+  const M=[['avg_pay','1인평균 급여','원',1,0],
+           ['payroll_to_revenue_pct','인건비/매출','%',0,1],
+           ['revenue_per_head','1인당 매출','원',1,0],
+           ['op_margin_pct','영업이익률','%',0,1],
+           ['avg_tenure_yr','평균 근속','년',0,1],
+           ['temp_ratio_pct','비정규직 비율','%',0,1]];
+  const cell=([k,lab,unit,isWon,dec])=>{
+    const v=D_[k]; if(v==null)return '';
+    const xs=peers.map(p=>p[k]).filter(x=>x!=null).sort((a,b)=>a-b);
+    if(xs.length<5)return '';
+    const med=xs.length%2?xs[(xs.length-1)/2]:(xs[xs.length/2-1]+xs[xs.length/2])/2;
+    /* '상위 N%' 로 쓰면 방향을 오해한다 — 영업이익률이 중위보다 낮은데 '상위 80%'
+       라고 나오면 좋아 보인다. 순위로 적고 색은 넣지 않는다. 이 지표들은 높다고
+       좋은 것도, 낮다고 좋은 것도 아니어서 어느 쪽으로도 물들이면 안 된다. */
+    const rank=xs.filter(x=>x>v).length+1;                  // 높은 순 등수
+    const f=x=>isWon?won(Math.round(x)):fmt(x,dec);
+    return `<div class="box" style="min-width:150px">
+      <div class="lab">${lab}</div>
+      <div class="big mono" style="font-size:1.05rem">${f(v)}${isWon?'원':unit}</div>
+      <div class="lab">업종 중위 ${f(med)}${isWon?'원':unit}<br>
+        <b>${xs.length}곳 중 ${rank}위</b> <span style="opacity:.75">(높은 순)</span></div></div>`;
+  };
+  const cells=M.map(cell).join('');
+  if(!cells)return '';
+  return `<div class="lab" style="margin:20px 0 6px;font-weight:600;color:var(--tx)">
+      🏭 업종 내 위치 — ${esc(D_.industry||('업종 '+D_.induty))} (${peers.length}곳 비교)</div>
+    <div class="hint" style="margin-bottom:10px">같은 업종 상장사와 견준 자리입니다.
+      <b>형평성</b>은 교섭에서 가장 자주 쓰이는 근거이고, 사측의 "인건비 비중이 이미 높다"에
+      맞설 때도 이 표가 답이 됩니다.</div>
+    <div class="row">${cells}</div>
+    <div class="note">⚠️ <b>순위는 '높은 순'일 뿐 좋고 나쁨이 아닙니다.</b> 1인평균 급여는 높으면 좋지만
+      비정규직 비율은 반대이고, 인건비/매출과 영업이익률은 <b>어느 쪽에게 유리한지가 상황마다 다릅니다</b>
+      — 그래서 색으로 물들이지 않았습니다.<br>
+      ⚠️ 같은 업종이라도 <b>사업 구조가 다르면 직접 비교가 어렵습니다</b>(예: 지주회사와 사업회사).
+      표준산업분류 중분류 기준이라 묶임이 거칠 수 있습니다.<br>
+      ⚠️ <b>상장사만</b> 들어 있습니다. 비상장·중소기업이 많은 업종은 실제 분포와 다를 수 있습니다.</div>`;
 }
 
 /* ⑤ 고용형태·원하청 격차 — 같은 회사 안의 정규직/기간제, 그리고 원청과 하청.

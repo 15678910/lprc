@@ -69,8 +69,16 @@ def _num(s):
         return None
 
 
+CORP_NAME = {}      # 종목코드 → 회사명. corp_map 이 채운다.
+
+
 def corp_map(key):
-    """종목코드 → DART 고유번호. dart_financials.py와 동일 방식."""
+    """종목코드 → DART 고유번호. 회사명도 함께 담아 둔다(CORP_NAME).
+
+    ⚠️ 예전엔 이름을 버렸다. 관심종목 8개일 때는 호출부가 이름을 알고 있어 문제가
+       없었지만, 전 상장사로 넓히면 이름 출처가 여기밖에 없다 — 안 담으면 화면
+       목록이 종목코드로 나온다.
+    """
     import io
     import re
     import zipfile
@@ -81,8 +89,12 @@ def corp_map(key):
     for blk in re.findall(r"<list>(.*?)</list>", xml, re.S):
         sc = re.search(r"<stock_code>\s*(\S+)\s*</stock_code>", blk)
         cc = re.search(r"<corp_code>\s*(\S+)\s*</corp_code>", blk)
+        nm = re.search(r"<corp_name>(.*?)</corp_name>", blk, re.S)
         if sc and cc and sc.group(1).strip():
-            m[sc.group(1).strip()] = cc.group(1).strip()
+            code = sc.group(1).strip()
+            m[code] = cc.group(1).strip()
+            if nm:
+                CORP_NAME[code] = nm.group(1).strip()
     return m
 
 
@@ -234,6 +246,73 @@ def financials(key, corp, year):
     return None
 
 
+# 표준산업분류(KSIC) 중분류 2자리 → 이름. 전부 담지 않고 상장사가 몰린 곳만 둔다.
+# 없는 코드는 아래 대분류 구간으로 떨어뜨린다 — 이름 없는 '업종 26' 을 화면에 내지 않기 위함이다.
+KSIC_MID = {
+    "10": "식료품", "11": "음료", "13": "섬유", "14": "의복", "17": "펄프·종이",
+    "18": "인쇄·기록매체", "19": "석유정제", "20": "화학", "21": "의약품",
+    "22": "고무·플라스틱", "23": "비금속광물", "24": "1차금속", "25": "금속가공",
+    "26": "전자부품·반도체·통신장비", "27": "의료·정밀·광학", "28": "전기장비",
+    "29": "기계·장비", "30": "자동차·부품", "31": "기타 운송장비", "32": "가구",
+    "33": "기타 제조", "35": "전기·가스", "41": "건설", "42": "전문건설",
+    "45": "자동차 판매", "46": "도매·상품중개", "47": "소매", "49": "육상운송",
+    "50": "수상운송", "51": "항공운송", "52": "창고·운송서비스", "55": "숙박",
+    "56": "음식점·주점", "58": "출판", "59": "영상·음악", "60": "방송",
+    "61": "통신", "62": "컴퓨터 프로그래밍·SI", "63": "정보서비스",
+    "64": "금융업", "65": "보험·연금", "66": "금융·보험 서비스", "68": "부동산",
+    "70": "연구개발", "71": "전문서비스", "72": "건축기술·엔지니어링",
+    "73": "기타 전문·과학기술", "85": "교육", "86": "보건업",
+}
+# 중분류에 이름이 없을 때 쓰는 대분류 구간
+KSIC_BIG = [(1, 3, "농림어업"), (5, 8, "광업"), (10, 34, "제조업"), (35, 35, "전기·가스"),
+            (36, 39, "수도·환경"), (41, 42, "건설업"), (45, 47, "도·소매"),
+            (49, 52, "운수·창고"), (55, 56, "숙박·음식"), (58, 63, "정보통신"),
+            (64, 66, "금융·보험"), (68, 68, "부동산"), (70, 73, "전문·과학기술"),
+            (74, 76, "사업지원"), (84, 84, "공공행정"), (85, 85, "교육"),
+            (86, 87, "보건·복지"), (90, 91, "예술·스포츠"), (94, 96, "협회·기타")]
+
+
+def ksic_name(code):
+    """업종코드 → (중분류코드, 표기명). 못 알아보면 (None, None)."""
+    c = (code or "").strip()
+    if len(c) < 2 or not c[:2].isdigit():
+        return None, None
+    mid = c[:2]
+    if mid in KSIC_MID:
+        return mid, KSIC_MID[mid]
+    n = int(mid)
+    for lo, hi, nm in KSIC_BIG:
+        if lo <= n <= hi:
+            return mid, nm
+    return mid, None
+
+
+# 업종코드는 거의 안 바뀌므로 파일로 남겨 두고 새 회사만 조회한다.
+# 이걸 안 하면 매 실행마다 회사 수만큼(약 4,000회) 호출을 더 쓴다.
+IND_CACHE = os.path.join(BASE_DIR, "docs", "corp_industry.json")
+
+
+def load_industry_cache():
+    try:
+        with open(IND_CACHE, encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return {}
+
+
+def industry(key, corp, cache):
+    """DART 기업개황의 표준산업분류 코드. 캐시에 있으면 호출하지 않는다."""
+    if corp in cache:
+        return cache[corp]
+    try:
+        d = json.loads(_get(f"{DART}/company.json?crtfc_key={key}&corp_code={corp}"))
+        code = (d.get("induty_code") or "").strip() or None
+    except Exception:
+        code = None
+    cache[corp] = code
+    return code
+
+
 def build(code, name, key, cmap):
     corp = cmap.get(code)
     if not corp:
@@ -241,9 +320,13 @@ def build(code, name, key, cmap):
         return None
     now_y = datetime.now(KST).year
     for y in range(now_y - 1, now_y - 1 - YEARS, -1):
+        # 직원현황이 없으면 손익은 볼 필요도 없다. 전 상장사로 넓히면 절반이 여기서
+        # 걸리는데, 예전엔 그래도 손익까지 불러 호출을 두 배로 썼다(하루 한도 2만 초과).
         emp = employees(key, corp, y)
+        if not emp:
+            continue
         fin = financials(key, corp, y)
-        if not emp or not fin:
+        if not fin:
             continue
         rev, op = fin["revenue"], fin.get("operating_income")
         pay = emp.get("payroll_total")
@@ -315,21 +398,70 @@ def main():
         print(f"[ERROR] corpCode 실패: {e}")
         return 1
 
-    rows = []
-    for code, name in WATCH:
+    # 전 상장사를 훑는다. 주요 기업을 앞에 두어 중간에 끊겨도 쓸 만한 것부터 남긴다.
+    head = [c for c, _ in WATCH if c in cmap]
+    codes = head + [c for c in sorted(cmap) if c not in set(head)]
+    limit = int(os.environ.get("WAGE_MAX_COMPANIES") or 0)
+    if limit:
+        codes = codes[:limit]
+    icache = load_industry_cache()
+    print(f"  대상 {len(codes):,}곳 · 업종 캐시 {len(icache):,}건")
+
+    rows, t0 = [], datetime.now(KST)
+    for i, code in enumerate(codes, 1):
         try:
-            r = build(code, name, key, cmap)
-            if r:
-                rows.append(r)
-        except Exception as e:
-            print(f"  [WARN] {name} 실패: {str(e)[:60]}")
+            r = build(code, CORP_NAME.get(code, code), key, cmap)
+        except Exception:
+            r = None
+        if r:
+            r["name"] = CORP_NAME.get(code, code)
+            corp = cmap.get(code)
+            r["induty"], r["industry"] = ksic_name(industry(key, corp, icache))
+            r.pop("scenarios", None)     # 화면에서 안 쓰는데 레코드의 절반을 차지한다
+            rows.append(r)
+        if i % 250 == 0:
+            el = (datetime.now(KST) - t0).total_seconds()
+            print(f"    {i:,}/{len(codes):,} · 확보 {len(rows):,}곳 · {el/60:.1f}분 경과", flush=True)
     if not rows:
         print("[ERROR] 전 종목 실패 — 기존 파일 보존.")
         return 1
+    try:
+        with open(IND_CACHE, "w", encoding="utf-8") as f:
+            json.dump(icache, f, ensure_ascii=False, separators=(",", ":"))
+    except OSError:
+        pass
+
+    # 업종별 집계 — ④ 가 '우리 회사가 업종 안에서 어디쯤인가'를 말할 수 있게 한다.
+    def med(v, dec=2):
+        v = sorted(x for x in v if x is not None)
+        if not v:
+            return None
+        m = v[len(v) // 2] if len(v) % 2 else (v[len(v) // 2 - 1] + v[len(v) // 2]) / 2
+        return round(m, dec)      # 짝수 개일 때 평균을 내며 6.779999999999999 같은 잡음이 생긴다
+
+    groups = {}
+    for r in rows:
+        if r.get("induty"):
+            groups.setdefault((r["induty"], r.get("industry")), []).append(r)
+    inds = []
+    for (mid, nm), g in sorted(groups.items()):
+        if len(g) < 5:            # 표본이 적으면 중위값이 의미 없다
+            continue
+        inds.append({
+            "code": mid, "name": nm or f"업종 {mid}", "n": len(g),
+            "med_pay": med([x.get("avg_pay") for x in g], 0),
+            "med_payroll_to_revenue": med([x.get("payroll_to_revenue_pct") for x in g]),
+            "med_op_margin": med([x.get("op_margin_pct") for x in g]),
+            "med_rev_per_head": med([x.get("revenue_per_head") for x in g]),
+            "med_temp_ratio": med([x.get("temp_ratio_pct") for x in g]),
+            "med_tenure": med([x.get("avg_tenure_yr") for x in g]),
+        })
+    print(f"  업종 {len(inds)}개 집계(표본 5곳 이상) · 회사 {len(rows):,}곳")
 
     out = {
         "generated_at": now.strftime("%Y-%m-%d %H:%M:%S KST"),
         "companies": rows,
+        "industries": inds,
         "method": {
             "source": "DART 사업보고서(11011) — empSttus(직원현황) + fnlttSinglAcntAll(손익)",
             "payroll_to_revenue": "연간급여총액 ÷ 매출액 — 인상 여력을 보는 핵심 비율",
