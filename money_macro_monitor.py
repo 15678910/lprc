@@ -615,7 +615,7 @@ def labor_share_block():
     return {
         "areas": out,
         "definition": "노동자 보수(D1) ÷ 국내총생산(B1GQ) — 경상가격·자국통화·전산업",
-        "source": "OECD SDMX DSD_NAMAIN10@DF_TABLE1 (키 불필요)",
+        "source": "OECD SDMX DSD_NAMAIN10@DF_TABLE1",
         "bok_note": ("한국은행은 같은 개념을 '노동자보수비율'(2022년까지 '노동소득분배율')로 공표하며 "
                      "분모가 요소비용국민소득이라 값이 더 크다(한국 68% 수준). 분모만 다를 뿐 둘 다 맞는 계산이고, "
                      "국제 비교에는 분모가 통일된 GDP 기준을 쓴다."),
@@ -668,7 +668,7 @@ def household_block():
     return {
         "areas": out,
         "definition": "1인당 실질 가계·비영리단체 최종소비지출 증가율(전년동기비)",
-        "source": "OECD SDMX DSD_HHDASH@DF_HHDASH_CTRY (키 불필요)",
+        "source": "OECD SDMX DSD_HHDASH@DF_HHDASH_CTRY",
         "why": ("실질임금은 '노동자 1인'이지만 이 지표는 '인구 1인'이라 가구원 수·고용률 변화까지 반영한다. "
                 "실질임금이 플러스인데 이 값이 0 부근이면, 오른 임금이 늘어난 부양 부담이나 "
                 "고용 구성 변화로 흡수됐다는 뜻이다."),
@@ -887,7 +887,7 @@ def temp_share_block():
         "areas": out,
         "kr_vs_oecd_x": (round(kr["pct"] / oe["pct"], 1) if kr and oe and oe["pct"] else None),
         "definition": "임시직(기간의 정함이 있는 고용) ÷ 전체 임금노동자 — OECD 공통 정의, 성별·연령 전체",
-        "source": "OECD SDMX DSD_TEMP@DF_TEMP_I (키 불필요)",
+        "source": "OECD SDMX DSD_TEMP@DF_TEMP_I",
         "caveat": ("⚠️ 이것은 '임금 격차'가 아니라 '비중'이다. 고용형태별 임금은 나라마다 조사 방식과 "
                    "비정규직 정의가 달라 국제 비교 가능한 공통 통계가 없다 — 임금 격차는 국내 통계"
                    "(통계청 경제활동인구조사 근로형태별 부가조사)로 봐야 한다. "
@@ -1028,7 +1028,7 @@ def _gap_wedges(gdp_q, rw_q, cpi_monthly):
                    "⚠️ '나머지'는 순수 분배분이 아니다 — 1인당 GDP는 인구 1인, 임금은 노동자 1인 "
                    "기준이라 고용률·인구구조 변화가 아직 섞여 있고, 감가상각 몫도 빠지지 않았다. "
                    "따라서 나머지는 분배 격차의 상한선이다."),
-        "source": "OECD SDMX DSD_NAMAIN10@DF_TABLE1 (B1GQ 명목·연쇄물량, D1, D11) — 키 불필요",
+        "source": "OECD SDMX DSD_NAMAIN10@DF_TABLE1 (B1GQ 명목·연쇄물량, D1, D11)",
     }
     print(f"  쐐기 분해 {a}→{b} 격차 {gap_pp:+.1f}%p = " +
           " + ".join(f"{p['label'].split(' —')[0]} {p['pp']:+.2f}" for p in out["parts"]))
@@ -1392,15 +1392,15 @@ def main():
         "seoul_property": seoul, "fiscal": fisc,
         "cpi_items": cpi_items, "wage": wage, "inequality": ineq, "labor_share": lshare, "household": hh, "growth_gap": gap, "temp_share": temp, "dependency": dep, "household_size": hh_size,
         "sources": {
-            "money": "OECD SDMX DF_MONAGG (M3, 월별, 자국통화) — 키 불필요",
+            "money": "OECD SDMX DF_MONAGG (M3, 월별, 자국통화)",
             "us_macro": "FRED M2SL·CPIAUCSL·W006RC1Q027SBEA·B235RC1Q027SBEA·DTWEXBGS",
             "property": "BIS 실질주거용부동산가격(FRED 경유, 2010=100, 명목÷물가)",
             "fx": "yfinance 최신 환율(비중 계산용 근사)",
             "seoul": "한국은행 ECOS — 통계표·항목 코드를 이름 키워드로 자동 탐색(하드코딩 없음)",
-            "labor_share": "OECD SDMX DSD_NAMAIN10@DF_TABLE1 — 노동자 보수÷GDP, 키 불필요",
-            "household": "OECD SDMX DSD_HHDASH@DF_HHDASH_CTRY — 1인당 실질 가계소비 증가율, 키 불필요",
+            "labor_share": "OECD SDMX DSD_NAMAIN10@DF_TABLE1 — 노동자 보수÷GDP",
+            "household": "OECD SDMX DSD_HHDASH@DF_HHDASH_CTRY — 1인당 실질 가계소비 증가율",
             "growth_gap": "OECD 1인당 실질GDP·소비 지수 + FRED 한국 임금지수 ÷ OECD 한국 CPI",
-            "temp_share": "OECD SDMX DSD_TEMP@DF_TEMP_I — 임시직 비중, 키 불필요",
+            "temp_share": "OECD SDMX DSD_TEMP@DF_TEMP_I — 임시직 비중",
             "dependency": "FRED LFEMTTTTKRQ647S(취업자)·POPTOTKRA647NWDB(총인구) — 1인당 부양 인구",
         },
         "caveats": [
