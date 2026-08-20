@@ -135,6 +135,32 @@ const sgn=v=>v==null||!isFinite(v)?'':v>=0?'+':'';
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let D=null,S=null,LASTMAP=null,CO=null;
 
+/* 회사 자료는 업종별로 쪼개 두고 필요한 것만 받는다.
+   1,883곳을 한 파일에 담으면 1MB 라, 회사를 고르지도 않은 사람까지 그걸 받게 된다.
+   첫 화면은 가벼운 목록(code·name·induty)만 쓰고, 회사를 고른 뒤 그 업종 파일을 받는다.
+   같은 업종 파일 하나면 ④ 상세와 '업종 내 위치' 비교군이 한꺼번에 해결된다. */
+const INDCACHE={}, INDLOAD={};
+function loadInd(k){
+  if(!k||INDCACHE[k]||INDLOAD[k])return;
+  INDLOAD[k]=1;
+  fetch(`./co/${encodeURIComponent(k)}.json?v=${(CO&&CO.generated_at)||''}`)
+    .then(r=>r.ok?r.json():[]).catch(()=>[])
+    .then(a=>{INDCACHE[k]=Array.isArray(a)?a:[];delete INDLOAD[k];render()});
+}
+const coIndex=()=>(CO&&CO.index)||[];
+function coMeta(code){return coIndex().find(x=>x.code===code)||null}
+/* 전체 레코드. 아직 안 받았으면 null 을 주고 내려받기를 건다(끝나면 render 재호출). */
+function coFull(code){
+  const m=coMeta(code); if(!m)return null;
+  const k=m.induty||'_etc';
+  if(!INDCACHE[k]){loadInd(k);return null}
+  return INDCACHE[k].find(x=>x.code===code)||null;
+}
+function coLoading(code){
+  const m=coMeta(code); return !!(m&&!INDCACHE[m.induty||'_etc']);
+}
+const coPeers=k=>INDCACHE[k]||[];
+
 /* 가맹점명 → 품목 분류 사전.
    카드 내역의 가맹점명은 표기가 제각각이라 완벽 분류는 불가능하다.
    흔한 상호·업종 키워드만 잡고, 못 잡은 건 '미분류'로 남겨 이용자가 확인하게 한다. */
@@ -278,10 +304,10 @@ window.onCSV=async file=>{
 window.setCo=v=>{S.co=v;save();render()};
 window.setCoF=(k,v)=>{S.coManual=S.coManual||{};S.coManual[k]=Math.max(0,parseFloat(v)||0);save();render()};
 function coCard(c){
-  const list=(CO&&CO.companies)||[];
+  const list=coIndex();
   const sel=S.co||'';
   const M=S.coManual||{};
-  const picked=sel==='manual'?null:list.find(x=>x.code===sel);
+  const picked=sel==='manual'?null:coFull(sel);
   const D_=picked||{headcount:M.headcount||0,avg_pay:M.avg_pay||0,
     payroll_total:(M.headcount||0)*(M.avg_pay||0),revenue:M.revenue||0,operating_income:M.op||0,year:'직접입력'};
   const pay=D_.payroll_total,rev=D_.revenue,op=D_.operating_income;
@@ -319,7 +345,9 @@ function coCard(c){
         <dd>· <b>외부감사 대상도 아닌 소규모</b>는 공시 자체가 없습니다. 단체협약 자료·급여명세로
             직접 확인하거나 ${ext('https://sminfo.mss.go.kr','중소기업현황정보시스템')}을 참고하세요.</dd>
       </dl></div>`:''}
-    ${!pay||!rev?`<div class="lab">회사를 선택하거나 직접 입력하면 지불능력 지표가 계산됩니다.</div>`:`
+    ${!pay||!rev?`<div class="lab">${coLoading(sel)
+        ?'⏳ 해당 업종 자료를 불러오는 중입니다…'
+        :'회사를 선택하거나 직접 입력하면 지불능력 지표가 계산됩니다.'}</div>`:`
     <div class="row">
       <div class="box"><div class="lab">직원 수 / 1인평균 연봉</div>
         <div class="big mono" style="font-size:1.15rem">${won(D_.headcount)}명</div>
@@ -358,9 +386,8 @@ function coCard(c){
    할 때 업종 중위값을 그 자리에서 대는 것이 실전에서 제일 세다.
    분위는 집계값이 아니라 같은 업종 회사 전체에서 그때그때 계산한다. */
 function industryBench(D_){
-  const all=(CO||{}).companies||[];
-  if(!D_||!D_.induty||!all.length)return '';
-  const peers=all.filter(x=>x.induty===D_.induty);
+  if(!D_||!D_.induty)return '';
+  const peers=coPeers(D_.induty);      // 이미 받아 둔 같은 업종 파일이 그대로 비교군이다
   if(peers.length<5)return '';
   // 낮을수록 좋은 지표(인건비 비중)는 방향을 뒤집어 '상위 N%' 의미를 맞춘다
   const M=[['avg_pay','1인평균 급여','원',1,0],
@@ -415,8 +442,8 @@ window.setGapSubF=(k,v)=>{S.gapSubM=S.gapSubM||{};S.gapSubM[k]=Math.max(0,parseF
 /* 격차 계산의 공통 입력·파생값 — ⑤(측정)와 ⑥(대안)이 같은 숫자를 쓰도록 한 곳에서 만든다.
    두 카드가 각자 계산하면 산식이 갈라질 수 있어 의도적으로 분리했다. */
 function gapCtx(){
-  const list=(CO&&CO.companies)||[],G=S.gap||{},SM=S.gapSubM||{},CM=S.coManual||{};
-  const main=(S.co&&S.co!=='manual')?list.find(x=>x.code===S.co):null;
+  const list=coIndex(),G=S.gap||{},SM=S.gapSubM||{},CM=S.coManual||{};
+  const main=(S.co&&S.co!=='manual')?coFull(S.co):null;
   const mName=main?main.name:(S.co==='manual'?'직접입력 회사':null);
   const mPay=main?main.avg_pay:(CM.avg_pay||null);
   const mRev=main?main.revenue:(CM.revenue||null);
@@ -438,7 +465,8 @@ function gapCtx(){
 
   // ── 원청 vs 하청 ──────────────────────────────────────────────
   const subSel=G.sub||'';
-  const subCo=(subSel&&subSel!=='manual')?list.find(x=>x.code===subSel):null;
+  // 협력사는 원청과 업종이 다를 수 있어 그 업종 파일을 따로 받게 된다(coFull 이 알아서 건다)
+  const subCo=(subSel&&subSel!=='manual')?coFull(subSel):null;
   const subD=subCo||(subSel==='manual'?{name:'하청(직접입력)',year:'직접입력',
     headcount:SM.headcount||0,avg_pay:SM.avg_pay||0,revenue:SM.revenue||0,operating_income:SM.op||0}:null);
   const sPct=(subD&&mPay&&subD.avg_pay)?(mPay-subD.avg_pay)/mPay*100:null;

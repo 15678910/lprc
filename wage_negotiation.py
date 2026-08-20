@@ -458,10 +458,36 @@ def main():
         })
     print(f"  업종 {len(inds)}개 집계(표본 5곳 이상) · 회사 {len(rows):,}곳")
 
+    # 업종별로 쪼개 쓴다. 한 파일에 다 담으면 1MB 가 되어 휴대폰에서 첫 화면이 느리다.
+    # 화면은 가벼운 목록만 먼저 받고, 회사를 고른 뒤 그 업종 파일만 더 받는다.
+    co_dir = os.path.join(BASE_DIR, "docs", "co")
+    os.makedirs(co_dir, exist_ok=True)
+    buckets = {}
+    for r in rows:
+        buckets.setdefault(r.get("induty") or "_etc", []).append(r)
+    for k, g in buckets.items():
+        with open(os.path.join(co_dir, f"{k}.json"), "w", encoding="utf-8") as f:
+            json.dump(g, f, ensure_ascii=False, separators=(",", ":"))
+    # 지난 실행에서 생겼다가 이번엔 빈 업종 파일은 지운다 — 옛 데이터가 남으면 안 된다
+    for fn in os.listdir(co_dir):
+        if fn.endswith(".json") and fn[:-5] not in buckets:
+            try:
+                os.remove(os.path.join(co_dir, fn))
+            except OSError:
+                pass
+    big = max((len(json.dumps(g, ensure_ascii=False).encode()) for g in buckets.values()), default=0)
+    print(f"  업종 파일 {len(buckets)}개 (가장 큰 것 {big/1024:.0f}KB)")
+
+    # 목록은 고르는 데 필요한 것만 — 이름·업종·연도. 나머지는 업종 파일에 있다.
+    # 업종 이름은 industries 에 이미 있으므로 목록에는 코드만 둔다(목록 크기 약 30% 절감).
+    index = [{"code": r["code"], "name": r["name"],
+              "induty": r.get("induty"), "year": r.get("year")} for r in rows]
+
     out = {
         "generated_at": now.strftime("%Y-%m-%d %H:%M:%S KST"),
-        "companies": rows,
+        "index": index,
         "industries": inds,
+        "detail_dir": "./co/",
         "method": {
             "source": "DART 사업보고서(11011) — empSttus(직원현황) + fnlttSinglAcntAll(손익)",
             "payroll_to_revenue": "연간급여총액 ÷ 매출액 — 인상 여력을 보는 핵심 비율",
