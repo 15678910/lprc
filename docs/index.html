@@ -352,7 +352,22 @@ addEventListener('compositionend',e=>{
   if(!e.target||e.target.id!=='coq')return;
   IME=false; setCoQ(e.target.value);
 },true);
-window.setCoQ=v=>{S.coQ=v;save();if(!IME)render()};
+/* 조합 중이라고 결과까지 멈추면 '삼성' 을 다 쳐도 목록은 '삼' 에 머문다.
+   마지막 음절은 다음 글자를 치기 전까지 확정되지 않기 때문이다.
+   그래서 조합 중에는 **입력칸은 건드리지 않고 결과 목록만** 갈아 끼운다.
+   조합이 깨지는 건 검색칸 노드가 바뀔 때이지, 옆 목록이 바뀌는 건 상관없다. */
+window.setCoQ=v=>{
+  S.coQ=v;save();
+  if(!IME){render();return}
+  const box=$('cores');
+  if(!box)return;
+  /* 조합 중간에는 '삼ㅅ' · '삼서' 처럼 아직 말이 안 되는 상태를 지난다.
+     그때마다 '찾은 회사가 없습니다' 로 갈아 끼우면 목록이 깜빡인다.
+     결과가 있을 때만 바꾸고, 없으면 직전 목록을 그대로 둔다.
+     조합이 끝나면 render() 가 돌아 어차피 정확한 상태로 맞춰진다. */
+  const r=coSearch(v);
+  if(!v||(r&&r.n))box.innerHTML=coResults(v);
+};
 window.pickCo=v=>{S.co=v;S.coQ='';save();IME=false;render()};
 window.coKey=e=>{                     // 엔터로 첫 결과 선택 — 마우스로 옮겨가지 않아도 되게
   // 조합을 확정하는 엔터는 검색용 엔터가 아니다. isComposing 으로 걸러낸다.
@@ -397,24 +412,30 @@ function coPicker(sel){
          <span class="lab">· ${esc(m.code)} · ${esc(String(m.year))}년</span></div></div>`,
     '↩ 다른 회사 찾기');
 
-  const q=S.coQ||'', res=coSearch(q);
-  const hits=res?res.hits.map(x=>
-    `<button class="ghost" style="text-align:left;justify-content:flex-start"
-       onclick="pickCo('${esc(x.code)}')">${esc(x.name)}
-       <span class="lab">· ${esc(x.code)} · ${esc(String(x.year))}년</span></button>`).join(''):'';
+  const q=S.coQ||'';
   return `<div class="noprint" style="margin-bottom:10px">
     <input type="text" id="coq" value="${esc(q)}" oninput="setCoQ(this.value)" onkeydown="coKey(event)"
       placeholder="회사명 또는 종목코드로 검색 (예: 삼성전자, 000660)"
       style="width:100%;max-width:420px;background:#0d1219;border:1px solid var(--line);
              color:var(--tx);border-radius:7px;padding:8px 11px;font-size:.95rem">
-    ${q?(res.n?`<div class="lab" style="margin:7px 0 4px">${res.n}곳 중
-        ${Math.min(res.n,10)}곳 표시 · 엔터를 누르면 맨 위를 고릅니다</div>
-      <div style="display:flex;flex-direction:column;gap:5px;max-width:420px">${hits}</div>`
-      :`<div class="lab" style="margin-top:7px">'${esc(q)}' 로 찾은 회사가 없습니다.
-        비상장사이거나 아직 수록되지 않았을 수 있습니다 — 아래 '직접 입력'을 쓰세요.</div>`)
-     :`<div class="lab" style="margin-top:7px">상장사 ${won(coIndex().length)}곳을 검색합니다.</div>`}
+    <div id="cores">${coResults(q)}</div>
     <button class="ghost" style="margin-top:8px" onclick="pickCo('manual')">직접 입력 (비상장·미수록)</button>
   </div>`;
+}
+
+/* 결과 목록만 따로 뽑아 둔다 — 한글 조합 중에는 이 부분만 다시 그린다. */
+function coResults(q){
+  q=q||'';
+  if(!q)return `<div class="lab" style="margin-top:7px">상장사 ${won(coIndex().length)}곳을 검색합니다.</div>`;
+  const res=coSearch(q);
+  if(!res||!res.n)return `<div class="lab" style="margin-top:7px">'${esc(q)}' 로 찾은 회사가 없습니다.
+    비상장사이거나 아직 수록되지 않았을 수 있습니다 — 아래 '직접 입력'을 쓰세요.</div>`;
+  return `<div class="lab" style="margin:7px 0 4px">${res.n}곳 중
+      ${Math.min(res.n,10)}곳 표시 · 엔터를 누르면 맨 위를 고릅니다</div>
+    <div style="display:flex;flex-direction:column;gap:5px;max-width:420px">${
+      res.hits.map(x=>`<button class="ghost" style="text-align:left;justify-content:flex-start"
+        onclick="pickCo('${esc(x.code)}')">${esc(x.name)}
+        <span class="lab">· ${esc(x.code)} · ${esc(String(x.year))}년</span></button>`).join('')}</div>`;
 }
 window.setCoF=(k,v)=>{S.coManual=S.coManual||{};S.coManual[k]=Math.max(0,parseFloat(v)||0);save();render()};
 function coCard(c){
