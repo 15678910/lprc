@@ -339,10 +339,24 @@ window.onCSV=async file=>{
 
 /* ── ④ 회사별 지불능력 ── 노동측 근거(물가)와 사측 근거(재무)를 같은 화면에 둔다 */
 window.setCo=v=>{S.co=v;save();render()};
-window.setCoQ=v=>{S.coQ=v;save();render()};
-window.pickCo=v=>{S.co=v;S.coQ='';save();render()};
+/* 한글은 IME 가 여러 자모를 모아 한 글자로 조합한다. 조합이 끝나기 전에
+   render() 가 innerHTML 을 갈아치우면 그 조합이 끊겨 '삼성' 이 'ㅅㅏㅁㅅㅓㅇ' 으로
+   풀려 버린다. 조합 중에는 값만 담아 두고 다시 그리지 않는다.
+   조합이 끝나는 순간(compositionend)에 한 번 그리면 된다. */
+let IME=false;
+/* oncompositionstart 는 HTML 인라인 이벤트 속성이 아니다 — 태그에 적어도 브라우저가
+   무시한다(onclick·oninput 과 달리 표준 목록에 없다). document 에 한 번 걸어 둔다.
+   검색칸은 render() 마다 새로 만들어지므로 위임이 아니면 매번 다시 붙여야 한다. */
+addEventListener('compositionstart',e=>{if(e.target&&e.target.id==='coq')IME=true},true);
+addEventListener('compositionend',e=>{
+  if(!e.target||e.target.id!=='coq')return;
+  IME=false; setCoQ(e.target.value);
+},true);
+window.setCoQ=v=>{S.coQ=v;save();if(!IME)render()};
+window.pickCo=v=>{S.co=v;S.coQ='';save();IME=false;render()};
 window.coKey=e=>{                     // 엔터로 첫 결과 선택 — 마우스로 옮겨가지 않아도 되게
-  if(e.key!=='Enter')return;
+  // 조합을 확정하는 엔터는 검색용 엔터가 아니다. isComposing 으로 걸러낸다.
+  if(e.key!=='Enter'||e.isComposing||IME)return;
   const r=coSearch(S.coQ);
   if(r&&r.hits.length)pickCo(r.hits[0].code);
 };
@@ -389,7 +403,7 @@ function coPicker(sel){
        onclick="pickCo('${esc(x.code)}')">${esc(x.name)}
        <span class="lab">· ${esc(x.code)} · ${esc(String(x.year))}년</span></button>`).join(''):'';
   return `<div class="noprint" style="margin-bottom:10px">
-    <input type="text" value="${esc(q)}" oninput="setCoQ(this.value)" onkeydown="coKey(event)"
+    <input type="text" id="coq" value="${esc(q)}" oninput="setCoQ(this.value)" onkeydown="coKey(event)"
       placeholder="회사명 또는 종목코드로 검색 (예: 삼성전자, 000660)"
       style="width:100%;max-width:420px;background:#0d1219;border:1px solid var(--line);
              color:var(--tx);border-radius:7px;padding:8px 11px;font-size:.95rem">
