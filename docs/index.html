@@ -358,15 +358,21 @@ addEventListener('compositionend',e=>{
    조합이 깨지는 건 검색칸 노드가 바뀔 때이지, 옆 목록이 바뀌는 건 상관없다. */
 window.setCoQ=v=>{
   S.coQ=v;save();
-  if(!IME){render();return}
   const box=$('cores');
-  if(!box)return;
-  /* 조합 중간에는 '삼ㅅ' · '삼서' 처럼 아직 말이 안 되는 상태를 지난다.
-     그때마다 '찾은 회사가 없습니다' 로 갈아 끼우면 목록이 깜빡인다.
-     결과가 있을 때만 바꾸고, 없으면 직전 목록을 그대로 둔다.
-     조합이 끝나면 render() 가 돌아 어차피 정확한 상태로 맞춰진다. */
-  const r=coSearch(v);
-  if(!v||(r&&r.n))box.innerHTML=coResults(v);
+  if(!box){render();return}
+  /* 검색어를 칠 때는 **절대 render() 를 부르지 않는다.** 결과 목록만 갈아 끼운다.
+     한글은 한 음절이 끝나는 순간(compositionend)과 다음 음절이 시작되는 순간
+     (compositionstart)이 붙어서 온다. '삼' 을 확정하고 곧바로 'ㅅ' 이 시작되는데,
+     그 사이에 화면을 다시 그려 입력칸을 새 노드로 갈면 방금 시작된 조합이 그
+     자리에서 깨진다. 검색어는 다른 카드에 영향을 주지 않으니 다시 그릴 이유도 없다. */
+  if(IME){
+    /* 조합 중간에는 '삼ㅅ' · '삼서' 처럼 아직 말이 안 되는 상태를 지난다.
+       그때마다 '찾은 회사가 없습니다' 로 갈아 끼우면 목록이 깜빡인다.
+       결과가 있을 때만 바꾸고, 없으면 직전 목록을 그대로 둔다. */
+    const r=coSearch(v);
+    if(!(!v||(r&&r.n)))return;
+  }
+  box.innerHTML=coResults(v);
 };
 window.pickCo=v=>{S.co=v;S.coQ='';save();IME=false;render()};
 window.coKey=e=>{                     // 엔터로 첫 결과 선택 — 마우스로 옮겨가지 않아도 되게
