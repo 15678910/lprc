@@ -116,6 +116,7 @@
   <div class="sub">①②③ <b>나의 실질임금</b> — 카드내역 CSV로 체감물가를 내고 명목임금과 비교합니다.<br>
     ④ <b>임금단협</b> — 회사 지불능력(DART)과 인상률 산식 여섯 가지를 같은 화면에 놓습니다.<br>
     ⑤⑥ <b>노동 양극화 해소</b> — 정규직·비정규직, 원청·하청, 사내하도급 격차를 재고 좁히는 경로별 비용을 계산합니다.<br>
+    ⑩ <b>공공부문</b> — 공공기관이면 ④ 대신 여기를 쓰세요. 알리오 공시 355곳의 보수·근속·고용구조를 비교합니다.<br>
     입력값은 이 브라우저에만 저장되며 서버로 전송되지 않습니다. 단체협약 근거자료로 인쇄할 수 있습니다.</div>
 </header>
 <div id="app"><div class="card">데이터를 불러오는 중…</div></div>
@@ -147,6 +148,40 @@ function loadInd(k){
     .then(r=>r.ok?r.json():[]).catch(()=>[])
     .then(a=>{INDCACHE[k]=Array.isArray(a)?a:[];delete INDLOAD[k];render()});
 }
+/* 공공부문(알리오)도 같은 방식으로 쪼개 둔다 — 목록 66KB + 기능별 그룹 파일.
+   다만 목록조차 첫 화면에 필요하지 않다. ⑩은 페이지 맨 아래에 있고 공공기관
+   노동자만 쓰는 카드라, 나머지 화면이 다 뜬 뒤에 따로 받는다. */
+let PS=null; const PSCACHE={}, PSLOAD={};
+let psFail=false;
+function loadPS(){
+  if(PS||PSLOAD.__ix)return; PSLOAD.__ix=1;
+  fetch('./public_sector.json?v='+Date.now(),{cache:'no-store'})
+    .then(r=>r.ok?r.json():null).catch(()=>null)
+    .then(j=>{PS=j;psFail=!j;delete PSLOAD.__ix;render()});
+}
+function loadPSG(g){
+  if(!g||PSCACHE[g]||PSLOAD[g])return;
+  PSLOAD[g]=1;
+  fetch(`${(PS&&PS.detail_dir)||'./ps/'}${encodeURIComponent(g)}.json?v=${(PS&&PS.generated)||''}`)
+    .then(r=>r.ok?r.json():[]).catch(()=>[])
+    .then(a=>{PSCACHE[g]=Array.isArray(a)?a:[];delete PSLOAD[g];render()});
+}
+const psIndex=()=>(PS&&PS.index)||[];
+function psMeta(id){return psIndex().find(x=>x.id===id)||null}
+/* 전체 레코드. 아직 안 받았으면 null 을 주고 내려받기를 건다(끝나면 render 재호출). */
+function psFull(id){
+  const m=psMeta(id); if(!m)return null;
+  if(!PSCACHE[m.g]){loadPSG(m.g);return null}
+  return PSCACHE[m.g].find(x=>x.id===id)||null;
+}
+const psPeers=g=>PSCACHE[g]||[];
+/* 결산 구간의 마지막 값. 예산연도(맨 끝)는 결산과 기준이 달라 기본 비교에서 뺀다. */
+function psLast(seq){
+  if(!seq)return null;
+  for(let i=Math.min(4,seq.length-1);i>=0;i--) if(seq[i]!=null)return seq[i];
+  return null;
+}
+
 const coIndex=()=>(CO&&CO.index)||[];
 function coMeta(code){return coIndex().find(x=>x.code===code)||null}
 /* 전체 레코드. 아직 안 받았으면 null 을 주고 내려받기를 건다(끝나면 render 재호출). */
@@ -207,8 +242,10 @@ function init(d){
      amounts:st.amounts||Object.fromEntries(items.map(i=>[i.key,0])),
      subs:st.subs??0, spendManual:st.spendManual??300,
      intNow:st.intNow??0, intPrev:st.intPrev??0,
-     co:st.co||'', coManual:st.coManual||{}, share:st.share??30, caseRate:st.caseRate??0,
+     co:st.co||'', coQ:st.coQ||'', coManual:st.coManual||{},
+     share:st.share??30, caseRate:st.caseRate??0,
      gap:st.gap||{}, gapSubM:st.gapSubM||{},
+     ps:st.ps||'', psRate:st.psRate??0,
      wage:st.wage??((d.wage&&d.wage.nominal_yoy_pct)||0)};
   render();
 }
@@ -302,9 +339,71 @@ window.onCSV=async file=>{
 
 /* ── ④ 회사별 지불능력 ── 노동측 근거(물가)와 사측 근거(재무)를 같은 화면에 둔다 */
 window.setCo=v=>{S.co=v;save();render()};
+window.setCoQ=v=>{S.coQ=v;save();render()};
+window.pickCo=v=>{S.co=v;S.coQ='';save();render()};
+window.coKey=e=>{                     // 엔터로 첫 결과 선택 — 마우스로 옮겨가지 않아도 되게
+  if(e.key!=='Enter')return;
+  const r=coSearch(S.coQ);
+  if(r&&r.hits.length)pickCo(r.hits[0].code);
+};
+
+/* 상장사가 1,883곳이다. 드롭다운에 다 넣으면 스크롤로는 못 찾는다 — 회사명이나
+   종목코드로 찾게 한다. 앞에서부터 일치하는 것을 위로 올린다:
+   '삼성'을 쳤을 때 '삼성전자'가 '에이치엘비삼성'보다 먼저 나와야 한다. */
+function coSearch(q){
+  q=(q||'').trim().toLowerCase();
+  if(!q)return null;
+  const out=[];
+  for(const x of coIndex()){
+    const n=(x.name||'').toLowerCase();
+    const r=n.startsWith(q)?0:(x.code||'').startsWith(q)?1:n.includes(q)?2:-1;
+    if(r>=0)out.push([r,x]);
+  }
+  // 같은 등급이면 짧은 이름이 먼저 — '삼성전자' 가 '삼성전자우' 보다 위로 온다
+  out.sort((a,b)=>a[0]-b[0]||a[1].name.length-b[1].name.length
+                 ||a[1].name.localeCompare(b[1].name,'ko'));
+  return {n:out.length, hits:out.slice(0,10).map(h=>h[1])};
+}
+
+/* 회사 고르는 칸. 고르기 전에는 검색창, 고른 뒤에는 무엇을 골랐는지 보여준다. */
+function coPicker(sel){
+  /* 고른 회사가 무엇인지는 **인쇄물에 남아야 한다** — 교섭 자료로 내는 종이에
+     회사명이 없으면 무엇을 계산한 표인지 알 수 없다. 버튼만 noprint 로 숨긴다. */
+  const wrap=(s,btn)=>`<div class="row" style="margin-bottom:10px">${s}
+    <button class="ghost noprint" style="align-self:center" onclick="pickCo('')">${btn}</button></div>`;
+  if(sel==='manual')return wrap(
+    `<div class="box" style="flex:1;min-width:220px">
+       <div class="lab">선택</div><div style="font-weight:600">직접 입력 (비상장·미수록)</div></div>`,
+    '↩ 회사 검색으로');
+  const m=sel?coMeta(sel):null;
+  if(m)return wrap(
+    `<div class="box" style="flex:1;min-width:220px">
+       <div class="lab">선택한 회사</div>
+       <div style="font-weight:600">${esc(m.name)}
+         <span class="lab">· ${esc(m.code)} · ${esc(String(m.year))}년</span></div></div>`,
+    '↩ 다른 회사 찾기');
+
+  const q=S.coQ||'', res=coSearch(q);
+  const hits=res?res.hits.map(x=>
+    `<button class="ghost" style="text-align:left;justify-content:flex-start"
+       onclick="pickCo('${esc(x.code)}')">${esc(x.name)}
+       <span class="lab">· ${esc(x.code)} · ${esc(String(x.year))}년</span></button>`).join(''):'';
+  return `<div class="noprint" style="margin-bottom:10px">
+    <input type="text" value="${esc(q)}" oninput="setCoQ(this.value)" onkeydown="coKey(event)"
+      placeholder="회사명 또는 종목코드로 검색 (예: 삼성전자, 000660)"
+      style="width:100%;max-width:420px;background:#0d1219;border:1px solid var(--line);
+             color:var(--tx);border-radius:7px;padding:8px 11px;font-size:.95rem">
+    ${q?(res.n?`<div class="lab" style="margin:7px 0 4px">${res.n}곳 중
+        ${Math.min(res.n,10)}곳 표시 · 엔터를 누르면 맨 위를 고릅니다</div>
+      <div style="display:flex;flex-direction:column;gap:5px;max-width:420px">${hits}</div>`
+      :`<div class="lab" style="margin-top:7px">'${esc(q)}' 로 찾은 회사가 없습니다.
+        비상장사이거나 아직 수록되지 않았을 수 있습니다 — 아래 '직접 입력'을 쓰세요.</div>`)
+     :`<div class="lab" style="margin-top:7px">상장사 ${won(coIndex().length)}곳을 검색합니다.</div>`}
+    <button class="ghost" style="margin-top:8px" onclick="pickCo('manual')">직접 입력 (비상장·미수록)</button>
+  </div>`;
+}
 window.setCoF=(k,v)=>{S.coManual=S.coManual||{};S.coManual[k]=Math.max(0,parseFloat(v)||0);save();render()};
 function coCard(c){
-  const list=coIndex();
   const sel=S.co||'';
   const M=S.coManual||{};
   const picked=sel==='manual'?null:coFull(sel);
@@ -317,18 +416,13 @@ function coCard(c){
     const add=pay*r/100;
     return{r,add,opAfter:op-add,opmAfter:(op-add)/rev*100,drop:add/rev*100};
   }):[];
-  const opts=`<option value="">— 회사 선택 —</option>`+
-    list.map(x=>`<option value="${esc(x.code)}"${x.code===sel?' selected':''}>${esc(x.name)} (${x.year}년)</option>`).join('')+
-    `<option value="manual"${sel==='manual'?' selected':''}>직접 입력 (비상장·미수록)</option>`;
   const mi=(k,lab,ph)=>`<div style="flex:1;min-width:130px"><div class="lab">${lab}</div>
     <input type="number" step="1" min="0" value="${M[k]||0}" oninput="setCoF('${k}',this.value)" style="width:100%" placeholder="${ph||''}"></div>`;
   return `<div class="card">
     <h2>④ 회사별 지불능력 — 사측 근거</h2>
     <div class="hint">임금협상에서 노동측은 <b>생계비(물가)</b>를, 사측은 <b>지불능력(재무)</b>을 근거로 듭니다.
       위 ②③이 앞의 절반이라면 여기가 뒤의 절반입니다. 상장사는 DART 사업보고서에서 자동으로 채워집니다.</div>
-    <div class="row noprint" style="margin-bottom:10px">
-      <select onchange="setCo(this.value)" style="background:#0d1219;border:1px solid var(--line);color:var(--tx);border-radius:7px;padding:7px 10px;font-size:.93rem;min-width:230px">${opts}</select>
-    </div>
+    ${coPicker(sel)}
     ${sel==='manual'?`<div class="row" style="margin-bottom:12px">
       ${mi('headcount','직원 수 (명)')}${mi('avg_pay','1인평균 연봉 (원)')}
       ${mi('revenue','연 매출액 (원)')}${mi('op','연 영업이익 (원)')}
@@ -365,7 +459,7 @@ function coCard(c){
     ${scen.length?`<table style="margin-top:14px"><thead><tr>
         <th>인상률</th><th>인건비 증가액</th><th>영업이익 (후)</th><th>영업이익률 (후)</th><th>하락폭</th>
       </tr></thead><tbody>${scen.map(s=>`<tr${Math.abs(s.r-c.felt)<0.01?' style="background:rgba(210,153,34,.09)"':''}>
-        <td>${fmt(s.r)}%${Math.abs(s.r-c.felt)<0.01?' <span class="lab">← 내 체감물가</span>':''}</td>
+        <td>${fmt(s.r)}%${Math.abs(s.r-c.felt)<0.01?' <span class="lab">← 나의 체감물가</span>':''}</td>
         <td class="mono">${won(s.add/1e8)}억원</td>
         <td class="mono">${won(s.opAfter/1e8)}억원</td>
         <td class="mono ${sc(s.opmAfter)}">${fmt(s.opmAfter)}%</td>
@@ -1010,7 +1104,7 @@ function growthGapBlock(){
       · 1인당 GDP는 인구로 나눈 값이라 <b>고용률·인구구조 변화</b>에도 영향받습니다.<br>
       · 그럼에도 <b>모든 구간에서 부호가 같습니다</b> — 코로나 이전에도, 이후에도, 최근 3년에도
         GDP가 임금보다 빨랐습니다. 일시적 현상이 아니라 <b>지속된 방향</b>입니다.<br>
-      · 여기 실질임금은 <b>공식 물가</b> 기준입니다. 위 ②에서 낸 <b>내 체감물가</b>로 다시 계산하면
+      · 여기 실질임금은 <b>공식 물가</b> 기준입니다. 위 ②에서 낸 <b>나의 체감물가</b>로 다시 계산하면
         격차는 더 커집니다 — 공식 물가에 없는 대출이자와 구독료 때문입니다.</div>
 
     <div class="note">🔗 <b>이 문제와 이 계산기의 관계</b><br>
@@ -1062,7 +1156,7 @@ function householdBlock(c){
         <div class="big mono ${sc(a.avg4q_pct)}" style="font-size:1.05rem">${a.avg4q_pct>=0?'+':''}${fmt(a.avg4q_pct,2)}%</div>
         <div class="lab">최근 4분기 평균 · ${esc(a.asof)} ${a.yoy_pct>=0?'+':''}${fmt(a.yoy_pct,2)}%</div></div>`).join('')}
     </div>
-    ${rw!=null?`<div class="note">📖 내 체감물가 기준 실질임금 <b>${c.realFelt>=0?'+':''}${fmt(c.realFelt)}%</b> vs
+    ${rw!=null?`<div class="note">📖 나의 체감물가 기준 실질임금 <b>${c.realFelt>=0?'+':''}${fmt(c.realFelt)}%</b> vs
       한국 1인당 실질소비 <b>${kr.avg4q_pct>=0?'+':''}${fmt(kr.avg4q_pct,2)}%</b> —
       차이 <b class="${rw>=0?'pos':'neg'}">${rw>=0?'+':''}${fmt(rw)}%p</b>.
       ${rw>1?'임금이 소비보다 빠르게 늘고 있습니다 — 늘어난 몫이 저축·부채상환으로 갔거나, 내 물가 입력이 실제보다 낮을 수 있습니다.'
@@ -1509,9 +1603,238 @@ function formulaTable(c,D_,picked){
    ⑥ 처럼 상태에 따라 제목이 달라지는 카드가 있어, 박아 두면 곧 어긋난다.
    render() 가 #app 을 통째로 다시 그리므로 그때마다 다시 만든다. */
 let navObs=null;
+/* ── ⑩ 공공부문 ── ④는 DART 공시에 기대서 상장사만 다룬다. 공공기관 노동자·노조는
+   그 화면을 쓸 수 없어 별도 카드를 둔다. 알리오는 355곳을 같은 서식으로 공시하므로
+   ④보다 오히려 비교가 깨끗하다. 다만 '지불능력' 산식은 성립하지 않는다 —
+   공공기관은 이익을 내는 곳이 아니고, 총인건비 인상률을 기재부 지침이 정한다. */
+window.setPs=v=>{S.ps=v;save();render()};
+window.setPsR=v=>{S.psRate=Math.max(0,parseFloat(v)||0);save();render()};
+
+const psMan=v=>v==null?'—':fmt(v/10,0)+'만원';      // 알리오 보수 단위는 천원
+const psYr=v=>v==null?'—':fmt(v/12,1)+'년';          // 근속 단위는 월
+
+function psCard(){
+  if(!PS||!PS.index)return `<div class="card">
+    <h2>⑩ 공공부문 — 알리오 공시 기준</h2>
+    <div class="hint">④는 DART 공시에 기대므로 <b>상장사만</b> 다룹니다. 공공기관은 여기를 쓰세요.</div>
+    <div class="lab">${psFail
+      ?'공공기관 자료를 불러오지 못했습니다. 새로고침해 주세요.'
+      :'⏳ 공공기관 자료를 불러오는 중입니다…'}</div></div>`;
+
+  const GN={}; (PS.groups||[]).forEach(g=>GN[g.code]=g.name);
+  const GB={}; (PS.groups||[]).forEach(g=>GB[g.code]=g);
+  const sel=S.ps||'', meta=sel?psMeta(sel):null, o=sel?psFull(sel):null;
+  const yr=(PS.basis&&PS.basis.settled)?PS.basis.settled[PS.basis.settled.length-1]:'';
+
+  // 기관 선택 — 기능별 그룹으로 묶는다. 355개를 한 줄로 늘어놓으면 못 찾는다.
+  const byG={}; psIndex().forEach(x=>{(byG[x.g]=byG[x.g]||[]).push(x)});
+  const opts=`<option value="">— 기관 선택 (${psIndex().length}곳) —</option>`+
+    (PS.groups||[]).map(g=>{
+      const xs=byG[g.code]||[]; if(!xs.length)return '';
+      return `<optgroup label="${esc(g.name)} (${xs.length}곳)">`+
+        xs.map(x=>`<option value="${esc(x.id)}"${x.id===sel?' selected':''}>${esc(x.name)}</option>`).join('')+
+        `</optgroup>`;
+    }).join('');
+
+  // 기관을 안 골랐을 때도 쓸모가 있어야 한다 — 기능별 중위값 표를 먼저 보여준다.
+  const gTable=`<div style="overflow-x:auto"><table><thead><tr>
+      <th>기능별 분류</th><th>기관</th><th>평균보수</th><th>신입 초임</th>
+      <th>평균근속</th><th>여성/남성</th><th>소속외 비중</th></tr></thead>
+    <tbody>${(PS.groups||[]).map(g=>`<tr${meta&&meta.g===g.code?' style="background:rgba(210,153,34,.09)"':''}>
+      <td>${esc(g.name)}${meta&&meta.g===g.code?' <span class="lab">← 내 기관</span>':''}</td>
+      <td class="mono">${g.n}곳</td>
+      <td class="mono">${psMan(g.pay)}</td>
+      <td class="mono">${psMan(g.pay_new)}</td>
+      <td class="mono">${psYr(g.ten)}</td>
+      <td class="mono">${fmt(g.gap_f,1)}%</td>
+      <td class="mono">${fmt(g.out_share,1)}%</td></tr>`).join('')}
+      <tr style="border-top:2px solid var(--line)"><td><b>전체</b></td>
+        <td class="mono">${PS.all.n}곳</td><td class="mono">${psMan(PS.all.pay)}</td>
+        <td class="mono">${psMan(PS.all.pay_new)}</td><td class="mono">${psYr(PS.all.ten)}</td>
+        <td class="mono">${fmt(PS.all.gap_f,1)}%</td><td class="mono">${fmt(PS.all.out_share,1)}%</td></tr>
+    </tbody></table></div>
+    <div class="lab" style="margin-top:6px">모두 ${esc(String(yr))}년 결산 기준 <b>중위값</b>입니다.
+      평균이 아니라 중위값이라 몇몇 큰 기관에 끌려가지 않습니다.</div>`;
+
+  if(!sel)return `<div class="card">
+    <h2>⑩ 공공부문 — 알리오 공시 기준</h2>
+    <div class="hint">④는 DART 공시에 기대므로 <b>상장사만</b> 다룹니다. 공공기관은 여기를 쓰세요.
+      알리오는 ${psIndex().length}곳이 <b>같은 서식으로</b> 공시하기 때문에 기관 간 비교가 오히려 깨끗합니다.</div>
+    <div class="row noprint" style="margin-bottom:12px">
+      <select onchange="setPs(this.value)" style="background:#0d1219;border:1px solid var(--line);color:var(--tx);border-radius:7px;padding:7px 10px;font-size:.93rem;min-width:280px">${opts}</select>
+    </div>
+    ${gTable}
+    ${psNote()}
+  </div>`;
+
+  if(!o)return `<div class="card">
+    <h2>⑩ 공공부문 — 알리오 공시 기준</h2>
+    <div class="row noprint" style="margin-bottom:12px">
+      <select onchange="setPs(this.value)" style="background:#0d1219;border:1px solid var(--line);color:var(--tx);border-radius:7px;padding:7px 10px;font-size:.93rem;min-width:280px">${opts}</select>
+    </div>
+    <div class="lab">⏳ ${esc(GN[meta.g]||'')} 그룹 자료를 불러오는 중입니다…</div></div>`;
+
+  const d=o.d||{};
+  const pay=psLast(d.pay), payM=psLast(d.pay_m), payF=psLast(d.pay_f);
+  const ten=psLast(d.ten), tenM=psLast(d.ten_m), tenF=psLast(d.ten_f);
+  // 초임 0은 '0원'이 아니라 그 해 신규채용이 없었다는 뜻이다. 값으로 쓰면 안 된다.
+  const nwRaw=psLast(d.pay_new), nw=nwRaw>0?nwRaw:null;
+  const all=psLast(d.emp_all), out=psLast(d.emp_out), reg=psLast(d.emp_reg);
+  const muh=psLast(d.emp_muhan), fix=psLast(d.emp_fixed), hc=psLast(d.hc);
+  const peers=psPeers(meta.g), bench=GB[meta.g]||PS.all;
+
+  // 그룹 내 순위 — ④의 '업종 내 위치'와 같은 취지다. 숫자 하나만으로는
+  // 그게 높은지 낮은지 알 수 없어 형평성 근거를 못 만든다.
+  const rank=(key,val,pos)=>{
+    if(val==null||peers.length<5)return '';
+    // pos=true 면 0을 뺀다. 신입 초임 0은 '초임이 0원'이 아니라 그 해 신규채용이
+    // 없었다는 뜻이라, 등수에 넣으면 꼴찌로 잡혀 없는 격차를 만들어 낸다.
+    const xs=peers.map(p=>psLast((p.d||{})[key])).filter(x=>x!=null&&(!pos||x>0)).sort((a,b)=>a-b);
+    if(xs.length<5)return '';
+    return `<b>${xs.length}곳 중 ${xs.filter(x=>x>val).length+1}위</b> <span style="opacity:.75">(높은 순)</span>`;
+  };
+
+  // 근속으로 설명되는 부분과 남는 부분.
+  // 보수 = 초임 + k×근속 이라는 가장 단순한 직선을 이 기관의 공시값만으로 세운다.
+  //   k = (평균보수 − 신입 초임) ÷ 평균근속
+  // 신입 초임을 절편으로 쓰는 게 핵심이다. '보수가 근속에 비례한다'고 두면
+  // 근속 0년의 보수가 0이 되어 버려 격차를 크게 부풀린다.
+  let dec=null;
+  if(pay!=null&&nw!=null&&ten&&tenM&&tenF&&payM!=null&&payF!=null&&ten>0){
+    const k=(pay-nw)/ten;
+    const eM=nw+k*tenM, eF=nw+k*tenF;
+    dec={k,eM,eF,rM:payM-eM,rF:payF-eF,
+         obs:payF/payM*100, exp:eM>0?eF/eM*100:null};
+  }
+
+  const r=S.psRate||0;
+  const addPer=pay!=null?pay*r/100:null;
+  const addTot=(addPer!=null&&hc!=null)?addPer*hc:null;
+
+  return `<div class="card">
+    <h2>⑩ 공공부문 — ${esc(o.name)}</h2>
+    <div class="hint">${esc(o.type)} · 주무부처 ${esc(o.ministry)} ·
+      기능별 분류 <b>${esc(o.group)}</b> <span class="lab">(${esc(o.why)})</span></div>
+    <div class="row noprint" style="margin-bottom:12px">
+      <select onchange="setPs(this.value)" style="background:#0d1219;border:1px solid var(--line);color:var(--tx);border-radius:7px;padding:7px 10px;font-size:.93rem;min-width:280px">${opts}</select>
+    </div>
+
+    <div class="row">
+      <div class="box"><div class="lab">1인당 평균보수 (일반정규직)</div>
+        <div class="big mono" style="font-size:1.15rem">${psMan(pay)}</div>
+        <div class="lab">${esc(String(yr))}년 결산 · ${rank('pay',pay)}</div></div>
+      <div class="box"><div class="lab">신입사원 초임</div>
+        <div class="big mono" style="font-size:1.15rem">${nw?psMan(nw):'—'}</div>
+        <div class="lab">그룹 중위 ${psMan(bench.pay_new)} ·
+          ${nw?rank('pay_new',nw,1):'<span style="opacity:.75">해당 연도 신규채용 공시 없음</span>'}</div></div>
+      <div class="box"><div class="lab">평균근속</div>
+        <div class="big mono" style="font-size:1.15rem">${psYr(ten)}</div>
+        <div class="lab">그룹 중위 ${psYr(bench.ten)} · ${rank('ten',ten)}</div></div>
+      <div class="box"><div class="lab">임직원</div>
+        <div class="big mono" style="font-size:1.15rem">${won(all)}명</div>
+        <div class="lab">소속외인력 ${won(out)}명${(out!=null&&all)?` · 전체의 ${fmt(out/(out+all)*100,1)}%`:''}</div></div>
+    </div>
+
+    <div class="lab" style="margin:20px 0 6px;font-weight:600;color:var(--tx)">👥 성별 보수 격차 — 근속으로 설명되나</div>
+    ${dec?`<div class="row">
+      <div class="box"><div class="lab">실제 여성/남성 보수비</div>
+        <div class="big mono ${dec.obs>=100?'pos':'neg'}">${fmt(dec.obs,1)}%</div>
+        <div class="lab">남 ${psMan(payM)} · 여 ${psMan(payF)}<br>그룹 중위 ${fmt(bench.gap_f,1)}%</div></div>
+      <div class="box"><div class="lab">근속만 반영했을 때의 보수비</div>
+        <div class="big mono" style="font-size:1.35rem">${fmt(dec.exp,1)}%</div>
+        <div class="lab">근속 남 ${psYr(tenM)} · 여 ${psYr(tenF)}<br>
+          근속 1년당 ${psMan(dec.k*12)} 가정</div></div>
+      <div class="box"><div class="lab">근속으로 설명되지 않는 몫 (연간)</div>
+        <div class="big mono ${dec.rF>=0?'pos':'neg'}" style="font-size:1.35rem">여성 ${dec.rF>=0?'+':'−'}${psMan(Math.abs(dec.rF))}</div>
+        <div class="lab">예상 ${psMan(dec.eF)} 대비 실제 ${psMan(payF)}<br>
+          남성 <b class="${dec.rM>=0?'pos':'neg'}">${dec.rM>=0?'+':'−'}${psMan(Math.abs(dec.rM))}</b>
+          <span style="opacity:.75">(예상 ${psMan(dec.eM)})</span></div></div>
+    </div>
+    <div class="note">📖 <b>어떻게 계산했나</b> — 이 기관의 공시값만으로
+      <b>보수 = 신입 초임 + (근속 1년당 증가분 × 근속연수)</b> 라는 가장 단순한 직선을 세웠습니다.
+      근속 1년당 증가분은 <b>(평균보수 ${psMan(pay)} − 초임 ${psMan(nw)}) ÷ 평균근속 ${psYr(ten)}</b>로 잡았습니다.
+      '보수가 근속에 <b>비례</b>한다'고 두면 근속 0년의 보수가 0원이 되어 격차가 크게 부풀려지므로,
+      초임을 출발점으로 삼는 것이 핵심입니다.
+      이 직선은 기관 평균을 지나므로 남녀 잔차는 인원으로 가중하면 대체로 상쇄됩니다 —
+      한쪽이 +면 다른 쪽이 −로 나오는 것이 정상입니다.<br>
+      ⚠️ <b>직종 구성이 다르면 이 모형은 맞지 않습니다.</b> 의사와 간호사, 기술직과 사무직처럼
+      한 기관 안에서 임금 체계가 갈리는 곳은 근속이 아니라 <b>직종 배치</b>가 격차의 원인일 수 있습니다.
+      이 표는 "근속 차이로는 설명이 안 되는 부분이 있다"는 <b>질문의 출발점</b>이지 결론이 아닙니다.<br>
+      ⚠️ 알리오는 <b>남녀 각각의 1인당 평균보수와 평균근속</b>만 공시합니다. 직급·직종별 분포는 없습니다.</div>`
+    :`<div class="lab">이 기관은 성별 보수·근속 또는 <b>신입사원 초임</b> 공시값이 비어 있어
+        계산할 수 없습니다. 초임이 없으면 직선의 출발점을 잡을 수 없고, 대신
+        '보수가 근속에 비례한다'고 두면 격차가 크게 부풀려지므로 계산하지 않습니다.<br>
+        실제 여성/남성 보수비만 보면 ${(payM&&payF)?`<b>${fmt(payF/payM*100,1)}%</b>
+        (남 ${psMan(payM)} · 여 ${psMan(payF)}), 그룹 중위 ${fmt(bench.gap_f,1)}%`:'공시값이 없습니다'}.</div>`}
+
+    <div class="lab" style="margin:20px 0 6px;font-weight:600;color:var(--tx)">🧩 고용 구조</div>
+    <div style="overflow-x:auto"><table><thead><tr>
+        <th>구분</th><th>인원</th><th>임직원 대비</th><th>그룹 중위</th><th>비고</th></tr></thead><tbody>
+      <tr><td>일반정규직 현원</td><td class="mono">${won(reg)}명</td>
+        <td class="mono">${(reg!=null&&all)?fmt(reg/all*100,1)+'%':'—'}</td><td class="lab">—</td>
+        <td class="lab">보수 공시 대상</td></tr>
+      <tr><td>무기계약직 현원</td><td class="mono">${won(muh)}명</td>
+        <td class="mono">${(muh!=null&&all)?fmt(muh/all*100,1)+'%':'—'}</td>
+        <td class="mono">${fmt(bench.muhan_share,1)}%</td>
+        <td class="lab">1인당 평균보수 ${psMan(psLast(d.pay_muhan))}${(psLast(d.pay_muhan)!=null&&pay)?` · 정규직의 ${fmt(psLast(d.pay_muhan)/pay*100,1)}%`:''}</td></tr>
+      <tr><td>기간제</td><td class="mono">${won(fix)}명</td>
+        <td class="mono">${(fix!=null&&all)?fmt(fix/all*100,1)+'%':'—'}</td><td class="lab">—</td>
+        <td class="lab">보수 공시 없음</td></tr>
+      <tr><td><b>소속외인력</b> (파견·용역·사내하도급)</td><td class="mono">${won(out)}명</td>
+        <td class="mono">${(out!=null&&all)?fmt(out/all*100,1)+'%':'—'}</td>
+        <td class="mono">${fmt(bench.out_share,1)}%</td>
+        <td class="lab">기관 소속이 아님 · 보수 공시 없음</td></tr>
+    </tbody></table></div>
+    <div class="note">⚠️ <b>소속외인력이 적다고 간접고용이 적은 것은 아닙니다.</b> 업무를
+      <b>자회사</b>로 넘긴 경우 그 인원은 여기 잡히지 않고 자회사가 별도 기관으로 공시됩니다
+      (예: 발전·검침·시설 자회사). 원청 기관만 보면 실제 구조를 놓칩니다.<br>
+      ⚠️ 그룹 중위는 ${esc(o.group)} ${peers.length}곳의 중위값입니다.
+      ⑤⑥의 격차·해소 경로 계산에 이 인원을 그대로 옮겨 쓸 수 있습니다.</div>
+
+    <div class="lab" style="margin:20px 0 6px;font-weight:600;color:var(--tx)">💰 총인건비 인상률</div>
+    <div class="hint" style="margin-bottom:10px">공공기관은 이익을 내는 곳이 아니라 ④의 <b>지불능력 산식이 성립하지 않습니다</b>.
+      대신 기재부 「공기업·준정부기관 예산운용지침」의 <b>총인건비 인상률</b>이 상한을 정합니다.
+      이 수치는 공개 API가 없어 자동으로 못 가져옵니다 — 해당 연도 지침에서 확인해 직접 넣으세요.</div>
+    <div class="row" style="margin-bottom:12px">
+      <div style="flex:1;min-width:160px"><div class="lab">총인건비 인상률 (%)</div>
+        <input type="number" step="0.1" min="0" value="${r}" oninput="setPsR(this.value)" style="width:100%"></div>
+      <div class="box"><div class="lab">1인당 증가액</div>
+        <div class="big mono" style="font-size:1.15rem">${psMan(addPer)}</div>
+        <div class="lab">${psMan(pay)} 기준</div></div>
+      <div class="box"><div class="lab">총 증가액 (연)</div>
+        <div class="big mono" style="font-size:1.15rem">${addTot!=null?fmt(addTot/1e5,1)+'억원':'—'}</div>
+        <div class="lab">상시종업원 ${won(hc)}명 기준</div></div>
+    </div>
+    <div style="overflow-x:auto"><table><thead><tr><th>연도</th><th>전 기관 평균보수 전년비 (중위)</th><th>기준</th><th>표본</th></tr></thead>
+      <tbody>${(PS.pay_yoy||[]).map(y=>`<tr><td>${y.year}</td>
+        <td class="mono ${sc(y.median)}">${y.median>=0?'+':''}${fmt(y.median,2)}%</td>
+        <td>${esc(y.basis)}</td><td class="mono lab">${y.n}곳</td></tr>`).join('')}</tbody></table></div>
+    <div class="note">📖 위 표는 <b>지침 수치가 아니라 실제 결과</b>입니다 — ${psIndex().length}곳의
+      1인당 평균보수가 전년 대비 얼마나 움직였는지의 중위값입니다. 지침 인상률과 실제 결과는
+      성과급·정원 변동·직급 구성 변화 때문에 어긋납니다. 교섭에서 둘을 나란히 놓으면
+      "지침대로 올렸는데 왜 체감이 다른가"를 숫자로 물을 수 있습니다.<br>
+      ⚠️ 마지막 줄은 <b>예산편성 기준</b>이라 결산과 섞어 읽으면 안 됩니다.</div>
+
+    ${psNote()}
+  </div>`;
+}
+
+function psNote(){
+  const b=(PS&&PS.basis)||{};
+  return `<div class="note">
+    · 출처: <b>${esc((PS&&PS.source)||'알리오')}</b> ·
+      ${ext('https://alio.go.kr/statisticsSearch/singleStatisticsSearch.do','단일 항목 통계')} ·
+      수집 ${esc(((PS&&PS.generated)||'').slice(0,10))}<br>
+    · <b>${esc(b.note||'')}</b><br>
+    ${((PS&&PS.limits)||[]).map(x=>`· ⚠️ ${esc(x)}`).join('<br>')}<br>
+    · 지방공기업·지방출자출연기관은 알리오가 아니라
+      ${ext('https://www.cleaneye.go.kr','클린아이')}에 공시됩니다 — 여기에는 없습니다.<br>
+    🚨 어느 쪽 주장도 대변하지 않는 계산 결과이며 노무·법률 자문이 아닙니다.</div>`;
+}
+
 function sideNav(){
   const nav=$('snav'); if(!nav)return;
-  const marks='①②③④⑤⑥⑦⑧⑨';
+  const marks='①②③④⑤⑥⑦⑧⑨⑩';
   const hs=[...document.querySelectorAll('#app .card>h2')]
     .filter(h=>marks.indexOf((h.textContent.trim()[0]||''))>=0);
   if(!hs.length){nav.innerHTML='';return}
@@ -1538,6 +1861,40 @@ function sideNav(){
     });
   },{rootMargin:'-15% 0px -70% 0px'});
   hs.forEach(h=>navObs.observe(h.parentElement));
+  psWatch();
+}
+
+/* render() 직전에 기억해 둔 입력칸으로 포커스와 커서를 되돌린다. */
+function restoreFocus(k){
+  if(!k)return;
+  let n=$('app');
+  for(let i=k.p.length-1;i>=0&&n;i--)n=n.children[k.p[i]];
+  if(!n||n.tagName!=='INPUT')return;
+  n.focus();
+  if(k.s!=null){try{n.setSelectionRange(k.s,k.e)}catch(_){}}
+}
+
+/* ⑩ 목록은 66KB 다. 공공기관 노동자만 쓰는 카드인데 모두가 받으면 첫 로드가 절반 늘어난다.
+   카드가 화면에 가까워질 때 받는다.
+   IntersectionObserver 가 아니라 스크롤에서 위치를 직접 재는 이유 — 관찰자는 콜백이
+   언제 오는지가 브라우저·렌더링 상태에 달려 있어 검증이 어렵다. 여기서는 그냥
+   '카드 윗변이 화면 아래에서 600px 안으로 들어왔는가'만 보면 된다. */
+let psHook=null;
+function psWatch(){
+  if(PS||PSLOAD.__ix||psHook)return;
+  const near=()=>{
+    const h=[...document.querySelectorAll('#app .card>h2')]
+      .find(x=>x.textContent.trim()[0]==='⑩');
+    return !!h&&h.parentElement.getBoundingClientRect().top<innerHeight+600;
+  };
+  psHook=()=>{
+    if(PS||PSLOAD.__ix||!near())return;
+    removeEventListener('scroll',psHook); removeEventListener('resize',psHook);
+    psHook=null; loadPS();
+  };
+  addEventListener('scroll',psHook,{passive:true});
+  addEventListener('resize',psHook,{passive:true});
+  psHook();      // 화면이 길거나 앵커로 바로 뛰어든 경우 처음부터 보일 수 있다
 }
 
 function render(){
@@ -1570,6 +1927,21 @@ function render(){
       ${LASTMAP.unTot?`<br>⚠️ 자동 분류 실패 <b>${won(LASTMAP.unTot)}원</b>은 '기타'로 넣었습니다 — 아래 상호를 보고 직접 옮기세요:<br>
         ${LASTMAP.unmatched.map(([nm,v])=>`<span class="tag">${esc(nm.slice(0,18))} ${won(v)}원</span>`).join('')}`:''}
     </div>`;
+
+  /* 입력칸 하나 건드릴 때마다 화면 전체를 다시 그린다. 단순해서 좋지만
+     innerHTML 을 통째로 갈면 **포커스와 커서 위치가 날아간다** — 숫자 칸에
+     '3000' 을 치려 해도 '3' 에서 커서를 잃는다. 다시 그리기 전에 어느 칸에
+     있었는지 기억했다가 되돌린다. id 를 다 붙이는 대신 부모에서 몇 번째
+     자식인가로 자리를 잡는다. 구조가 그대로면 같은 칸을 정확히 찾는다. */
+  const _ae=document.activeElement, _root=$('app');
+  let _keep=null;
+  if(_ae&&_ae.tagName==='INPUT'&&_root.contains(_ae)){
+    const p=[]; let n=_ae;
+    while(n&&n!==_root){p.push([...n.parentNode.children].indexOf(n));n=n.parentNode}
+    // number 칸은 selectionStart 를 읽는 것만으로 예외가 난다(브라우저마다 다름)
+    let s=null,e=null; try{s=_ae.selectionStart;e=_ae.selectionEnd}catch(_){}
+    if(n===_root)_keep={p,s,e};
+  }
 
   $('app').innerHTML=`
   <div class="card">
@@ -1626,7 +1998,7 @@ function render(){
   </div>
 
   <div class="card">
-    <h2>② 내 체감물가</h2>
+    <h2>② 나의 체감물가</h2>
     <div class="row">
       <div class="box"><div class="lab">공식 소비자물가</div><div class="big mono">${fmt(c.official)}%</div>
         <div class="lab">${esc((D.cpi_items||{}).asof||'')} 기준</div></div>
@@ -1637,7 +2009,7 @@ function render(){
       <div class="box"><div class="lab">${c.intAdd>=0?'＋':'−'} 주거 금융비용</div>
         <div class="big mono ${c.intAdd>0?'warn':c.intAdd<0?'pos':''}">${c.intAdd>=0?'+':''}${fmt(c.intAdd)}%p</div>
         <div class="lab">월 이자 ${won(S.intNow)}원 (1년 전 ${won(S.intPrev)}원)<br>공식 물가에 없는 항목</div></div>
-      <div class="box" style="border-color:var(--amb)"><div class="lab">＝ 내 체감물가</div>
+      <div class="box" style="border-color:var(--amb)"><div class="lab">＝ 나의 체감물가</div>
         <div class="big mono warn">${fmt(c.felt)}%</div>
         <div class="lab">공식 대비 ${c.felt!=null&&c.official!=null?((c.felt-c.official)>=0?'+':'')+fmt(c.felt-c.official)+'%p':'—'}</div></div>
     </div>
@@ -1653,7 +2025,7 @@ function render(){
       <div class="box"><div class="lab">실질임금 — 공식물가 기준</div>
         <div class="big mono ${sc(c.realOfficial)}">${c.realOfficial>=0?'+':''}${fmt(c.realOfficial)}%</div>
         <div class="lab">${fmt(S.wage)}% − ${fmt(c.official)}%</div></div>
-      <div class="box" style="border-color:var(--amb)"><div class="lab">실질임금 — 내 체감물가 기준</div>
+      <div class="box" style="border-color:var(--amb)"><div class="lab">실질임금 — 나의 체감물가 기준</div>
         <div class="big mono ${sc(c.realFelt)}">${c.realFelt>=0?'+':''}${fmt(c.realFelt)}%</div>
         <div class="lab">${fmt(S.wage)}% − ${fmt(c.felt)}%</div></div>
       <div class="box"><div class="lab">구매력 유지에 필요한 인상률</div>
@@ -1684,6 +2056,8 @@ function render(){
     <div style="overflow-x:auto"><table><thead><tr><th>경제권</th><th>최근</th>${years}</tr></thead>
       <tbody>${money}</tbody></table></div>
   </div>
+
+  ${psCard()}
 
   <div class="card">
     <h2>출처 · 기준시점</h2>
@@ -1723,6 +2097,7 @@ function render(){
   </div>`;
 
   sideNav();
+  restoreFocus(_keep);
 
   const fi=$('fi'),dz=$('dz');
   if(fi){fi.onchange=e=>{if(e.target.files[0])onCSV(e.target.files[0]);e.target.value=''}}
