@@ -945,6 +945,35 @@ def _ma4(series, ks):
 OECD_KR_NA_A = ("https://sdmx.oecd.org/public/rest/data/OECD.SDD.NAD,DSD_NAMAIN10@DF_TABLE1,"
                 "/A.KOR.S1..B1GQ+D1+D11.......?startPeriod=2010&format=csvfilewithlabels")
 
+# 국민소득 — '성장' 을 무엇으로 재느냐를 바꾸는 값이다. GDP 는 Table1 에 있지만
+# 국민소득은 Table2(국민처분가능소득) 에 있다. 같은 DSD 라 키 형식은 같다.
+#   B5G 국민총소득(GNI) = GDP + 교역조건에 따른 실질무역손익 + 국외순수취요소소득
+#   B5N 국민순소득(NNI) = GNI − 고정자본소모(감가상각)
+OECD_KR_NI_A = ("https://sdmx.oecd.org/public/rest/data/OECD.SDD.NAD,DSD_NAMAIN10@DF_TABLE2,"
+                "/A.KOR.S1..B5G+B5N.......?startPeriod=2010&format=csvfilewithlabels")
+
+
+def _national_income():
+    """실질 GNI·NNI(원화, 연쇄물량) 연간. 실패하면 빈 dict — 기준별 격차만 빠진다."""
+    txt = _http(OECD_KR_NI_A, timeout=120)
+    if not txt:
+        print("  [WARN] OECD 국민소득(B5G/B5N) 조회 실패 — 기준별 격차 생략")
+        return {}, {}
+    gni, nni = {}, {}
+    for r in csv.DictReader(io.StringIO(txt)):
+        if (r.get("UNIT_MEASURE") != "XDC" or r.get("TRANSFORMATION") != "N"
+                or r.get("PRICE_BASE") != "LR" or r.get("SECTOR") != "S1"):
+            continue
+        try:
+            v = float(r["OBS_VALUE"])
+        except (ValueError, KeyError, TypeError):
+            continue
+        if r["TRANSACTION"] == "B5G":
+            gni[r["TIME_PERIOD"]] = v
+        elif r["TRANSACTION"] == "B5N":
+            nni[r["TIME_PERIOD"]] = v
+    return gni, nni
+
 
 def _to_year(q, need):
     """{YYYY-Qn 또는 YYYY-MM: v} → 연평균. 관측치가 need 개 다 있는 해만 쓴다."""
@@ -1010,10 +1039,72 @@ def _gap_wedges(gdp_q, rw_q, cpi_monthly):
                 "pp": round(gap_pp * x / gap_log, 2),
                 "share_pct": round(x / gap_log * 100, 1)}
 
+    # 성장을 무엇으로 재느냐 — GDP / GNI / NNI 로 바꿔 가며 격차를 다시 낸다.
+    #
+    # 사측은 "교역조건이 나빠져 국민소득은 안 늘었다"(GNI)거나 "감가상각은
+    # 누구에게도 나눠 줄 수 없는 몫이다"(NNI)라고 반박한다. 둘 다 맞는 말이라
+    # 반론의 크기를 노동측이 먼저 알고 있어야 한다. 과장하면 반박당한다.
+    #
+    # GNI·NNI 는 총액이고 gdp_a 는 이미 1인당이다. 인구가 같은 분모이므로
+    # 총액 대비 비율만 옮겨 곱하면 인구 계열 없이 1인당으로 환산된다.
+    gni_t, nni_t = _national_income()
+    bases = None
+    ys2 = sorted(set(ys) & set(gni_t) & set(nni_t) & set(vol))
+    if len(ys2) >= 8:
+        a2, b2 = ys2[0], ys2[-1]
+        grow = lambda d: round((d[b2] / d[a2] - 1) * 100, 1)
+        per_head = lambda tot: {y: gdp_a[y] * tot[y] / vol[y] for y in ys2}
+        wage2 = grow(rw_a)
+
+        # 시작 연도를 바꿔 가며 GDP 와의 차이가 얼마나 흔들리는지 본다.
+        # 부호까지 뒤집히면 교섭에서 못 쓴다 — 상대가 다른 해를 들고 와 그대로 뒤집는다.
+        # 인구는 어차피 같은 분모라 상쇄되므로 총액으로 재도 %p 차이는 같다.
+        def sens(tot):
+            vals = []
+            for a3 in ys2[:-5]:              # 최소 5년 구간은 남긴다
+                if not vol[a3] or not tot[a3]:
+                    continue
+                vals.append(round((tot[b2] / tot[a3] - 1) * 100
+                                  - (vol[b2] / vol[a3] - 1) * 100, 1))
+            if len(vals) < 3:
+                return None
+            return {"min": min(vals), "max": max(vals), "n": len(vals),
+                    "flips": min(vals) < 0 < max(vals)}
+
+        rows = []
+        for key, label, tot in (("gdp", "1인당 실질 GDP", vol),
+                                ("gni", "1인당 실질 GNI", gni_t),
+                                ("nni", "1인당 실질 NNI", nni_t)):
+            p = grow(per_head(tot))
+            rows.append({"key": key, "label": label, "pct": p,
+                         "gap_pp": round(p - wage2, 1),
+                         "sens": None if key == "gdp" else sens(tot)})
+        base_gap = rows[0]["gap_pp"]
+        for r_ in rows:
+            r_["vs_gdp_pp"] = round(r_["gap_pp"] - base_gap, 1)
+        bases = {
+            "from": a2, "to": b2, "years": len(ys2),
+            "wage_pct": wage2, "rows": rows,
+            "source": "OECD SDMX DSD_NAMAIN10@DF_TABLE2 (B5G·B5N 연쇄물량, 원화)",
+            "note": ("GNI = GDP + 교역조건에 따른 실질무역손익 + 국외순수취요소소득. "
+                     "NNI = GNI − 고정자본소모(감가상각). "
+                     "감가상각은 설비를 갈아 끼우는 데 쓰여 누구에게도 분배될 수 없는 몫이라, "
+                     "NNI 기준 격차가 '나눌 수 있었던 몫'에 가장 가깝다."),
+            "caveat": ("⚠️ 어느 기준이 옳다고 말하지 않는다. 셋 다 한국은행 국민계정이 함께 공표하는 값이고, "
+                       "무엇을 근거로 삼느냐에 따라 결론이 달라진다는 것을 보이는 표다. "
+                       "⚠️ NNI 도 임금이 아니다 — 기업 이익잉여와 자본소득이 그대로 들어 있다. "
+                       "감가상각 하나만 뺀 값이다. "
+                       "⚠️ 시작 연도를 바꾸면 값이 흔들린다. 부호까지 뒤집히는 기준은 표에 따로 표시했다 — "
+                       "그런 기준은 상대가 다른 해를 들고 오면 그대로 뒤집히므로 근거로 쓰면 안 된다."),
+        }
+    elif ys2:
+        print(f"  [WARN] 기준별 격차 표본 부족 {len(ys2)}년 — 생략")
+
     out = {
         "from": a, "to": b, "years": len(ys),
         "gap_pp": round(gap_pp, 1),
         "gdp_pc_pct": pct(gdp_a), "real_wage_pct": pct(rw_a),
+        "bases": bases,
         "parts": [
             part("terms", "① 교역조건 — 물가 기준 차이", w_terms,
                  f"소비자물가 {pct(cpi_a):+.1f}% vs GDP디플레이터 {pct(defl):+.1f}%"),

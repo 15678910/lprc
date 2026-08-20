@@ -1035,6 +1035,51 @@ function growthGapBlock(){
       <path d="${path(g)}" fill="none" stroke="var(--acc)" stroke-width="2.2"/>
     </svg>`;
   };
+  /* 성장을 무엇으로 재나 — GDP / GNI / NNI.
+     사측 반론이 바로 여기서 나온다. "교역조건이 나빠져 국민소득은 안 늘었다"(GNI),
+     "감가상각은 누구에게도 나눠 줄 수 없다"(NNI). 둘 다 맞는 말이라 그 크기를
+     노동측이 먼저 알아야 한다. 반론이 작으면 밀고, 크면 다른 근거로 간다. */
+  const bases=()=>{
+    const B=(G.wedges||{}).bases;
+    if(!B||!B.rows||B.rows.length<2)return '';
+    const gdp=B.rows.find(r=>r.key==='gdp')||{}, nni=B.rows.find(r=>r.key==='nni');
+    const row=r=>{
+      const s=r.sens, me=r.key==='gdp';
+      return `<tr${me?' style="background:rgba(88,166,255,.07)"':''}>
+        <td><b>${esc(r.label)}</b>${me?' <span class="lab">← 위 표의 기준</span>':''}</td>
+        <td class="mono ${sc(r.pct)}">${sgn(r.pct)}${fmt(r.pct,1)}%</td>
+        <td class="mono warn">${fmt(r.gap_pp,1)}%p</td>
+        <td class="mono">${me?'—':`${sgn(r.vs_gdp_pp)}${fmt(r.vs_gdp_pp,1)}%p`}</td>
+        <td class="lab">${!s?'—':s.flips
+          ? `<b class="warn">부호가 뒤집힘</b> (${sgn(s.min)}${fmt(s.min,1)} ~ ${sgn(s.max)}${fmt(s.max,1)}%p)`
+          : `방향 일관 (${sgn(s.min)}${fmt(s.min,1)} ~ ${sgn(s.max)}${fmt(s.max,1)}%p)`}</td></tr>`;
+    };
+    return `<div class="lab" style="margin:18px 0 6px;font-weight:600;color:var(--tx)">
+        성장을 무엇으로 재나 — 기준을 바꾸면 격차가 달라진다
+        <span style="font-weight:400;color:var(--mut)">(${esc(B.from)} → ${esc(B.to)} · 연 단위)</span></div>
+      <div class="hint" style="margin-bottom:10px">사측은 <b>"교역조건이 나빠져 국민소득은 안 늘었다"</b>(GNI)거나
+        <b>"감가상각은 누구에게도 나눠 줄 수 없는 몫"</b>(NNI)이라고 반박합니다. 둘 다 틀린 말이 아닙니다.
+        <b>그 반론이 격차를 얼마나 깎는지</b> 먼저 알고 들어가야 합니다.</div>
+      <div style="overflow-x:auto"><table><thead><tr>
+        <th>성장 기준</th><th>누적</th><th>실질임금과의 격차</th><th>GDP 기준 대비</th><th>시작 연도를 바꾸면</th>
+      </tr></thead><tbody>${B.rows.map(row).join('')}</tbody></table></div>
+      <div class="note">📖 <b>읽는 법</b> — 실질임금은 같은 기간 <b>${sgn(B.wage_pct)}${fmt(B.wage_pct,1)}%</b>입니다.
+        ${esc(B.note)}<br><br>
+        ${nni?`<b>성장 기준을 가장 보수적으로 잡으면(NNI) 격차는 ${fmt(nni.gap_pp,1)}%p 입니다.</b>
+        감가상각까지 뺀 값이 '나눌 수 있었던 몫'에 가장 가깝습니다. 교섭에서는
+        <b>이 숫자로 말하는 편이 안전합니다</b> — ${fmt(gdp.gap_pp,1)}%p 를 들고 갔다가
+        감가상각 얘기가 나오면 절반 넘게 날아갑니다.<br><br>
+        ⚠️ <b>아래 '격차 분해' 와 더하거나 빼지 마세요.</b> 아래 분해는 <b>GDP 기준
+        ${fmt(gdp.gap_pp,1)}%p</b> 를 가른 것입니다. NNI 기준 ${fmt(nni.gap_pp,1)}%p 에서
+        아래 ①②를 그대로 빼면 안 됩니다 — 물가 기준이 달라져 분해를 다시 해야 하기 때문입니다.
+        두 블록은 <b>같은 격차를 다른 각도에서 본 것</b>이지 이어 붙이는 계산이 아닙니다.<br><br>`:''}
+        ⚠️ <b>맨 오른쪽 열을 보세요.</b> 시작 연도를 한 해만 옮겨도 값이 달라지고,
+        <b>부호까지 뒤집히는 기준은 근거로 쓸 수 없습니다</b> — 상대가 다른 해를 들고 오면
+        그대로 뒤집힙니다. 방향이 일관된 기준만 교섭에 들고 가세요.<br>
+        ${esc(B.caveat)}<br>
+        · 출처: ${esc(B.source)}</div>`;
+  };
+
   /* 격차 분해 — 격차 전체를 분배로 읽으면 교섭에서 반박당한다.
      측정 방식 차이로 설명되는 몫을 먼저 떼어내고 남는 것만 분배로 말한다. */
   const wedges=()=>{
@@ -1044,7 +1089,8 @@ function growthGapBlock(){
     const tot=W_.parts.reduce((s,p)=>s+Math.abs(p.pp),0)||1;
     return `<div class="lab" style="margin:18px 0 6px;font-weight:600;color:var(--tx)">
         격차 분해 — ${fmt(W_.gap_pp,1)}%p 중 얼마가 분배인가
-        <span style="font-weight:400;color:var(--mut)">(${esc(W_.from)} → ${esc(W_.to)} · 연 단위)</span></div>
+        <span style="font-weight:400;color:var(--mut)">(${esc(W_.from)} → ${esc(W_.to)} · 연 단위 ·
+        <b>GDP 기준</b>)</span></div>
       <div class="hint" style="margin-bottom:10px">격차 전체를 분배 문제로 말하면 반박당합니다.
         <b>측정 방식 차이로 설명되는 부분</b>을 먼저 떼어내고, 남는 것만 분배로 말해야 합니다.</div>
       <div style="display:flex;height:20px;border-radius:6px;overflow:hidden;margin-bottom:12px">
@@ -1085,6 +1131,7 @@ function growthGapBlock(){
       <td class="mono" style="color:var(--amb)">${sgn(e.real_wage_pct)}${fmt(e.real_wage_pct,1)}%</td>
       <td class="mono">${sgn(e.real_cons_pct)}${fmt(e.real_cons_pct,1)}%</td>
       <td class="mono warn">${fmt(e.gap_pp,1)}%p</td></tr>`).join('')}</tbody></table></div>
+    ${bases()}
     ${wedges()}
     <div class="note">📖 <b>무엇이 문제인가</b> —
       ${A.gdp_pc!=null?`1인당 생산은 연 <b>${fmt(A.gdp_pc,2)}%</b> 늘었는데 실질임금은 연 <b>${fmt(A.real_wage,2)}%</b> 늘었습니다.
