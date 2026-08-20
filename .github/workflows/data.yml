@@ -8,7 +8,8 @@ name: Update data
 #   BOK_API_KEY   없으면 서울 아파트 실질가격·한국 분배지표가 빠짐    (ecos.bok.or.kr)
 #   FRED_API_KEY  없으면 일부 미국 계열이 빠짐                        (fred.stlouisfed.org)
 #   KOSIS_API_KEY 없으면 평균 가구원 수(1인당 주거부담 환산)가 빠짐   (kosis.kr)
-# 셋 다 없어도 OECD 기반 블록(물가·노동몫·격차·임시직 비중)은 그대로 수집된다.
+# 넷 다 없어도 OECD 기반 블록(물가·노동몫·격차·임시직 비중)과
+# 공공부문(⑩ 알리오)은 그대로 수집된다 — 알리오는 키가 필요 없다.
 on:
   schedule:
     - cron: '0 1 * * *'      # 매일 KST 10:00 (UTC 01:00)
@@ -50,6 +51,14 @@ jobs:
           PYTHONIOENCODING: utf-8
         run: python wage_negotiation.py || echo "wage_negotiation had errors, continuing..."
 
+      # 공공부문 (알리오) — 키가 필요 없다. 화면이 쓰는 JSON 을 그대로 부른다.
+      # 알리오 화면 구조가 바뀌면 깨질 수 있어, 실패해도 앞의 데이터는 살린다.
+      # 원인은 출력 JSON 의 diag 배열에 남는다.
+      - name: Collect public sector data
+        env:
+          PYTHONIOENCODING: utf-8
+        run: python public_sector.py || echo "public_sector had errors, continuing..."
+
       - name: Commit results
         run: |
           git config user.name "github-actions[bot]"
@@ -58,9 +67,26 @@ jobs:
           # 같은 줄(generated_at 등)을 다시 쓰기 때문이다. 실제로 두 실행이 겹쳐 실패했다.
           # 생성물에는 '병합'이라는 개념이 없다. 이번에 수집한 값이 언제나 옳으므로
           # 최신 원격 위에 그대로 얹어 다시 커밋한다.
-          mkdir -p /tmp/collected
+          #
+          # 생성물은 docs/*.json 뿐만이 아니다. 자료를 쪼개 두면서
+          # docs/co/(업종별)·docs/ps/(공공부문 기능별) 아래로도 나간다.
+          # 'docs/*.json' 글롭은 하위 폴더를 잡지 않으므로 디렉터리째 넣는다.
+          # (그렇게 안 해서 docs/co 가 수동 커밋 이후 자동 갱신되지 않고 있었다.
+          #  디렉터리로 넣으면 파일이 사라진 경우의 삭제도 함께 기록된다.)
+          GEN="docs/co docs/ps"
+          # 폴더가 없을 때 함수가 0이 아닌 값을 돌려주면 bash -e 가 스텝을 끊는다.
+          # 마지막에 return 0 을 박아 둔다.
+          save() { rm -rf /tmp/collected; mkdir -p /tmp/collected
+                   cp docs/*.json /tmp/collected/ 2>/dev/null || true
+                   for d in $GEN; do [ -d "$d" ] && cp -r "$d" /tmp/collected/; done
+                   return 0; }
+          restore() { cp /tmp/collected/*.json docs/ 2>/dev/null || true
+                      for d in $GEN; do rm -rf "$d"
+                        b=$(basename "$d")
+                        [ -d "/tmp/collected/$b" ] && cp -r "/tmp/collected/$b" docs/; done
+                      return 0; }
           for i in 1 2 3; do
-            git add docs/*.json 2>/dev/null || true
+            git add docs/*.json $GEN 2>/dev/null || true
             if git diff --cached --quiet 2>/dev/null; then
               echo "변경 없음 — 커밋할 것이 없다"
               exit 0
@@ -68,10 +94,10 @@ jobs:
             git commit -m "Update data [automated]"
             if git push; then exit 0; fi
             echo "push 실패 (시도 $i) — 원격이 앞섰다. 최신 위에 이번 수집 결과를 다시 얹는다."
-            cp docs/*.json /tmp/collected/
+            save
             git fetch origin master
             git reset --hard origin/master
-            cp /tmp/collected/*.json docs/
+            restore
           done
           echo "3회 모두 실패 — 다음 예약 실행에서 다시 시도된다."
           exit 1
