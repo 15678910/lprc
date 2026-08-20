@@ -1084,10 +1084,12 @@ function growthGapBlock(){
     const B=(G.wedges||{}).bases;
     if(!B||!B.rows||B.rows.length<2)return '';
     const gdp=B.rows.find(r=>r.key==='gdp')||{}, nni=B.rows.find(r=>r.key==='nni');
+    // 약어만 적어 두면 무슨 말인지 알 수 없다. 한국은행 공식 용어를 함께 적는다.
+    const FULL={gdp:'국내총생산',gni:'국민총소득',nni:'국민순소득'};
     const row=r=>{
       const s=r.sens, me=r.key==='gdp';
       return `<tr${me?' style="background:rgba(88,166,255,.07)"':''}>
-        <td><b>${esc(r.label)}</b>${me?' <span class="lab">← 위 표의 기준</span>':''}</td>
+        <td><b>${esc(r.label)}</b> <span class="lab">(${esc(FULL[r.key]||'')})</span>${me?' <span class="lab">← 위 표의 기준</span>':''}</td>
         <td class="mono ${sc(r.pct)}">${sgn(r.pct)}${fmt(r.pct,1)}%</td>
         <td class="mono warn">${fmt(r.gap_pp,1)}%p</td>
         <td class="mono">${me?'—':`${sgn(r.vs_gdp_pp)}${fmt(r.vs_gdp_pp,1)}%p`}</td>
@@ -1103,8 +1105,21 @@ function growthGapBlock(){
         <b>그 반론이 격차를 얼마나 깎는지</b> 먼저 알고 들어가야 합니다.</div>
       <div style="overflow-x:auto"><table><thead><tr>
         <th>성장 기준</th><th>누적</th><th>실질임금과의 격차</th><th>GDP 기준 대비</th><th>시작 연도를 바꾸면</th>
-      </tr></thead><tbody>${B.rows.map(row).join('')}</tbody></table></div>
-      <div class="note">📖 <b>읽는 법</b> — 실질임금은 같은 기간 <b>${sgn(B.wage_pct)}${fmt(B.wage_pct,1)}%</b>입니다.
+      </tr></thead><tbody>
+        <!-- 빼는 대상이 표 안에 있어야 격차가 검산된다. 없으면 8.5%p 가 어디서
+             나왔는지 확인할 길이 없고, 위 구간 표의 실질임금과 값이 달라 더 헷갈린다. -->
+        <tr style="border-bottom:2px solid var(--line)">
+          <td><b>실질임금</b> <span class="lab">← 빼는 기준</span></td>
+          <td class="mono" style="color:var(--amb)">${sgn(B.wage_pct)}${fmt(B.wage_pct,1)}%</td>
+          <td class="lab">—</td><td class="lab">—</td><td class="lab">—</td></tr>
+        ${B.rows.map(row).join('')}</tbody></table></div>
+      <div class="note">📖 <b>읽는 법</b> — 표 첫 줄의 <b>실질임금 ${sgn(B.wage_pct)}${fmt(B.wage_pct,1)}%</b>가 빼는 기준입니다.
+        격차는 각 기준의 누적에서 이 값을 뺀 것입니다
+        (예: ${fmt(gdp.pct,1)} − ${fmt(B.wage_pct,1)} = <b>${fmt(gdp.gap_pp,1)}%p</b>).<br>
+        ⚠️ <b>위 구간 표의 실질임금 ${sgn(all.real_wage_pct)}${fmt(all.real_wage_pct,1)}% 와 다릅니다</b> —
+        기간이 다르기 때문입니다. 위 표는 <b>분기</b>로 ${esc(all.from)}~${esc(all.to)},
+        이 표는 국민계정이 연간이라 <b>연 단위</b>로 ${esc(B.from)}~${esc(B.to)} 입니다.
+        같은 지표를 다른 구간에서 잰 값이므로 서로 바꿔 쓰면 안 됩니다.<br><br>
         ${esc(B.note)}<br><br>
         ${nni?`<b>성장 기준을 가장 보수적으로 잡으면(NNI) 격차는 ${fmt(nni.gap_pp,1)}%p 입니다.</b>
         감가상각까지 뺀 값이 '나눌 수 있었던 몫'에 가장 가깝습니다. 교섭에서는
