@@ -1,0 +1,63 @@
+# 알리오가 GitHub Actions 환경(해외 IP)에서 응답하는지만 본다.
+# 공공부문 수집이 로컬 1~2분인데 Actions 에서 20분을 넘겨, 차단인지 단순 지연인지
+# 가르기 위한 일회성 진단이다. 확인이 끝나면 이 파일은 지운다.
+name: Probe alio
+
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+
+      - name: 알리오 응답 확인
+        env:
+          PYTHONIOENCODING: utf-8
+        run: |
+          python - <<'PY'
+          import json, ssl, time, urllib.parse, urllib.request
+          ALIO = "https://alio.go.kr"
+          UA = {"User-Agent": "Mozilla/5.0 (compatible; lprc-public-sector)",
+                "Referer": ALIO + "/statisticsSearch/singleStatisticsSearch.do",
+                "Accept": "application/json, text/plain, */*"}
+          ctx = ssl.create_default_context()
+          ctx.check_hostname = False
+          ctx.verify_mode = ssl.CERT_NONE
+
+          def probe(label, path, params=None, timeout=30):
+              url = ALIO + path + ("?" + urllib.parse.urlencode(params) if params else "")
+              t0 = time.time()
+              try:
+                  r = urllib.request.Request(url, headers=UA)
+                  body = urllib.request.urlopen(r, context=ctx, timeout=timeout).read()
+                  print(f"  {label}: OK {len(body):,}B · {time.time()-t0:.1f}s")
+                  return body
+              except Exception as e:
+                  print(f"  {label}: FAIL {type(e).__name__} {str(e)[:90]} · {time.time()-t0:.1f}s")
+                  return None
+
+          print("[1] 화면 (GB_alioYear 를 읽는 곳)")
+          probe("singleStatisticsSearch.do", "/statisticsSearch/singleStatisticsSearch.do")
+
+          print("[2] 항목 트리")
+          probe("findItemTreeList.json", "/statisticsSearch/findItemTreeList.json")
+
+          print("[3] 실제 자료 1쪽 — 수집기가 84번 반복하는 요청")
+          for i in (1, 2, 3):
+              probe(f"findSingleItemSearchList.json #{i}",
+                    "/statisticsSearch/findSingleItemSearchList.json",
+                    {"pageNo": i, "countPerPage": 100,
+                     "reportFormNo": "20601", "itemNo": "GI0101"})
+
+          print("[4] 참고 — 이 러너의 나가는 IP")
+          try:
+              ip = urllib.request.urlopen("https://api.ipify.org", timeout=15).read().decode()
+              print("  egress IP:", ip)
+          except Exception as e:
+              print("  IP 확인 실패:", e)
+          PY
