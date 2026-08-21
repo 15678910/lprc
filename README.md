@@ -51,7 +51,7 @@ lprc/
 ├─ wage_negotiation.py      회사별 지불능력 (DART 직원현황 + 손익)
 ├─ public_sector.py         공공기관 보수·근속·고용구조 (알리오)
 ├─ core/                    환경변수·시크릿 로더
-└─ .github/workflows/data.yml   매일 KST 10:00 자동 수집
+└─ .github/workflows/data.yml   매일 KST 10:00 (회사 재무는 일요일만)
 ```
 
 큰 자료는 **쪼개서 필요한 것만 받습니다.** 전 상장사 1,883곳과 공공기관 355곳을
@@ -91,6 +91,7 @@ python public_sector.py           # 키 불필요 (알리오)
 | `DART_API_KEY` | ④⑤⑥ 회사 목록이 비고 수동 입력만 가능 | opendart.fss.or.kr (무료) |
 | `BOK_API_KEY` | 서울 아파트 실질가격·한국 분배지표만 빠짐 | ecos.bok.or.kr (무료) |
 | `FRED_API_KEY` | 일부 계열만 영향 (대부분 키 없이 동작) | fred.stlouisfed.org (무료) |
+| `KOSIS_API_KEY` | ⑧ 평균 가구원 수(1인당 주거부담 환산)가 빠짐 | kosis.kr 오픈API (무료) |
 
 환경변수 또는 GitHub Actions Secrets 로 넣습니다.
 **키를 코드나 커밋에 넣지 마세요.**

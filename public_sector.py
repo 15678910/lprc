@@ -67,6 +67,16 @@ UA = {
 PER_PAGE = 100      # 서버 상한. 더 넣어도 100건만 온다.
 PAUSE = 0.25        # 요청 간격
 
+# 닿지 않을 때 오래 매달리지 않는 것이 중요하다.
+# 알리오는 Actions 에서도 정상 수집된다(실측: 21개 항목 4분). 다만 **실행이 겹치면**
+# 나중 것이 전부 timeout 난다 — 같은 출처의 동시 접속을 막는 것으로 보인다.
+# 실제로 예약 실행이 도는 중에 수동 실행을 겹쳐 걸었다가 전 항목이 막혔다. 예전에는 타임아웃 40초 × 재시도 3회라
+# 한 요청이 최대 126초를 잡았고, 84요청이면 3시간 가까이 헛돌았다. 실제로 그래서
+# 자동 실행을 두 번 끊어야 했다. 짧게 시도하고 빨리 포기한다.
+TIMEOUT = 12        # 초. 되는 환경에서는 0.4초면 온다 — 길게 잡을 이유가 없다.
+TRIES = 2
+GIVE_UP_AFTER = 3   # 항목이 연속 이만큼 실패하면 남은 항목을 건너뛴다
+
 DIAG = []
 
 
@@ -86,7 +96,7 @@ def _ctx():
     return c
 
 
-def _get(path, params=None, timeout=40, tries=3):
+def _get(path, params=None, timeout=TIMEOUT, tries=TRIES):
     url = ALIO + path + ("?" + urllib.parse.urlencode(params) if params else "")
     last = None
     for i in range(tries):
@@ -95,7 +105,8 @@ def _get(path, params=None, timeout=40, tries=3):
             return urllib.request.urlopen(r, context=_ctx(), timeout=timeout).read()
         except Exception as e:
             last = e
-            time.sleep(1.0 + i)
+            if i + 1 < tries:
+                time.sleep(1.0)
     raise last
 
 
@@ -164,18 +175,24 @@ def alio_year():
 
 
 def check_tree():
-    """항목 코드가 아직 살아 있는지 확인한다. 트리가 바뀌면 여기서 먼저 걸린다."""
+    """연결 확인 겸 항목 코드 검증. 여기서 막히면 자료도 못 받으니 바로 포기한다.
+
+    이 관문이 없으면 84개 요청을 전부 시도하며 몇 시간을 버린다.
+    돌려주는 값이 False 면 호출 쪽에서 수집을 중단한다."""
     try:
         tree = _json(TREE)
     except Exception as e:
-        diag("WARN", "항목 트리 조회 실패(%s) — 코드 검증 건너뜀" % e)
-        return
+        diag("ERROR",
+             "알리오에 닿지 못했다(%s). 다른 실행이 이미 돌고 있지 않은지 확인할 것 — "
+             "동시 접속은 막힌다. 기존 파일을 그대로 둔다." % str(e)[:60])
+        return False
     codes = set(n.get("treeCode") for n in tree.get("data", []) if n.get("treeCode"))
     missing = [c for _, c, _, _ in ITEMS if c not in codes]
     if missing:
         diag("ERROR", "트리에서 사라진 항목 코드: %s" % ", ".join(missing))
     else:
         log("  항목 트리 %s개 · 요청 코드 %d개 모두 유효" % (format(len(codes), ","), len(ITEMS)))
+    return True
 
 
 def fetch_item(tree_code):
@@ -376,15 +393,21 @@ def main():
     si = 4                                      # years[4] = ay-1 이 마지막 결산연도
     log("  공시연도 %d · 결산 %d~%d · 예산 %d" % (ay, years[0], years[4], years[5]))
 
-    check_tree()
+    if not check_tree():
+        return 1                      # 닿지 못한다 — 기존 파일을 보존하고 즉시 끝낸다
 
     # 기관 명부는 첫 항목 응답에서 만든다. 별도 명부 API 를 또 부를 이유가 없다.
-    orgs, ok, units = {}, 0, {}
+    orgs, ok, units, miss = {}, 0, {}, 0
     for key, code, label, unit in ITEMS:
         rows = fetch_item(code)
         time.sleep(PAUSE)
         if rows is None:
+            miss += 1
+            if miss >= GIVE_UP_AFTER:
+                diag("ERROR", "연속 %d개 항목 실패 — 남은 항목을 건너뛴다." % miss)
+                break
             continue
+        miss = 0
         ok += 1
         # 단위는 우리가 적어 둔 값 대신 응답이 말하는 값을 쓴다.
         # 근속연수가 '년'이 아니라 '월'로 오는 것처럼, 짐작하면 틀린다.
