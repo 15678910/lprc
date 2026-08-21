@@ -10,10 +10,23 @@ name: Update data
 #   KOSIS_API_KEY 없으면 평균 가구원 수(1인당 주거부담 환산)가 빠짐   (kosis.kr)
 # 넷 다 없어도 OECD 기반 블록(물가·노동몫·격차·임시직 비중)과
 # 공공부문(⑩ 알리오)은 그대로 수집된다 — 알리오는 키가 필요 없다.
+#
+# 회사 재무만 주 1회로 뺀 이유
+#   DART 는 회사 한 곳당 최대 7번을 물어야 한다(직원현황·손익을 최근 3개 사업연도까지
+#   시도하고 업종을 한 번 더). 1,883곳이면 13,000회다. 실측 2시간을 넘겼다.
+#   그런데 사업보고서는 **연 1회** 공시다. 연 1회 바뀌는 값을 매일 13,000번 묻고 있었다.
+#   매일 도는 쪽이 그만큼 오래 잡혀 있으면 DART 가 조금만 느려져도 그날 수집이 통째로
+#   날아간다. 물가·공공부문은 몇 분이면 끝나므로 갈라 둔다.
 on:
   schedule:
-    - cron: '0 1 * * *'      # 매일 KST 10:00 (UTC 01:00)
+    - cron: '0 1 * * *'      # 매일 KST 10:00 — 물가·임금·공공부문 (몇 분)
+    - cron: '0 2 * * 0'      # 일요일 KST 11:00 — 회사 재무까지 (2시간+)
   workflow_dispatch:
+    inputs:
+      companies:
+        description: '회사 재무(DART 1,883곳)도 수집 — 2시간 넘게 걸린다'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -43,9 +56,15 @@ jobs:
           PYTHONIOENCODING: utf-8
         run: python money_macro_monitor.py
 
-      # 회사별 지불능력 (DART 직원현황 + 손익)
-      # 실패해도 위 데이터는 살리기 위해 계속 진행한다.
+      # 회사별 지불능력 (DART 직원현황 + 손익) — 주 1회만.
+      # 일요일 예약과 수동 실행에서 companies 를 켠 경우에만 돈다.
+      # 건너뛴 날에는 docs/wage_negotiation.json 과 docs/co/ 가 그대로 남는다.
+      #
+      # 타임아웃을 건다. 이게 없으면 DART 가 응답을 안 줄 때 6시간을 잡고 있다가
+      # 뒤 단계(공공부문·커밋)까지 통째로 못 돌게 만든다. 실제로 그래서 한 번 끊었다.
       - name: Collect wage negotiation data
+        if: github.event.schedule == '0 2 * * 0' || github.event.inputs.companies == 'true'
+        timeout-minutes: 200
         env:
           DART_API_KEY: ${{ secrets.DART_API_KEY }}
           PYTHONIOENCODING: utf-8
