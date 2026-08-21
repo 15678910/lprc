@@ -1019,6 +1019,7 @@ function dependencyBlock(){
       ⑦과 겹쳐 보면 이렇게 됩니다. <b>한 사람이 감당할 수 있는 범위가 줄었고</b>(이 카드),
       <b>그 한 사람의 임금도 나라의 성장에 못 미쳤습니다</b>(⑦). 두 가지가 함께 일어났습니다.</div>
     ${housing()}
+    ${hhSize()}
     <div class="note">${esc(P.caveat||'')}<br>
       · 출처: ${esc(P.source||'')} · ${esc(P.definition||'')}</div>
   </div>`;
@@ -1029,6 +1030,42 @@ function dependencyBlock(){
       1992 년(80년대 말 폭등 직후)에서 재면 지금이 더 싸고, 2001 년 저점에서
       재면 훨씬 비싸다. 둘 다 사실이다. 그래서 한 숫자만 내지 않고 국면을 모두
       보여주고, '단독으로 쓰지 말라'를 화면에 못박는다. */
+/* 👪 평균 가구원 수 — 주거비를 1인 기준으로 환산한다.
+   집값이 그대로여도 한 채를 나눠 지던 사람이 줄면 1인당 부담은 그만큼 커진다.
+   위 주거비 배수와 곱해야 '한 사람이 지는 몫'이 나온다. */
+function hhSize(){
+  const H=D.household_size; if(!H||!H.series||H.series.length<3)return '';
+  const s=H.series, lo=Math.min(...s.map(x=>x.v)), hi=Math.max(...s.map(x=>x.v));
+  const W=520,Hh=64,PL=4,PR=4,PT=6,PB=6;
+  const X=i=>PL+(W-PL-PR)*i/(s.length-1);
+  const Y=v=>PT+(Hh-PT-PB)*(1-(v-lo)/((hi-lo)||1));
+  const path=s.map((d,i)=>`${i?'L':'M'}${X(i).toFixed(1)},${Y(d.v).toFixed(1)}`).join('');
+  return `<div class="lab" style="margin:22px 0 6px;font-weight:600;color:var(--tx)">
+      👪 한 집을 나눠 지는 사람 — 주거비의 1인당 환산</div>
+    <div class="hint" style="margin-bottom:10px">집값이 그대로여도 <b>같이 부담하던 사람이 줄면</b>
+      한 사람이 지는 몫은 커집니다. 위 주거비 배수는 <b>가구</b> 기준이라, 1인 기준으로 보려면
+      여기까지 곱해야 합니다.</div>
+    <div class="row">
+      <div class="box"><div class="lab">평균 가구원 수</div>
+        <div class="big mono" style="font-size:1.35rem">${fmt(H.size,2)}명</div>
+        <div class="lab">${esc(H.asof)}년 · ${esc(H.base)}년 ${fmt(H.base_size,2)}명에서</div></div>
+      <div class="box" style="border-color:var(--amb)"><div class="lab">1인당 부담 배수</div>
+        <div class="big mono warn" style="font-size:1.35rem">${fmt(H.shrink_x,2)}배</div>
+        <div class="lab">집값이 그대로여도 이만큼</div></div>
+      <div class="box" style="flex:2;min-width:260px"><div class="lab">추이</div>
+        <svg viewBox="0 0 ${W} ${Hh}" style="width:100%;height:auto" role="img"
+          aria-label="평균 가구원 수 추이">
+          <path d="${path}" fill="none" stroke="var(--acc)" stroke-width="2.2"/></svg>
+        <div class="lab">${esc(H.base)} → ${esc(H.asof)}</div></div>
+    </div>
+    <div class="note">📖 ${esc(H.definition||'')}<br>
+      ⚠️ ${esc(H.caveat||'')}<br>
+      ⚠️ 가구원 감소를 <b>전부 부담 증가로 읽으면 안 됩니다</b> — 1인가구 증가에는
+      독립 시기가 빨라진 것, 고령 단독가구가 는 것이 함께 섞여 있습니다.
+      같은 집을 더 적은 사람이 나눠 진다는 사실만 이 숫자가 말합니다.<br>
+      · 출처: ${esc(H.source||'')}</div>`;
+}
+
 function housing(){
   const S=D.seoul_property; if(!S)return '';
   const sets=[['매매',S.vs_wage],['전세',S.jeonse_vs_wage]].filter(x=>x[1]&&x[1].eras);

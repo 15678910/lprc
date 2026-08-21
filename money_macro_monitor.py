@@ -680,8 +680,24 @@ def household_block():
 # ── 평균 가구원 수 (KOSIS) ──────────────────────────────────────────
 # 집값이 그대로여도 한 채를 나눠 지던 사람이 줄면 1인당 주거부담은 커진다.
 # 대가족 → 핵가족 → 1인가구 변화를 숫자로 잡아 주거비를 1인 기준으로 환산한다.
-# ECOS 와 같은 방식으로 통계표 코드를 하드코딩하지 않고 이름으로 탐색한다.
-KOSIS_SEARCH_KW = ["평균 가구원수", "평균가구원수", "가구원수"]
+#
+# 이름으로 통계표를 찾으려던 방식은 버렸다. '가구원수' 로 검색하면 가계동향조사의
+# '가구원수별 가구당 월평균 가계수지' 가 먼저 잡힌다 — 가구원수를 분류 기준으로
+# 쓸 뿐 평균 가구원수가 아니다. 통계표를 지정한다.
+#
+#   인구총조사 > 가구부문 > 총조사가구(2015년 이후) > 전수부문(등록센서스)
+#   DT_1JC1501 가구형태별 가구 및 가구원
+#
+# KOSIS 에 '평균 가구원수' 라는 항목은 없다. 총가구와 총가구원을 받아 나눈다.
+#   T1100 총가구_가구(가구) · T1200 총가구_가구원_계(명)
+# 검증: 2025년 51,188,818 ÷ 23,245,980 = 2.202 명 (KOSIS 공표 지표 '2.2명' 과 일치)
+#
+# 엔드포인트도 바꿨다. statisticsData.do 는 오류 20(필수요청변수값 누락)만 돌려준다.
+# 화면이 [OpenAPI] 로 만들어 주는 것과 같은 Param/statisticsParameterData.do 를 쓴다.
+KOSIS_PARAM = "Param/statisticsParameterData.do"
+KOSIS_HH = {"orgId": "101", "tblId": "DT_1JC1501",
+            "itmId": "T1100+T1200",     # 총가구 · 총가구원
+            "objL1": "00"}              # 00 = 전국 (ALL 은 시군구까지 와 4만 셀을 넘긴다)
 
 
 def _kosis_json(path, params, timeout=45, label=""):
@@ -708,61 +724,49 @@ def household_size_block():
     if not key:
         print("  [INFO] KOSIS_API_KEY 없음 — 평균 가구원 수 생략")
         return None
-    cands = []
-    for kw in KOSIS_SEARCH_KW:
-        d = _kosis_json("statisticsSearch.do",
-                        {"method": "getList", "apiKey": key, "searchNm": kw,
-                         "format": "json", "jsonVD": "Y"}, label=f"검색'{kw}'")
-        if isinstance(d, dict) and d.get("err"):
-            print(f"    [WARN] KOSIS 검색 오류 {d.get('err')}: {str(d.get('errMsg'))[:60]}")
-            continue
-        for it in (d or []) if isinstance(d, list) else []:
-            cands.append(it)
-        if cands:
-            break
-    if not cands:
-        print("    [WARN] KOSIS 에서 가구원수 통계표를 못 찾음")
-        return None
-    # 무엇이 잡혔는지 반드시 남긴다 — 다음 회차에 코드를 좁힐 근거가 된다.
-    for it in cands[:6]:
-        print(f"    후보 {it.get('ORG_ID')}/{it.get('TBL_ID')} — {str(it.get('TBL_NM'))[:38]} "
-              f"({it.get('PRD_DE_FR')}~{it.get('PRD_DE_TO')})")
-    it = cands[0]
-    d = _kosis_json("statisticsData.do",
-                    {"method": "getList", "apiKey": key,
-                     "orgId": it.get("ORG_ID"), "tblId": it.get("TBL_ID"),
-                     "objL1": "ALL", "itmId": "ALL", "prdSe": "Y",
-                     "startPrdDe": "1970", "endPrdDe": str(datetime.now(KST).year),
-                     "format": "json", "jsonVD": "Y"})
+    p = {"method": "getList", "apiKey": key, "prdSe": "Y",
+         "newEstPrdCnt": "15",              # 수록이 2015년부터라 15면 전 구간을 덮는다
+         "format": "json", "jsonVD": "Y"}
+    p.update(KOSIS_HH)
+    d = _kosis_json(KOSIS_PARAM, p, label="가구·가구원")
     if isinstance(d, dict) and d.get("err"):
-        print(f"    [WARN] KOSIS 자료 조회 오류 {d.get('err')}: {str(d.get('errMsg'))[:80]}")
+        print(f"    [WARN] KOSIS 조회 오류 {d.get('err')}: {str(d.get('errMsg'))[:80]}")
         return None
     rows = d if isinstance(d, list) else []
     if not rows:
-        print("    [WARN] KOSIS 자료 0건")
         return None
-    print(f"    자료 {len(rows)}건 · 예시: " +
-          ", ".join(f"{r.get('PRD_DE')}={r.get('DT')}({str(r.get('ITM_NM'))[:10]}/{str(r.get('C1_NM'))[:10]})"
-                    for r in rows[:3]))
-    ser = {}
+
+    hh, pp = {}, {}                          # 연도별 총가구 · 총가구원
     for r in rows:
         try:
             v = float(r.get("DT"))
         except (TypeError, ValueError):
             continue
-        if 1.0 < v < 8.0:                       # 가구원 수의 물리적 범위
-            ser[str(r.get("PRD_DE"))[:4]] = v
+        y = str(r.get("PRD_DE"))[:4]
+        if r.get("ITM_ID") == "T1100":
+            hh[y] = v
+        elif r.get("ITM_ID") == "T1200":
+            pp[y] = v
+    ser = {y: pp[y] / hh[y] for y in sorted(set(hh) & set(pp)) if hh[y]}
+    # 가구원 수의 물리적 범위를 벗어나면 표 구조가 바뀐 것이다 — 조용히 쓰지 않는다.
+    ser = {y: v for y, v in ser.items() if 1.0 < v < 8.0}
     if len(ser) < 5:
-        print(f"    [WARN] 가구원 수로 볼 값이 부족 {len(ser)}건")
+        print(f"    [WARN] 가구원 수로 볼 값이 부족 {len(ser)}건 — 표 구조 변경 의심")
         return None
+
     ys = sorted(ser)
     a, b = ys[0], ys[-1]
     out = {"base": a, "asof": b, "base_size": round(ser[a], 2), "size": round(ser[b], 2),
            "shrink_x": round(ser[a] / ser[b], 2),
            "series": [{"y": y, "v": round(ser[y], 2)} for y in ys],
-           "source": f"KOSIS {it.get('ORG_ID')}/{it.get('TBL_ID')} {str(it.get('TBL_NM'))[:30]}",
-           "definition": "평균 가구원 수 — 1인당 주거부담 환산의 분모"}
-    print(f"  👪 평균 가구원 {ser[a]:.2f}명({a}) → {ser[b]:.2f}명({b}) · 1인당 부담 {ser[a] / ser[b]:.2f}배")
+           "source": f"KOSIS {KOSIS_HH['orgId']}/{KOSIS_HH['tblId']} "
+                     "인구총조사 가구형태별 가구 및 가구원(전국)",
+           "definition": "평균 가구원 수 = 총가구원 ÷ 총가구 — 1인당 주거부담 환산의 분모",
+           "caveat": ("KOSIS 에 '평균 가구원수' 항목은 없어 총가구원을 총가구로 나눈 값이다. "
+                      "등록센서스 기준이라 2015년부터만 있고, 그 이전(대가족 시절)과는 잇지 못한다."),
+           }
+    print(f"  👪 평균 가구원 {ser[a]:.2f}명({a}) → {ser[b]:.2f}명({b}) · "
+          f"1인당 부담 {ser[a] / ser[b]:.2f}배")
     return out
 
 
