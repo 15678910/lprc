@@ -2116,6 +2116,8 @@ function pvCard(){
         ⚠️ 접근율은 <b>본봉만이 아니라 수당·연금부담금까지 포함한 총보수</b> 기준입니다.
         위 봉급표 숫자와 직접 곱하거나 빼지 마세요.</div>`:''}
 
+    ${pvAllow()}
+
     <div class="note">⚠️ <b>단체협약으로 보수를 정할 수 없습니다.</b>
       공무원노조법 제10조에 따라 <b>법령·조례·예산으로 정해지는 내용</b>과 그 위임을 받아
       규정되는 내용은 단체협약으로서의 효력이 없습니다. 보수는 「공무원보수규정」 사항이라
@@ -2129,6 +2131,59 @@ function pvCard(){
       · 수집 ${esc(String(PV.generated||'').slice(0,10))}<br>
       🚨 어느 쪽 주장도 대변하지 않는 계산 결과이며 노무·법률 자문이 아닙니다.</div>
   </div>`;
+}
+
+/* 정액 수당 동결 — 본봉 인상률만 다투면 통째로 빠지는 부분이다.
+   금액이 고정된 수당은 동결되는 동안 물가만큼 실질이 깎인다. 잘 안 쓰이는데 세다. */
+function pvAllow(){
+  const A=(PV||{}).allowance, C=(PV||{}).cpi;
+  if(!A||!A.runs||!A.runs.length)return '';
+  const runs=A.runs.slice().reverse();          // 최근 구간부터
+  const now=runs[0];
+  const real=r=>{
+    if(!C||!C[r.from]||!C[r.to]||r.years<2)return null;
+    const infl=(C[r.to]/C[r.from]-1)*100, v=r.amt*C[r.from]/C[r.to];
+    return {infl, v, loss:(r.amt-v)*10000};
+  };
+  const longest=A.runs.reduce((a,b)=>(b.years>(a?a.years:0)?b:a),null);
+  const lr=longest?real(longest):null;
+  return `<div class="lab" style="margin:20px 0 6px;font-weight:600;color:var(--tx)">
+      🍚 ${esc(A.name)} — 정액 수당은 동결되면 그만큼 깎인다</div>
+    <div class="hint" style="margin-bottom:10px">본봉 인상률만 다투면 <b>이 부분이 통째로 빠집니다</b>.
+      금액이 고정된 수당은 동결되는 동안 물가만큼 <b>실질 가치가 줄어듭니다</b>.
+      「공무원수당 등에 관한 규정」 ${esc(A.article)} 의 개정 이력을 그대로 읽은 것입니다.</div>
+    <div class="row">
+      <div class="box"><div class="lab">현재 금액</div>
+        <div class="big mono" style="font-size:1.15rem">${fmt(now.amt,0)}만원</div>
+        <div class="lab">${esc(now.from)}년부터 · 월 지급</div></div>
+      ${lr?`<div class="box" style="border-color:var(--amb)">
+        <div class="lab">가장 길게 묶였던 구간</div>
+        <div class="big mono warn" style="font-size:1.15rem">${longest.years}년</div>
+        <div class="lab">${esc(longest.from)}~${esc(longest.to)} · ${fmt(longest.amt,0)}만원 그대로</div></div>
+      <div class="box"><div class="lab">그 사이 실질 가치</div>
+        <div class="big mono neg" style="font-size:1.15rem">−${won(Math.round(lr.loss))}원</div>
+        <div class="lab">물가 +${fmt(lr.infl,1)}% · ${esc(longest.to)}년 기준
+          ${fmt(lr.v,2)}만원의 값어치</div></div>`:''}
+    </div>
+    <div style="overflow-x:auto;margin-top:10px"><table><thead><tr>
+      <th>금액</th><th>기간</th><th>묶인 햇수</th><th>그 사이 물가</th><th>끝 해 기준 실질</th><th>깎인 금액(월)</th>
+    </tr></thead><tbody>${runs.map(r=>{const x=real(r);return `<tr>
+      <td class="mono"><b>${fmt(r.amt,0)}만원</b></td>
+      <td>${esc(r.from)} ~ ${esc(r.to)}</td>
+      <td class="mono ${r.years>=5?'warn':''}">${r.years}년</td>
+      <td class="mono">${x?'+'+fmt(x.infl,1)+'%':'—'}</td>
+      <td class="mono">${x?fmt(x.v,2)+'만원':'—'}</td>
+      <td class="mono ${x?'neg':''}">${x?'−'+won(Math.round(x.loss))+'원':'—'}</td></tr>`}).join('')}
+    </tbody></table></div>
+    <div class="note">📖 <b>어떻게 쓰나</b> — "본봉은 올랐다"는 말에 대한 답입니다.
+      ${lr?`${esc(longest.from)}년 ${fmt(longest.amt,0)}만원은 ${esc(longest.to)}년 기준
+      <b>${fmt(lr.v,2)}만원</b>의 값어치였습니다. 명목은 그대로였지만 실질로는
+      <b>월 ${won(Math.round(lr.loss))}원</b>, 연 ${won(Math.round(lr.loss*12))}원이 깎인 셈입니다.`:''}
+      정액 수당이 여럿이면 각각 더해야 실제 삭감분이 나옵니다.<br>
+      ⚠️ ${esc(A.note||'')}<br>
+      ⚠️ 물가는 소비자물가지수(연평균)로 환산했습니다. ②에서 낸 <b>나의 체감물가</b>로 다시 재면
+      깎인 폭은 더 커집니다 — 공식 물가에 없는 대출이자와 구독료 때문입니다.<br>
+      · 출처: ${esc(A.source||'')} · 물가 ${esc(((PV||{}).sources||{}).cpi||'')}</div>`;
 }
 
 function psNote(){

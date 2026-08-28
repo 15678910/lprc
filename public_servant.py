@@ -40,13 +40,16 @@
 🚨 어느 쪽 주장도 대변하지 않는 계산 결과 · 노무·법률 자문 아님.
 """
 
+import csv
 import html
+import io
 import json
 import os
 import re
 import ssl
 import sys
 import time
+import urllib.parse
 import urllib.request
 from datetime import datetime, timezone, timedelta
 
@@ -61,6 +64,21 @@ PAY_URL = "https://www.mpm.go.kr/mpm/info/resultPay/bizSalary/%d/"
 IDX_URL = ("https://www.index.go.kr/unity/potal/eNara/sub/showStblGams3.do"
            "?stts_cd=102101&idx_cd=1021&freq=Y&period=N")
 UA = {"User-Agent": "Mozilla/5.0 (compatible; lprc-public-servant)"}
+
+# 수당 — 국가법령정보센터. OC 는 이메일 ID 자리인데 'test' 로 열려 있다(키 신청 불필요).
+#
+# 「공무원수당 등에 관한 규정」에서 **금액이 조문 본문에 직접 박힌 것은 정액급식비뿐**이다.
+# 위험근무수당(별표8)·특수업무수당(별표11)·직급보조비(별표15)는 별표에 있고,
+# 별표는 API 로 본문이 오지 않고 첨부파일(HWP) 링크만 온다 → 자동화 불가.
+#
+# 정액급식비만으로도 논거는 선다. 연혁을 훑으면 동결 구조가 그대로 보인다.
+#   13만원 2010~2019 (10년) · 14만원 2020~2025 (6년) · 16만원 2026
+LAW_API = "https://www.law.go.kr/DRF"
+LAW_NAME = "공무원수당 등에 관한 규정"
+ALLOWANCE_ART = "제18조(정액급식비)"
+# 물가 — 동결 기간의 실질 가치 하락을 재려면 필요하다. money_macro_monitor 와 같은 계열.
+OECD_KR_CPI = ("https://sdmx.oecd.org/public/rest/data/OECD.SDD.TPS,DSD_PRICES@DF_PRICES_ALL,"
+               "/KOR.A.N.CPI.._T.N.?startPeriod=2005&format=csvfilewithlabels")
 
 YEARS_BACK = 5          # 올해 포함 최근 6개 연도
 TIMEOUT = 15            # 닿지 않을 때 오래 매달리지 않는다(알리오에서 배운 것)
@@ -204,6 +222,99 @@ def approach_rate():
             }
 
 
+def _law(path, **params):
+    params.setdefault("OC", "test")
+    params.setdefault("type", "JSON")
+    return json.loads(_get("%s/%s.do?%s" % (LAW_API, path, urllib.parse.urlencode(params)))
+                      .decode("utf-8", "replace"))
+
+
+def _meal_amount(arts):
+    """조문 목록에서 정액급식비 금액(만원)을 뽑는다."""
+    arts = arts if isinstance(arts, list) else [arts]
+    for a in arts:
+        c = re.sub(r"\s+", " ", str(a.get("조문내용", "")))
+        if ALLOWANCE_ART in c:
+            m = re.search(r"월\s*([\d,]+)\s*만원", c)
+            rev = re.findall(r"(\d{4})\.\d+\.\d+", c)
+            return (int(m.group(1).replace(",", "")) if m else None), rev
+    return None, []
+
+
+def allowance():
+    """정액급식비 — 현재 금액과 연도별 추이. 동결 기간이 그대로 드러난다."""
+    try:
+        d = _law("lawSearch", target="eflaw", query=LAW_NAME, display="100")
+        L = d["LawSearch"].get("law", [])
+        L = L if isinstance(L, list) else [L]
+        L = [x for x in L if x.get("법령명한글") == LAW_NAME]
+    except Exception as e:
+        diag("WARN", "법령 연혁 조회 실패: %s" % str(e)[:60])
+        return None
+    if not L:
+        diag("WARN", "「%s」을 찾지 못했다." % LAW_NAME)
+        return None
+
+    seen, ser, rev = set(), {}, []
+    for x in sorted(L, key=lambda z: str(z.get("시행일자"))):
+        ef = str(x.get("시행일자") or "")
+        y = ef[:4]
+        if not y or y in seen:
+            continue
+        try:
+            b = _law("lawService", target="eflaw", MST=x["법령일련번호"], efYd=ef)
+        except Exception:
+            continue
+        amt, r = _meal_amount((b.get("법령", {}).get("조문", {}) or {}).get("조문단위", []))
+        time.sleep(0.25)
+        if amt:
+            seen.add(y)
+            ser[y] = amt
+            if r:
+                rev = r          # 최신 조문의 개정 이력을 남긴다
+    if len(ser) < 3:
+        diag("WARN", "정액급식비 연혁이 %d건뿐 — 조문 형식이 바뀌었을 수 있다." % len(ser))
+        return None
+
+    # 금액이 바뀌지 않고 이어진 구간 = 동결 구간
+    ys = sorted(ser)
+    runs, cur = [], {"amt": ser[ys[0]], "from": ys[0], "to": ys[0]}
+    for y in ys[1:]:
+        if ser[y] == cur["amt"]:
+            cur["to"] = y
+        else:
+            runs.append(cur)
+            cur = {"amt": ser[y], "from": y, "to": y}
+    runs.append(cur)
+    for r in runs:
+        r["years"] = int(r["to"]) - int(r["from"]) + 1
+    return {"name": "정액급식비", "article": ALLOWANCE_ART,
+            "unit": "만원/월", "series": ser, "runs": runs, "revisions": rev,
+            "source": "국가법령정보센터 「%s」 (law.go.kr, 키 불필요)" % LAW_NAME,
+            "note": ("금액이 조문 본문에 직접 있는 수당은 정액급식비뿐이다. "
+                     "위험근무수당(별표8)·특수업무수당(별표11)·직급보조비(별표15)는 별표에 있고, "
+                     "별표는 API 로 본문이 오지 않아(첨부파일 링크만) 자동으로 가져올 수 없다."),
+            }
+
+
+def cpi_year():
+    """한국 소비자물가지수(연). 동결 구간의 실질 가치 하락을 재는 데 쓴다."""
+    try:
+        txt = _get(OECD_KR_CPI).decode("utf-8", "replace")
+    except Exception as e:
+        diag("WARN", "OECD 한국 CPI 조회 실패: %s" % str(e)[:60])
+        return None
+    out = {}
+    for r in csv.DictReader(io.StringIO(txt)):
+        if r.get("UNIT_MEASURE") != "IX":
+            continue
+        try:
+            out[str(r["TIME_PERIOD"])[:4]] = float(r["OBS_VALUE"])
+        except (ValueError, KeyError, TypeError):
+            continue
+    return out or None
+
+
 def main():
     if hasattr(sys.stdout, "reconfigure"):
         try:
@@ -238,6 +349,13 @@ def main():
         diag("ERROR", "봉급표를 한 해도 받지 못했다 — 기존 파일을 보존하고 끝낸다.")
         return 1
 
+    alw = allowance()
+    if alw:
+        for r in alw["runs"]:
+            log("  정액급식비 %d만원 · %s~%s (%d년)"
+                % (r["amt"], r["from"], r["to"], r["years"]))
+    cpi = cpi_year()
+
     idx = approach_rate()
     if idx:
         ys = idx["years"]
@@ -257,9 +375,13 @@ def main():
         "pay_file": "./public_servant_pay.json",
         "general": gen,             # 연도 → 일반직 계급×호봉 (화면 기본)
         "index": idx,               # 접근율·처우개선율
+        "allowance": alw,           # 정액급식비 — 동결 구간이 그대로 보인다
+        "cpi": cpi,                 # 한국 CPI(연) — 동결분의 실질 가치 계산용
         "sources": {
             "pay": "인사혁신처 공무원 봉급표 (mpm.go.kr) — 키 불필요",
             "index": "지표누리 e-나라지표 1021 (index.go.kr) — 키 불필요",
+            "allowance": "국가법령정보센터 「공무원수당 등에 관한 규정」 (law.go.kr) — 키 불필요",
+            "cpi": "OECD SDMX DSD_PRICES@DF_PRICES_ALL (한국 CPI 지수, 연) — 키 불필요",
         },
         "limits": [
             "봉급표는 **본봉만**이다. 정액급식비·직급보조비 등 수당은 「공무원수당 등에 "
@@ -270,6 +392,8 @@ def main():
             "이 화면은 교섭 문안이 아니라 예산·법령을 바꿀 근거를 만드는 자료다.",
             "민간 대비 보수수준은 민간 100인 이상 사업체 **사무·관리직** 임금이 기준이다. "
             "전체 민간 평균이 아니므로 '민간보다 몇 % 낮다'로 옮겨 말하면 안 된다.",
+            "수당 중 금액이 조문에 직접 있는 것은 **정액급식비뿐**이다. 직급보조비·위험근무수당·"
+            "특수업무수당은 별표에 있고 별표는 API 로 본문이 오지 않아 자동으로 못 가져온다.",
         ],
         "diag": DIAG,
     }
