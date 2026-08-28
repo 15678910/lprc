@@ -82,6 +82,14 @@ jobs:
           PYTHONIOENCODING: utf-8
         run: python public_sector.py || echo "public_sector had errors, continuing..."
 
+      # 공무원 봉급표(인사혁신처) + 민간 대비 보수수준(지표누리). 둘 다 키가 필요 없다.
+      # 봉급표는 연 1회, 접근율도 연 1회 갱신이라 매일 돌아도 대개 '변경 없음'이다.
+      - name: Collect public servant data
+        timeout-minutes: 10
+        env:
+          PYTHONIOENCODING: utf-8
+        run: python public_servant.py || echo "public_servant had errors, continuing..."
+
       - name: Commit results
         run: |
           git config user.name "github-actions[bot]"

@@ -151,6 +151,15 @@ function loadInd(k){
 /* 공공부문(알리오)도 같은 방식으로 쪼개 둔다 — 목록 66KB + 기능별 그룹 파일.
    다만 목록조차 첫 화면에 필요하지 않다. ⑩은 페이지 맨 아래에 있고 공공기관
    노동자만 쓰는 카드라, 나머지 화면이 다 뜬 뒤에 따로 받는다. */
+/* ⑪ 공무원 — ⑩ 과 같은 방식으로 화면 아래에 닿을 때 받는다. 34KB. */
+let PV=null, pvFail=false;
+function loadPV(){
+  if(PV||PSLOAD.__pv)return; PSLOAD.__pv=1;
+  fetch('./public_servant.json?v='+Date.now(),{cache:'no-store'})
+    .then(r=>r.ok?r.json():null).catch(()=>null)
+    .then(j=>{PV=j;pvFail=!j;delete PSLOAD.__pv;render()});
+}
+
 let PS=null; const PSCACHE={}, PSLOAD={};
 let psFail=false;
 function loadPS(){
@@ -245,7 +254,7 @@ function init(d){
      co:st.co||'', coQ:st.coQ||'', subQ:st.subQ||'', coManual:st.coManual||{},
      share:st.share??30, caseRate:st.caseRate??0,
      gap:st.gap||{}, gapSubM:st.gapSubM||{},
-     ps:st.ps||'', psRate:st.psRate??0,
+     ps:st.ps||'', psRate:st.psRate??0, pv:st.pv||{},
      wage:st.wage??((d.wage&&d.wage.nominal_yoy_pct)||0)};
   render();
 }
@@ -1975,6 +1984,153 @@ function psCard(){
   </div>`;
 }
 
+/* ── ⑪ 공무원 ── ⑩ 은 공공기관 '직원'이다. 공무원은 법적 지위도 교섭 구조도 다르다.
+   보수를 대통령령이 정하므로 단협으로 정할 수 없다(공무원노조법 제10조).
+   그래서 이 화면의 목적은 교섭 문안이 아니라 **예산·법령을 바꿀 근거**를 만드는 것이다. */
+window.setPv=(k,v)=>{S.pv=S.pv||{};S.pv[k]=v;save();render()};
+
+function pvCard(){
+  if(!PV||!PV.general)return `<div class="card">
+    <h2>⑪ 공무원 — 봉급표와 민간 대비 보수수준</h2>
+    <div class="hint">⑩ 공공부문은 공공기관 <b>직원</b>입니다. 공무원은 보수를 대통령령이 정해
+      교섭 구조가 다릅니다.</div>
+    <div class="lab">${pvFail?'자료를 불러오지 못했습니다. 새로고침해 주세요.'
+      :'⏳ 공무원 자료를 불러오는 중입니다…'}</div></div>`;
+
+  const P=S.pv||{}, yrs=PV.years.map(String), yr=P.y&&PV.general[P.y]?P.y:yrs[yrs.length-1];
+  const G=PV.general[yr], grades=G.grades;
+  const gi=P.g!=null&&grades[P.g]?+P.g:grades.length-1;      // 기본 9급
+  const stepKeys=Object.keys(G.steps).map(Number).sort((a,b)=>a-b);
+  const st=P.s&&G.steps[P.s]?+P.s:1;
+  const cur=(G.steps[st]||[])[gi];
+  const prev=(()=>{const py=String(+yr-1),g2=PV.general[py];
+    return g2&&g2.steps[st]?g2.steps[st][gi]:null})();
+  const yoy=(cur&&prev)?(cur/prev-1)*100:null;
+
+  const I=PV.index, iy=I?I.years:[], last=iy[iy.length-1];
+  const app=I?I.approach:{}, rz=I?I.raise_pct:{};
+  const peak=iy.reduce((a,y)=>(app[y]>(app[a]||0)?y:a), iy[0]||'');
+  const gap=(I&&last&&peak)?app[peak]-app[last]:null;
+
+  // 접근율 추이 — 값이 작고 방향이 뚜렷해 선 하나면 충분하다
+  const spark=(()=>{
+    if(!iy.length)return '';
+    const v=iy.map(y=>app[y]).filter(x=>x!=null);
+    const lo=Math.min(...v),hi=Math.max(...v),W=520,H=70,PL=4,PT=6,PB=6;
+    const X=i=>PL+(W-2*PL)*i/(iy.length-1), Y=x=>PT+(H-PT-PB)*(1-(x-lo)/((hi-lo)||1));
+    return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto" role="img"
+        aria-label="민간 대비 공무원 보수수준 추이">
+      <path d="${iy.map((y,i)=>`${i?'L':'M'}${X(i).toFixed(1)},${Y(app[y]).toFixed(1)}`).join('')}"
+        fill="none" stroke="var(--acc)" stroke-width="2.2"/></svg>`;
+  })();
+
+  const sel=(id,val,opts,lab)=>`<div style="flex:1;min-width:120px">
+    <div class="lab">${lab}</div>
+    <select onchange="setPv('${id}',this.value)" style="width:100%;background:#0d1219;
+      border:1px solid var(--line);color:var(--tx);border-radius:7px;padding:7px 9px;font-size:.93rem">
+      ${opts.map(([v,t])=>`<option value="${esc(String(v))}"${String(v)===String(val)?' selected':''}>${esc(t)}</option>`).join('')}
+    </select></div>`;
+
+  /* ⑩ 공공기관 초임과의 비교 — **수당을 넣어야만** 성립한다.
+     봉급표는 본봉뿐이고 알리오 신입사원 초임은 기본급·수당·성과급을 더한 합계다.
+     둘을 그냥 나누면 공무원이 실제보다 훨씬 낮게 나오고, 교섭에서 그대로 반박당한다.
+     그래서 이용자가 수당을 넣기 전에는 비교를 보여주지 않는다. */
+  const allow=Math.max(0, +(P.allow||0));
+  const total=cur?cur+allow:null;
+  const psCmp=(()=>{
+    if(!PS||!PS.all||!PS.all.pay_new||!total)return '';
+    const nw=PS.all.pay_new*1000/12;          // 천원/연 → 원/월
+    if(!allow)return `<div class="box" style="flex:2;min-width:250px">
+      <div class="lab">공공기관 초임과 비교하려면</div>
+      <div class="lab" style="margin-top:4px">봉급표는 <b>본봉뿐</b>이고 알리오 초임은
+        수당·성과급을 더한 <b>합계</b>입니다. 왼쪽에 월 수당을 넣으면 그때 비교가 나옵니다.
+        넣지 않은 채 견주면 공무원이 실제보다 낮게 나와 <b>반박당합니다</b>.</div></div>`;
+    return `<div class="box"><div class="lab">공공기관 신입 초임 대비</div>
+      <div class="big mono ${total>=nw?'pos':'neg'}" style="font-size:1.15rem">${fmt(total/nw*100,1)}%</div>
+      <div class="lab">본봉+수당 ${won(total)}원<br>
+        알리오 355곳 중위 초임 ${won(Math.round(nw))}원/월</div></div>`;
+  })();
+
+  return `<div class="card">
+    <h2>⑪ 공무원 — 봉급표와 민간 대비 보수수준</h2>
+    <div class="hint">⑩ 공공부문은 공공기관 <b>직원</b>입니다. 공무원은 보수를
+      <b>「공무원보수규정」(대통령령)</b>이 정하므로 교섭 구조가 다릅니다.
+      이 화면은 교섭 문안이 아니라 <b>예산과 법령을 바꿀 근거</b>를 만드는 자료입니다.</div>
+
+    <div class="row noprint" style="margin-bottom:12px">
+      ${sel('y',yr,yrs.map(y=>[y,y+'년']),'연도')}
+      ${sel('g',gi,grades.map((g,i)=>[i,g]),'계급')}
+      ${sel('s',st,stepKeys.map(s=>[s,s+'호봉']),'호봉')}
+      <div style="flex:1;min-width:150px"><div class="lab">월 수당 합계 (원)</div>
+        <input type="number" step="10000" min="0" value="${allow}"
+          oninput="setPv('allow',this.value)" style="width:100%"
+          placeholder="정액급식비·직급보조비 등"></div>
+    </div>
+    <div class="lab noprint" style="margin:-4px 0 12px">수당은 「공무원수당 등에 관한 규정」
+      소관이라 봉급표에 없습니다. 급여명세서의 <b>본봉 외 항목 합계</b>를 넣으면
+      총보수 기준으로 비교됩니다.</div>
+
+    <div class="row">
+      <div class="box"><div class="lab">본봉 (월)</div>
+        <div class="big mono" style="font-size:1.15rem">${won(cur)}원</div>
+        <div class="lab">${esc(yr)}년 ${esc(grades[gi])} ${st}호봉</div></div>
+      <div class="box"><div class="lab">전년 대비</div>
+        <div class="big mono ${sc(yoy)}" style="font-size:1.15rem">${yoy==null?'—':(yoy>=0?'+':'')+fmt(yoy,1)+'%'}</div>
+        <div class="lab">${prev?won(prev)+'원에서':'전년 자료 없음'}</div></div>
+      <div class="box"><div class="lab">연 환산 ${allow?'(본봉+수당)':'(본봉만)'}</div>
+        <div class="big mono" style="font-size:1.15rem">${total?psMan(total*12/1000):'—'}</div>
+        <div class="lab">${allow?'입력한 수당 '+won(allow)+'원/월 포함'
+          :'수당 제외 — 실수령액과 다릅니다'}</div></div>
+      ${psCmp}
+    </div>
+
+    ${I?`<div class="lab" style="margin:20px 0 6px;font-weight:600;color:var(--tx)">
+        민간 대비 공무원 보수수준 — 정부 자신의 지표</div>
+      <div class="hint" style="margin-bottom:10px">인사혁신처가 해마다 산출해 공표하는 값입니다.
+        민간 <b>100인 이상 사업체 사무·관리직</b> 임금을 100 으로 놓았습니다.
+        정부가 세운 기준이라 <b>반박하기 어렵습니다</b>.</div>
+      <div class="row">
+        <div class="box"><div class="lab">${esc(last)}년 접근율</div>
+          <div class="big mono ${app[last]>=90?'pos':'neg'}">${fmt(app[last],1)}%</div>
+          <div class="lab">처우개선율 ${fmt(rz[last],1)}%</div></div>
+        <div class="box" style="border-color:var(--amb)"><div class="lab">최고치(${esc(peak)}년) 대비</div>
+          <div class="big mono warn">−${fmt(gap,1)}%p</div>
+          <div class="lab">${esc(peak)}년 ${fmt(app[peak],1)}% 에서 내려온 폭</div></div>
+        <div class="box" style="flex:2;min-width:250px"><div class="lab">추이</div>
+          ${spark}<div class="lab">${esc(iy[0])} → ${esc(last)}</div></div>
+      </div>
+      <div style="overflow-x:auto;margin-top:10px"><table><thead><tr>
+        <th>연도</th>${iy.map(y=>`<th>${esc(y)}</th>`).join('')}</tr></thead><tbody>
+        <tr><td><b>민간 대비 보수수준</b></td>
+          ${iy.map(y=>`<td class="mono${app[y]===app[peak]?' pos':''}">${fmt(app[y],1)}</td>`).join('')}</tr>
+        <tr><td>처우개선율</td>
+          ${iy.map(y=>`<td class="mono lab">${fmt(rz[y],1)}</td>`).join('')}</tr>
+      </tbody></table></div>
+      <div class="note">📖 <b>읽는 법</b> — ${esc(peak)}년 ${fmt(app[peak],1)}% 에서
+        ${esc(last)}년 ${fmt(app[last],1)}% 로 <b>${fmt(gap,1)}%p</b> 내려왔습니다.
+        처우개선율이 낮았던 해와 겹치는지 아래 줄에서 확인하세요 — 인상률이 물가에 못 미친 해가
+        쌓이면 접근율이 내려갑니다. <b>"정부가 정한 기준에 정부가 미달한다"</b>는 것이
+        이 표의 쓸모입니다.<br>
+        ⚠️ ${esc((I.definition||''))} <b>전체 민간 평균이 아니므로</b>
+        '민간보다 몇 % 낮다'로 옮겨 말하면 반박당합니다.<br>
+        ⚠️ 접근율은 <b>본봉만이 아니라 수당·연금부담금까지 포함한 총보수</b> 기준입니다.
+        위 봉급표 숫자와 직접 곱하거나 빼지 마세요.</div>`:''}
+
+    <div class="note">⚠️ <b>단체협약으로 보수를 정할 수 없습니다.</b>
+      공무원노조법 제10조에 따라 <b>법령·조례·예산으로 정해지는 내용</b>과 그 위임을 받아
+      규정되는 내용은 단체협약으로서의 효력이 없습니다. 보수는 「공무원보수규정」 사항이라
+      단협에 써도 효력이 생기지 않고, 정부교섭대표는 그 내용이 이행되도록
+      <b>성실히 노력할 의무</b>만 집니다.<br>
+      그래서 이 화면의 숫자는 <b>공무원보수위원회 → 기재부 예산 → 국무회의</b> 라인과
+      여론을 향한 근거로 쓰는 것이 맞습니다. 실제로 2026년은 보수위원회가 2.7~2.9%를
+      제시했으나 최종 3.5%로 정해졌습니다 — <b>위원회 권고가 천장이 아닙니다.</b><br>
+      ${((PV.limits)||[]).map(x=>`⚠️ ${esc(x)}`).join('<br>')}<br>
+      · 출처: ${esc((PV.sources||{}).pay||'')} · ${esc((PV.sources||{}).index||'')}<br>
+      · 수집 ${esc(String(PV.generated||'').slice(0,10))}<br>
+      🚨 어느 쪽 주장도 대변하지 않는 계산 결과이며 노무·법률 자문이 아닙니다.</div>
+  </div>`;
+}
+
 function psNote(){
   const b=(PS&&PS.basis)||{};
   return `<div class="note">
@@ -1990,7 +2146,7 @@ function psNote(){
 
 function sideNav(){
   const nav=$('snav'); if(!nav)return;
-  const marks='①②③④⑤⑥⑦⑧⑨⑩';
+  const marks='①②③④⑤⑥⑦⑧⑨⑩⑪';
   const hs=[...document.querySelectorAll('#app .card>h2')]
     .filter(h=>marks.indexOf((h.textContent.trim()[0]||''))>=0);
   if(!hs.length){nav.innerHTML='';return}
@@ -2037,7 +2193,7 @@ function restoreFocus(k){
    '카드 윗변이 화면 아래에서 600px 안으로 들어왔는가'만 보면 된다. */
 let psHook=null;
 function psWatch(){
-  if(PS||PSLOAD.__ix||psHook)return;
+  if((PS&&PV)||psHook)return;
   const near=()=>{
     const h=[...document.querySelectorAll('#app .card>h2')]
       .find(x=>x.textContent.trim()[0]==='⑩');
@@ -2046,7 +2202,7 @@ function psWatch(){
   psHook=()=>{
     if(PS||PSLOAD.__ix||!near())return;
     removeEventListener('scroll',psHook); removeEventListener('resize',psHook);
-    psHook=null; loadPS();
+    psHook=null; loadPS(); loadPV();
   };
   addEventListener('scroll',psHook,{passive:true});
   addEventListener('resize',psHook,{passive:true});
@@ -2214,6 +2370,8 @@ function render(){
   </div>
 
   ${psCard()}
+
+  ${pvCard()}
 
   <div class="card">
     <h2>출처 · 기준시점</h2>
