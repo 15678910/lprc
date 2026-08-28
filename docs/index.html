@@ -2141,10 +2141,14 @@ function pvAllow(){
   if(!A||!A.runs||!A.runs.length)return '';
   const runs=A.runs.slice().reverse();          // 최근 구간부터
   const now=runs[0];
+  /* '2019년 기준 11.29만원의 값어치' 같은 말은 읽어도 잘 안 들어온다.
+     기준 시점을 옮겨 다니기 때문이다. 방향을 뒤집어 **"물가를 따라갔다면 얼마여야
+     했나"**로 적는다. 교섭에서 쓰는 문장('얼마를 올려야 원래대로냐')과도 바로 맞는다. */
   const real=r=>{
     if(!C||!C[r.from]||!C[r.to]||r.years<2)return null;
-    const infl=(C[r.to]/C[r.from]-1)*100, v=r.amt*C[r.from]/C[r.to];
-    return {infl, v, loss:(r.amt-v)*10000};
+    const infl=(C[r.to]/C[r.from]-1)*100;
+    const need=r.amt*C[r.to]/C[r.from];      // 물가만큼 올랐다면 있어야 할 금액
+    return {infl, need, gap:(need-r.amt)*10000};
   };
   const longest=A.runs.reduce((a,b)=>(b.years>(a?a.years:0)?b:a),null);
   const lr=longest?real(longest):null;
@@ -2161,26 +2165,35 @@ function pvAllow(){
         <div class="lab">가장 길게 묶였던 구간</div>
         <div class="big mono warn" style="font-size:1.15rem">${longest.years}년</div>
         <div class="lab">${esc(longest.from)}~${esc(longest.to)} · ${fmt(longest.amt,0)}만원 그대로</div></div>
-      <div class="box"><div class="lab">그 사이 실질 가치</div>
-        <div class="big mono neg" style="font-size:1.15rem">−${won(Math.round(lr.loss))}원</div>
-        <div class="lab">물가 +${fmt(lr.infl,1)}% · ${esc(longest.to)}년 기준
-          ${fmt(lr.v,2)}만원의 값어치</div></div>`:''}
+      <div class="box"><div class="lab">물가를 따라갔다면</div>
+        <div class="big mono" style="font-size:1.15rem">${fmt(lr.need,1)}만원</div>
+        <div class="lab">${esc(longest.to)}년에 이만큼이어야 같은 값어치<br>
+          <span style="opacity:.75">${esc(longest.from)}년 ${fmt(longest.amt,0)}만원 + 물가 ${fmt(lr.infl,1)}%</span></div></div>
+      <div class="box"><div class="lab">실제와의 차이 (월)</div>
+        <div class="big mono neg" style="font-size:1.15rem">−${won(Math.round(lr.gap))}원</div>
+        <div class="lab">받은 것은 ${fmt(longest.amt,0)}만원 그대로<br>
+          연 ${won(Math.round(lr.gap*12))}원</div></div>`:''}
     </div>
     <div style="overflow-x:auto;margin-top:10px"><table><thead><tr>
-      <th>금액</th><th>기간</th><th>묶인 햇수</th><th>그 사이 물가</th><th>끝 해 기준 실질</th><th>깎인 금액(월)</th>
+      <th>받은 금액</th><th>기간</th><th>묶인 햇수</th><th>그 사이 물가</th>
+      <th>물가를 따라갔다면</th><th>차이(월)</th>
     </tr></thead><tbody>${runs.map(r=>{const x=real(r);return `<tr>
       <td class="mono"><b>${fmt(r.amt,0)}만원</b></td>
       <td>${esc(r.from)} ~ ${esc(r.to)}</td>
       <td class="mono ${r.years>=5?'warn':''}">${r.years}년</td>
       <td class="mono">${x?'+'+fmt(x.infl,1)+'%':'—'}</td>
-      <td class="mono">${x?fmt(x.v,2)+'만원':'—'}</td>
-      <td class="mono ${x?'neg':''}">${x?'−'+won(Math.round(x.loss))+'원':'—'}</td></tr>`}).join('')}
+      <td class="mono">${x?fmt(x.need,1)+'만원':'—'}</td>
+      <td class="mono ${x?'neg':''}">${x?'−'+won(Math.round(x.gap))+'원':'—'}</td></tr>`}).join('')}
     </tbody></table></div>
-    <div class="note">📖 <b>어떻게 쓰나</b> — "본봉은 올랐다"는 말에 대한 답입니다.
-      ${lr?`${esc(longest.from)}년 ${fmt(longest.amt,0)}만원은 ${esc(longest.to)}년 기준
-      <b>${fmt(lr.v,2)}만원</b>의 값어치였습니다. 명목은 그대로였지만 실질로는
-      <b>월 ${won(Math.round(lr.loss))}원</b>, 연 ${won(Math.round(lr.loss*12))}원이 깎인 셈입니다.`:''}
-      정액 수당이 여럿이면 각각 더해야 실제 삭감분이 나옵니다.<br>
+    <div class="note">📖 <b>어떻게 읽나</b> — 맨 윗줄부터 이렇게 읽습니다.
+      ${lr?`<b>${esc(longest.from)}년에 ${fmt(longest.amt,0)}만원이던 정액급식비가
+      ${esc(longest.to)}년까지 ${longest.years}년 동안 한 번도 오르지 않았습니다.</b>
+      그 사이 물가가 ${fmt(lr.infl,1)}% 올랐으니, 같은 것을 사려면
+      ${esc(longest.to)}년에는 <b>${fmt(lr.need,1)}만원</b>이 있어야 했습니다.
+      그런데 받은 것은 여전히 ${fmt(longest.amt,0)}만원이었습니다 —
+      <b>월 ${won(Math.round(lr.gap))}원</b>, 연 ${won(Math.round(lr.gap*12))}원이 모자랐던 셈입니다.<br><br>`:''}
+      "본봉은 올랐다"는 말에 대한 답이 이것입니다.
+      정액 수당이 여럿이면 각각 더해야 실제 부족분이 나옵니다.<br>
       ⚠️ ${esc(A.note||'')}<br>
       ⚠️ 물가는 소비자물가지수(연평균)로 환산했습니다. ②에서 낸 <b>나의 체감물가</b>로 다시 재면
       깎인 폭은 더 커집니다 — 공식 물가에 없는 대출이자와 구독료 때문입니다.<br>
