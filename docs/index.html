@@ -2199,15 +2199,17 @@ function pvOecd(){
   return `<div class="lab" style="margin:20px 0 6px;font-weight:600;color:var(--tx)">
       🌐 정부 인건비 국제 비교 — 일반정부 피용자보수 ÷ GDP
       <span style="font-weight:400;color:var(--mut)">(${esc(O.year)}년 · ${O.n}개국)</span></div>
-    <div class="hint" style="margin-bottom:10px">44개국이 <b>같은 국민계정 기준</b>으로 내는 값이라
+    <div class="hint" style="margin-bottom:10px">${O.n}개국이 <b>같은 국민계정 기준</b>으로 내는 값이라
       비교가 깨끗합니다. 직급별 급여의 국제 비교는 OECD 가 공개 API 로 열어 두지 않았습니다.</div>
     <div class="row">
       <div class="box"><div class="lab">한국</div>
-        <div class="big mono ${O.kr<O.median?'neg':'pos'}">${fmt(O.kr,1)}%</div>
-        <div class="lab">${O.n}개국 중 <b>${O.rank}위</b> (높은 순)</div></div>
-      <div class="box"><div class="lab">중위 국가</div>
-        <div class="big mono" style="font-size:1.35rem">${fmt(O.median,1)}%</div>
-        <div class="lab">한국과의 차이 ${fmt(O.kr-O.median,1)}%p</div></div>
+        <div class="big mono ${O.kr<(O.avg||O.median)?'neg':'pos'}">${fmt(O.kr,1)}%</div>
+        <div class="lab">${O.n}개국 중 <b>${O.rank}위</b></div></div>
+      <div class="box"><div class="lab">${O.avg?'OECD 평균':'중위 국가'}</div>
+        <div class="big mono" style="font-size:1.35rem">${fmt(O.avg||O.median,1)}%</div>
+        <div class="lab">${(()=>{const d=O.kr-(O.avg||O.median);
+          return d<0?`평균보다 <b class="neg">${fmt(d,1)}%p</b> 낮음`
+                    :`평균보다 <b class="pos">+${fmt(d,1)}%p</b> 높음`})()}</div></div>
       <div class="box" style="flex:2;min-width:280px"><div class="lab">주요국</div>
         <div style="margin-top:6px">${pick.map(c=>`
           <div style="display:flex;align-items:center;gap:8px;margin:3px 0">

@@ -263,6 +263,11 @@ def oecd_gov_pay():
         if y == yr:
             cur[a] = v
             names[a] = nm
+    # 응답에 나라뿐 아니라 **집계행**이 섞여 있다(OECD, OECD_REP=OECD average country,
+    # EUOECD). 이걸 빼지 않으면 '44개국 중 42위' 처럼 국가 수와 순위가 함께 부풀려진다.
+    AGG = {"OECD", "OECD_REP", "EUOECD", "EU27_2020", "OAVG", "WORLD", "G7", "G20"}
+    avg = cur.get("OECD_REP")          # OECD 가 계산한 평균국(average country)
+    cur = dict((a, v) for a, v in cur.items() if a not in AGG)
     order = sorted(cur.items(), key=lambda kv: -kv[1])
     rank = [a for a, _ in order].index("KOR") + 1
     ser = {}
@@ -270,11 +275,13 @@ def oecd_gov_pay():
         if a == "KOR":
             ser[y] = v
     return {"year": yr, "kr": cur["KOR"], "rank": rank, "n": len(cur),
+            "avg": avg,                # OECD 공식 집계. 없으면 화면이 중위로 물러선다
             "median": sorted(cur.values())[len(cur) // 2],
             "series_kr": ser,
             "countries": [{"code": a, "name": names.get(a, a), "v": v} for a, v in order],
             "source": "OECD Government at a Glance · DF_GOV_TRANSACTION (D1/GDP) — 키 불필요",
-            "definition": "일반정부 피용자보수 ÷ GDP. 44개국이 같은 국민계정 기준으로 낸다.",
+            "definition": ("일반정부 피용자보수 ÷ GDP. 국가별 국민계정 기준으로 산출되며, "
+                           "평균은 OECD 가 계산해 함께 공표하는 'OECD average country' 값이다."),
             "caveat": ("**1인당 급여가 아니다.** 공무원 수가 적으면 급여가 높아도 비중은 낮게 나온다. "
                        "한국이 낮은 데는 공무원 수가 적은 몫이 크므로 '공무원 보수가 낮다'로 "
                        "곧장 옮기면 반박당한다. 직급별 급여의 국제 비교는 OECD 가 SDMX 로 열어 두지 않았다."),
@@ -416,8 +423,9 @@ def main():
     cpi = cpi_year()
     gov = oecd_gov_pay()
     if gov:
-        log("  OECD 정부 인건비/GDP %s년 · 한국 %.1f%% · %d개국 중 %d위 (중위 %.1f%%)"
-            % (gov["year"], gov["kr"], gov["n"], gov["rank"], gov["median"]))
+        log("  OECD 정부 인건비/GDP %s년 · 한국 %.1f%% · %d개국 중 %d위 · OECD 평균 %s"
+            % (gov["year"], gov["kr"], gov["n"], gov["rank"],
+               ("%.1f%%" % gov["avg"]) if gov.get("avg") else "없음(중위 %.1f%%)" % gov["median"]))
 
     idx = approach_rate()
     if idx:
