@@ -2117,6 +2117,7 @@ function pvCard(){
         위 봉급표 숫자와 직접 곱하거나 빼지 마세요.</div>`:''}
 
     ${pvAllow()}
+    ${pvOecd()}
 
     <div class="note">⚠️ <b>단체협약으로 보수를 정할 수 없습니다.</b>
       공무원노조법 제10조에 따라 <b>법령·조례·예산으로 정해지는 내용</b>과 그 위임을 받아
@@ -2184,6 +2185,48 @@ function pvAllow(){
       ⚠️ 물가는 소비자물가지수(연평균)로 환산했습니다. ②에서 낸 <b>나의 체감물가</b>로 다시 재면
       깎인 폭은 더 커집니다 — 공식 물가에 없는 대출이자와 구독료 때문입니다.<br>
       · 출처: ${esc(A.source||'')} · 물가 ${esc(((PV||{}).sources||{}).cpi||'')}</div>`;
+}
+
+/* 국제 비교 — 정부가 인건비에 GDP 의 몇 %를 쓰는가.
+   직급별 공무원 급여의 국제 비교는 OECD 가 SDMX 로 열어 두지 않았다(DF_GOV_2025 는 404).
+   대신 44개국이 같은 국민계정 기준으로 내는 이 값을 쓴다. */
+function pvOecd(){
+  const O=(PV||{}).oecd;
+  if(!O||!O.countries)return '';
+  const KEY=['DNK','SWE','FRA','GBR','ITA','DEU','USA','KOR','JPN'];
+  const pick=O.countries.filter(c=>KEY.includes(c.code));
+  const mx=Math.max(...O.countries.map(c=>c.v))||1;
+  return `<div class="lab" style="margin:20px 0 6px;font-weight:600;color:var(--tx)">
+      🌐 정부 인건비 국제 비교 — 일반정부 피용자보수 ÷ GDP
+      <span style="font-weight:400;color:var(--mut)">(${esc(O.year)}년 · ${O.n}개국)</span></div>
+    <div class="hint" style="margin-bottom:10px">44개국이 <b>같은 국민계정 기준</b>으로 내는 값이라
+      비교가 깨끗합니다. 직급별 급여의 국제 비교는 OECD 가 공개 API 로 열어 두지 않았습니다.</div>
+    <div class="row">
+      <div class="box"><div class="lab">한국</div>
+        <div class="big mono ${O.kr<O.median?'neg':'pos'}">${fmt(O.kr,1)}%</div>
+        <div class="lab">${O.n}개국 중 <b>${O.rank}위</b> (높은 순)</div></div>
+      <div class="box"><div class="lab">중위 국가</div>
+        <div class="big mono" style="font-size:1.35rem">${fmt(O.median,1)}%</div>
+        <div class="lab">한국과의 차이 ${fmt(O.kr-O.median,1)}%p</div></div>
+      <div class="box" style="flex:2;min-width:280px"><div class="lab">주요국</div>
+        <div style="margin-top:6px">${pick.map(c=>`
+          <div style="display:flex;align-items:center;gap:8px;margin:3px 0">
+            <span class="lab" style="flex:0 0 84px${c.code==='KOR'?';color:var(--amb);font-weight:600':''}">${esc(c.name.slice(0,10))}</span>
+            <span style="flex:1;height:9px;background:#0d1219;border-radius:5px;overflow:hidden">
+              <i style="display:block;height:100%;width:${(c.v/mx*100).toFixed(0)}%;
+                 background:${c.code==='KOR'?'var(--amb)':'var(--acc)'};opacity:.8"></i></span>
+            <span class="mono lab" style="flex:0 0 46px;text-align:right">${fmt(c.v,1)}%</span>
+          </div>`).join('')}</div></div>
+    </div>
+    <div class="note">⚠️ <b>이 값은 '공무원 1인당 급여'가 아닙니다.</b>
+      공무원 <b>수</b>가 적으면 급여가 높아도 비중은 낮게 나옵니다.
+      한국이 낮은 데는 <b>공무원 수가 적은 몫이 큽니다</b> — 그대로 "공무원 보수가 낮다"로 옮기면
+      그 자리에서 반박당합니다. 쓸 수 있는 말은 <b>"정부가 인건비에 쓰는 비중이 낮다"</b>까지입니다.<br>
+      📖 그래도 쓸모가 있습니다. 사측(정부)이 <b>"재정 부담이 크다"</b>고 할 때,
+      국제적으로 어느 자리에 있는지를 같은 기준으로 보여줍니다.
+      1인당 급여 수준은 위 <b>민간 대비 보수수준</b>이 답합니다 — 둘을 함께 놓아야 그림이 맞습니다.<br>
+      ⚠️ ${esc(O.definition||'')}<br>
+      · 출처: ${esc(O.source||'')}</div>`;
 }
 
 function psNote(){

@@ -79,6 +79,10 @@ ALLOWANCE_ART = "제18조(정액급식비)"
 # 물가 — 동결 기간의 실질 가치 하락을 재려면 필요하다. money_macro_monitor 와 같은 계열.
 OECD_KR_CPI = ("https://sdmx.oecd.org/public/rest/data/OECD.SDD.TPS,DSD_PRICES@DF_PRICES_ALL,"
                "/KOR.A.N.CPI.._T.N.?startPeriod=2005&format=csvfilewithlabels")
+# 국제 비교 — 일반정부 피용자보수/GDP. 44개국 같은 기준.
+OECD_GOV_TR = ("https://sdmx.oecd.org/public/rest/data/OECD.GOV.GIP,"
+               "DSD_GOV_TRANSACTION@DF_GOV_TRANSACTION_YU,/all"
+               "?startPeriod=2015&format=csvfilewithlabels")
 
 YEARS_BACK = 5          # 올해 포함 최근 6개 연도
 TIMEOUT = 15            # 닿지 않을 때 오래 매달리지 않는다(알리오에서 배운 것)
@@ -222,6 +226,61 @@ def approach_rate():
             }
 
 
+def oecd_gov_pay():
+    """일반정부 피용자보수 / GDP — OECD 국제 비교.
+
+    직급별 공무원 급여를 나라끼리 견주는 자료는 SDMX 로 열려 있지 않다
+    (Government at a Glance 의 DF_GOV_2025 는 404 다). 대신 국민계정에서 나오는
+    **정부가 인건비에 GDP 의 몇 %를 쓰는가**를 쓴다. 이건 44개국이 같은 기준으로 낸다.
+
+    ⚠️ 이 값은 '공무원 1인당 급여'가 아니다. 공무원 **수**가 적으면 급여가 높아도
+    비중은 낮게 나온다. 한국이 낮은 데는 공무원 수가 적은 몫이 크다. 화면에 적어 둔다.
+    """
+    try:
+        txt = _get(OECD_GOV_TR).decode("utf-8", "replace")
+    except Exception as e:
+        diag("WARN", "OECD 정부 인건비 조회 실패: %s" % str(e)[:60])
+        return None
+    rows = []
+    for r in csv.DictReader(io.StringIO(txt)):
+        if r.get("TRANSACTION") != "D1" or r.get("UNIT_MEASURE") != "PT_B1GQ":
+            continue
+        try:
+            v = float(r["OBS_VALUE"])
+        except (ValueError, KeyError, TypeError):
+            continue
+        rows.append((r["TIME_PERIOD"], r["REF_AREA"], str(r.get("Reference area") or ""), v))
+    if not rows:
+        diag("WARN", "OECD 정부 인건비 D1/GDP 행이 없다 — 구조가 바뀌었다.")
+        return None
+    kyrs = sorted({y for y, a, _, _ in rows if a == "KOR"})
+    if not kyrs:
+        diag("WARN", "OECD 정부 인건비에 한국이 없다.")
+        return None
+    yr = kyrs[-1]
+    cur, names = {}, {}
+    for y, a, nm, v in rows:
+        if y == yr:
+            cur[a] = v
+            names[a] = nm
+    order = sorted(cur.items(), key=lambda kv: -kv[1])
+    rank = [a for a, _ in order].index("KOR") + 1
+    ser = {}
+    for y, a, _, v in rows:
+        if a == "KOR":
+            ser[y] = v
+    return {"year": yr, "kr": cur["KOR"], "rank": rank, "n": len(cur),
+            "median": sorted(cur.values())[len(cur) // 2],
+            "series_kr": ser,
+            "countries": [{"code": a, "name": names.get(a, a), "v": v} for a, v in order],
+            "source": "OECD Government at a Glance · DF_GOV_TRANSACTION (D1/GDP) — 키 불필요",
+            "definition": "일반정부 피용자보수 ÷ GDP. 44개국이 같은 국민계정 기준으로 낸다.",
+            "caveat": ("**1인당 급여가 아니다.** 공무원 수가 적으면 급여가 높아도 비중은 낮게 나온다. "
+                       "한국이 낮은 데는 공무원 수가 적은 몫이 크므로 '공무원 보수가 낮다'로 "
+                       "곧장 옮기면 반박당한다. 직급별 급여의 국제 비교는 OECD 가 SDMX 로 열어 두지 않았다."),
+            }
+
+
 def _law(path, **params):
     params.setdefault("OC", "test")
     params.setdefault("type", "JSON")
@@ -355,6 +414,10 @@ def main():
             log("  정액급식비 %d만원 · %s~%s (%d년)"
                 % (r["amt"], r["from"], r["to"], r["years"]))
     cpi = cpi_year()
+    gov = oecd_gov_pay()
+    if gov:
+        log("  OECD 정부 인건비/GDP %s년 · 한국 %.1f%% · %d개국 중 %d위 (중위 %.1f%%)"
+            % (gov["year"], gov["kr"], gov["n"], gov["rank"], gov["median"]))
 
     idx = approach_rate()
     if idx:
@@ -377,11 +440,13 @@ def main():
         "index": idx,               # 접근율·처우개선율
         "allowance": alw,           # 정액급식비 — 동결 구간이 그대로 보인다
         "cpi": cpi,                 # 한국 CPI(연) — 동결분의 실질 가치 계산용
+        "oecd": gov,                # 정부 인건비/GDP 국제 비교
         "sources": {
             "pay": "인사혁신처 공무원 봉급표 (mpm.go.kr) — 키 불필요",
             "index": "지표누리 e-나라지표 1021 (index.go.kr) — 키 불필요",
             "allowance": "국가법령정보센터 「공무원수당 등에 관한 규정」 (law.go.kr) — 키 불필요",
             "cpi": "OECD SDMX DSD_PRICES@DF_PRICES_ALL (한국 CPI 지수, 연) — 키 불필요",
+            "oecd": "OECD Government at a Glance DF_GOV_TRANSACTION (D1/GDP) — 키 불필요",
         },
         "limits": [
             "봉급표는 **본봉만**이다. 정액급식비·직급보조비 등 수당은 「공무원수당 등에 "
