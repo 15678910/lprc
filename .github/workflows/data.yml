@@ -28,6 +28,16 @@ on:
         type: boolean
         default: false
 
+# 같은 워크플로가 겹쳐 돌지 않게 한다.
+#   · 겹치면 알리오가 동시 접속을 막아 나중 것이 전 항목 timeout 난다(실측).
+#   · 각 실행이 저마다 커밋해 'Update data [automated]' 가 무더기로 쌓인다
+#     (하루에 7개가 생겼다).
+# cancel-in-progress 는 false — 수집이 한창인 실행을 죽이면 그날 자료를 잃는다.
+# 나중 것이 앞의 것을 기다렸다가 돈다.
+concurrency:
+  group: update-data
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
