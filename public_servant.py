@@ -79,7 +79,7 @@ ALLOWANCE_ART = "제18조(정액급식비)"
 # 물가 — 동결 기간의 실질 가치 하락을 재려면 필요하다. money_macro_monitor 와 같은 계열.
 OECD_KR_CPI = ("https://sdmx.oecd.org/public/rest/data/OECD.SDD.TPS,DSD_PRICES@DF_PRICES_ALL,"
                "/KOR.A.N.CPI.._T.N.?startPeriod=2005&format=csvfilewithlabels")
-# 국제 비교 — 일반정부 피용자보수/GDP. 44개국 같은 기준.
+# 국제 비교 — 일반정부 노동자 보수/GDP. 44개국 같은 기준.
 OECD_GOV_TR = ("https://sdmx.oecd.org/public/rest/data/OECD.GOV.GIP,"
                "DSD_GOV_TRANSACTION@DF_GOV_TRANSACTION_YU,/all"
                "?startPeriod=2015&format=csvfilewithlabels")
@@ -227,7 +227,7 @@ def approach_rate():
 
 
 def oecd_gov_pay():
-    """일반정부 피용자보수 / GDP — OECD 국제 비교.
+    """일반정부 노동자 보수 / GDP — OECD 국제 비교.
 
     직급별 공무원 급여를 나라끼리 견주는 자료는 SDMX 로 열려 있지 않다
     (Government at a Glance 의 DF_GOV_2025 는 404 다). 대신 국민계정에서 나오는
@@ -280,7 +280,7 @@ def oecd_gov_pay():
             "series_kr": ser,
             "countries": [{"code": a, "name": names.get(a, a), "v": v} for a, v in order],
             "source": "OECD Government at a Glance · DF_GOV_TRANSACTION (D1/GDP) — 키 불필요",
-            "definition": ("일반정부 피용자보수 ÷ GDP. 국가별 국민계정 기준으로 산출되며, "
+            "definition": ("일반정부 노동자 보수 ÷ GDP. 국가별 국민계정 기준으로 산출되며, "
                            "평균은 OECD 가 계산해 함께 공표하는 'OECD average country' 값이다."),
             "caveat": ("**1인당 급여가 아니다.** 공무원 수가 적으면 급여가 높아도 비중은 낮게 나온다. "
                        "한국이 낮은 데는 공무원 수가 적은 몫이 크므로 '공무원 보수가 낮다'로 "

@@ -2197,7 +2197,7 @@ function pvOecd(){
   const pick=O.countries.filter(c=>KEY.includes(c.code));
   const mx=Math.max(...O.countries.map(c=>c.v))||1;
   return `<div class="lab" style="margin:20px 0 6px;font-weight:600;color:var(--tx)">
-      🌐 정부 인건비 국제 비교 — 일반정부 피용자보수 ÷ GDP
+      🌐 정부 인건비 국제 비교 — 일반정부 노동자 보수 ÷ GDP
       <span style="font-weight:400;color:var(--mut)">(${esc(O.year)}년 · ${O.n}개국)</span></div>
     <div class="hint" style="margin-bottom:10px">${O.n}개국이 <b>같은 국민계정 기준</b>으로 내는 값이라
       비교가 깨끗합니다. 직급별 급여의 국제 비교는 OECD 가 공개 API 로 열어 두지 않았습니다.</div>
