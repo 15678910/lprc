@@ -1829,6 +1829,7 @@ function psCard(){
       <select onchange="setPs(this.value)" style="background:#0d1219;border:1px solid var(--line);color:var(--tx);border-radius:7px;padding:7px 10px;font-size:.93rem;min-width:280px">${opts}</select>
     </div>
     ${gTable}
+    ${comp5()}
     ${psNote()}
   </div>`;
 
@@ -1979,6 +1980,8 @@ function psCard(){
       성과급·정원 변동·직급 구성 변화 때문에 어긋납니다. 교섭에서 둘을 나란히 놓으면
       "지침대로 올렸는데 왜 체감이 다른가"를 숫자로 물을 수 있습니다.<br>
       ⚠️ 마지막 줄은 <b>예산편성 기준</b>이라 결산과 섞어 읽으면 안 됩니다.</div>
+
+    ${comp5()}
 
     ${psNote()}
   </div>`;
@@ -2242,6 +2245,73 @@ function pvOecd(){
       1인당 급여 수준은 위 <b>민간 대비 보수수준</b>이 답합니다 — 둘을 함께 놓아야 그림이 맞습니다.<br>
       ⚠️ ${esc(O.definition||'')}<br>
       · 출처: ${esc(O.source||'')}</div>`;
+}
+
+/* 같은 5년, 누가 얼마나 올랐나 — 민간·공공기관·공무원·1인당 GDP 를 한 자리에.
+   ⑦ 차트에 끼워 넣지 않은 이유: ⑦ 은 2010년부터의 분기 계열인데 공공기관·공무원은
+   2021년부터의 연간이다. 한 그림에 넣으면 뒤쪽 5년만 짧게 붙어 오해를 부른다.
+   기간을 맞춘 별도 비교로 둔다. */
+function comp5(){
+  const PM=(PS||{}).pay_median, G=(PV||{}).general, C=(PV||{}).cpi;
+  const S_=(D.growth_gap||{}).series||{};
+  if(!PM||!C||!S_.gdp_pc||!S_.real_wage)return '';
+  // 분기 계열을 연평균으로 — 4분기가 다 있는 해만 쓴다
+  const toY=a=>{const m={};(a||[]).forEach(d=>{(m[d.q.slice(0,4)]=m[d.q.slice(0,4)]||[]).push(d.v)});
+    const o={};for(const y in m)if(m[y].length===4)o[y]=m[y].reduce((x,z)=>x+z,0)/4;return o};
+  const gdp=toY(S_.gdp_pc), wage=toY(S_.real_wage);
+  const gov={}; for(const y in (G||{})){const s=G[y].steps&&G[y].steps['1'];
+    if(s)gov[y]=s[s.length-1]}                     // 9급 1호봉
+  // 결산 연도만. 공공기관 마지막 해는 예산이라 뺀다.
+  const settled=((PS.basis||{}).settled||[]).map(String);
+  const ys=settled.filter(y=>PM[y]&&gdp[y]&&wage[y]&&C[y]);
+  if(ys.length<4)return '';
+  const b=ys[0];
+  const line=(d,real)=>ys.map(y=>d[y]==null?null
+    :d[y]/d[b]*100*(real?C[b]/C[y]:1));
+  const SER=[
+    {k:'gdp',  n:'1인당 실질 GDP', c:'var(--acc)', v:line(gdp)},
+    {k:'wage', n:'민간 실질임금',   c:'var(--amb)', v:line(wage)},
+    {k:'pub',  n:'공공기관 중위보수', c:'var(--cy)', v:line(PM,1)},
+  ];
+  if(Object.keys(gov).length>=4&&ys.every(y=>gov[y]))
+    SER.push({k:'gov', n:'공무원 9급 1호봉', c:'var(--grn)', v:line(gov,1)});
+  const all=SER.flatMap(s=>s.v).filter(x=>x!=null);
+  const lo=Math.min(...all,100), hi=Math.max(...all,100);
+  const W=560,H=170,PL=6,PR=6,PT=10,PB=20;
+  const X=i=>PL+(W-PL-PR)*i/(ys.length-1), Y=v=>PT+(H-PT-PB)*(1-(v-lo)/((hi-lo)||1));
+  const path=v=>v.map((x,i)=>x==null?'':`${i?'L':'M'}${X(i).toFixed(1)},${Y(x).toFixed(1)}`).join('');
+  return `<div class="lab" style="margin:22px 0 6px;font-weight:600;color:var(--tx)">
+      📐 같은 ${ys.length}년, 누가 얼마나 올랐나
+      <span style="font-weight:400;color:var(--mut)">(${esc(b)}=100 · 물가를 뺀 실질)</span></div>
+    <div class="hint" style="margin-bottom:10px">기간을 <b>${esc(b)}~${esc(ys[ys.length-1])}년으로 맞춰</b>
+      민간·공공기관·공무원을 한자리에 놓았습니다. ⑦ 은 2010년부터의 분기 자료라 여기 섞지 않았습니다.</div>
+    <div class="lab" style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:4px">
+      ${SER.map(s=>`<span style="display:inline-flex;align-items:center;gap:6px">
+        <i style="display:inline-block;width:18px;height:0;border-top:3px solid ${s.c}"></i>${esc(s.n)}</span>`).join('')}</div>
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto" role="img"
+      aria-label="${esc(b)}년을 100으로 놓은 실질 보수 비교">
+      <line x1="${PL}" y1="${Y(100).toFixed(1)}" x2="${W-PR}" y2="${Y(100).toFixed(1)}"
+        stroke="var(--line)" stroke-dasharray="4 4"/>
+      ${/* 양 끝 연도는 라벨이 SVG 밖으로 잘린다 — ⑦ 차트와 같이 안쪽으로 당긴다 */''}
+      ${ys.map((y,i)=>`<text x="${Math.min(Math.max(X(i),15),W-15).toFixed(1)}" y="${H-5}"
+        fill="var(--mut)" font-size="10" text-anchor="middle">${esc(y)}</text>`).join('')}
+      ${SER.map(s=>`<path d="${path(s.v)}" fill="none" stroke="${s.c}" stroke-width="2.2"/>`).join('')}
+    </svg>
+    <div style="overflow-x:auto;margin-top:8px"><table><thead><tr><th>구분</th>
+      ${ys.map(y=>`<th>${esc(y)}</th>`).join('')}<th>누적</th></tr></thead><tbody>
+      ${SER.map(s=>{const last=s.v[s.v.length-1];return `<tr>
+        <td><b style="color:${s.c}">${esc(s.n)}</b></td>
+        ${s.v.map(x=>`<td class="mono">${x==null?'—':fmt(x,1)}</td>`).join('')}
+        <td class="mono ${last>=100?'pos':'neg'}"><b>${last>=100?'+':''}${fmt(last-100,1)}%</b></td></tr>`}).join('')}
+    </tbody></table></div>
+    <div class="note">📖 <b>읽는 법</b> — 100 위에 있으면 ${esc(b)}년보다 실질로 오른 것,
+      아래면 내린 것입니다. 공공기관과 공무원은 명목 보수를 소비자물가로 나눠 실질로 바꿨습니다.<br>
+      ⚠️ <b>세 계열의 성격이 다릅니다.</b> 1인당 GDP는 <b>인구</b> 1인, 민간 실질임금은
+      <b>노동자</b> 1인, 공공기관은 <b>기관 중위값</b>, 공무원은 <b>특정 호봉 한 자리</b>입니다.
+      공공기관 평균보수는 근속·직급 구성이 바뀌어도 움직이지만, 공무원 9급 1호봉은
+      <b>같은 자리의 임금</b>이라 구성 변화가 없습니다 — 그래서 둘을 같은 잣대로 보면 안 됩니다.<br>
+      ⚠️ 어느 선이 위에 있다고 그 집단이 더 받는다는 뜻이 아닙니다. 모두 <b>${esc(b)}년 대비
+      변화율</b>이지 수준이 아닙니다.</div>`;
 }
 
 function psNote(){

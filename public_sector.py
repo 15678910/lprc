@@ -497,9 +497,19 @@ def main():
                       "ministry": o["ministry"], "g": GROUP_CODE.get(o["group"], "99"),
                       "why": o["why"], "pay": pay})
 
+    # 연도별 중위 평균보수 — ⑩ 의 '같은 5년, 누가 얼마나 올랐나' 비교에 쓴다.
+    # 화면에서 내려면 그룹 상세 파일을 전부 받아야 하므로 여기서 미리 낸다.
+    pay_med = {}
+    for i, y in enumerate(years):
+        vs = [o["d"]["pay"][i] for o in rows
+              if o["d"].get("pay") and i < len(o["d"]["pay"]) and o["d"]["pay"][i]]
+        if len(vs) >= 50:
+            pay_med[str(y)] = median(vs, 0)
+
     out = {
         "generated": now.isoformat(),
         "source": "알리오(alio.go.kr) 공공기관 경영정보 공개시스템",
+        "pay_median": pay_med,
         "source_url": ALIO + PAGE,
         "alio_year": ay,
         "years": years,
