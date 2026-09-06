@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+<meta name="googlebot" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>원청교섭 가이드 — 실질임금 · 임금단협 · 노동 양극화 해소 계산기</title>
+<style>
+  :root{--bg:#0b1017;--card:#131a24;--line:#20293a;--tx:#e6edf3;--mut:#8b98a9;
+        --grn:#3fb950;--red:#f85149;--amb:#d29922;--acc:#58a6ff;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--tx);
+       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Malgun Gothic",sans-serif;
+       font-size:17px;line-height:1.68;
+       word-break:keep-all;overflow-wrap:break-word}
+  .wrap{max-width:1000px;margin:0 auto;padding:24px 16px 70px}
+  header{border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:22px}
+  h1{font-size:1.62rem;margin:0 0 6px}
+  .sub{color:var(--mut);font-size:1rem}
+  .nav{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 12px}
+  .nav a{color:var(--mut);text-decoration:none;font-size:.95rem;padding:6px 13px;
+         border:1px solid var(--line);border-radius:20px;background:#0d1219;white-space:nowrap}
+  .nav a:hover{color:var(--tx);border-color:var(--acc)}
+  .nav a.on{color:var(--tx);border-color:var(--acc);background:rgba(88,166,255,.12);font-weight:600}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:16px}
+  .card h2{font-size:1.24rem;margin:0 0 10px}
+  h3{font-size:1.08rem;margin:20px 0 6px}
+  p,li,td,th{font-size:1rem}
+  ul,ol{padding-left:20px;margin:6px 0}
+  li{margin-bottom:6px}
+  .tblwrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;margin-top:8px}
+  th,td{padding:8px 9px;text-align:left;border-top:1px solid var(--line);vertical-align:top}
+  th{color:var(--mut);font-weight:600;font-size:.9rem;border-top:none}
+  a{color:var(--acc)}
+  .note{color:var(--mut);font-size:.94rem;line-height:1.72;border-top:1px solid var(--line);padding-top:12px;margin-top:14px}
+  .tip{background:rgba(63,185,80,.08);border:1px solid rgba(63,185,80,.35);
+       border-radius:8px;padding:10px 13px;margin:8px 0;font-size:.97rem}
+  .warn{background:rgba(210,153,34,.09);border:1px solid rgba(210,153,34,.4);
+        border-radius:8px;padding:10px 13px;margin:8px 0;font-size:.97rem}
+  .warn b{color:var(--amb)}
+  code{background:#0d1219;border:1px solid var(--line);border-radius:4px;padding:1px 5px;font-size:.94rem}
+  blockquote{margin:8px 0;padding:10px 14px;border-left:3px solid var(--acc);
+             background:rgba(88,166,255,.06);border-radius:0 8px 8px 0;font-size:.98rem}
+  label{display:flex;gap:10px;align-items:flex-start;padding:9px 11px;border:1px solid var(--line);
+        border-radius:8px;margin-bottom:8px;cursor:pointer;background:#0d1219}
+  label:hover{border-color:var(--acc)}
+  label input{margin-top:4px;flex:0 0 auto}
+  .chkres{border-radius:8px;padding:12px 14px;margin-top:10px;font-size:.98rem;border:1px solid var(--line);background:#0d1219}
+  .inrow{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin:8px 0 4px}
+  .inrow div{display:flex;flex-direction:column;gap:4px}
+  .inrow span{color:var(--mut);font-size:.88rem}
+  input[type=date]{background:#0d1219;color:var(--tx);border:1px solid var(--line);
+        border-radius:8px;padding:8px 10px;font-size:1rem;font-family:inherit;color-scheme:dark}
+  .dday{color:var(--mut);font-size:.88rem;white-space:nowrap}
+  .muted{color:var(--mut)}
+  @media print{ body{background:#fff;color:#000;font-size:14.5px}
+    .card{background:#fff;border-color:#bbb} .note,th{color:#444} a{color:#000} .nav{display:none}
+    label,.chkres,input[type=date],blockquote{background:#fff} }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>원청교섭 가이드</h1>
+  <nav class="nav">
+    <a href="./">🧮 계산기</a>
+    <a href="./guide.html">📖 소개 · 이용 방법</a>
+    <a href="./labor.html" class="on">⚖️ 원청교섭 가이드</a>
+    <a href="./future.html">🤖 AI 시대의 노동</a>
+    <a href="./about.html">📋 출처 · 면책</a>
+  </nav>
+  <div class="sub">2026년 3월 10일 시행된 개정 노동조합법으로 하청·용역·자회사 노동자가 원청에 교섭을 요구하는 길이 열렸습니다.
+    이 페이지는 그 <b>요건 · 절차 · 기한 · 실제 진행 상황</b>을 조문과 숫자로 정리합니다.
+    ⑤⑥이 격차의 <b>크기</b>를 계산한다면, 이 페이지는 그 격차를 다룰 <b>테이블을 여는 법적 경로</b>를 다룹니다.</div>
+</header>
+
+<div class="warn"><b>먼저 읽어 주세요.</b> 이 페이지는 <b>2026-09-06 기준</b>의 법령·판례·통계를 정리한 것이며 자동으로 갱신되지 않습니다.
+  법률 자문이 아니며, 노무·법률 상담을 대신할 수 없습니다. 인정 여부는 사안마다 노동위원회와 법원이 개별 판단하고,
+  아래에 적힌 판례 흐름처럼 <b>지금도 다툼이 진행 중인 영역</b>입니다.
+  실제 교섭을 준비한다면 소속 상급단체 · 공인노무사 · 변호사 · <a href="https://nlrc.go.kr" target="_blank" rel="noopener">노동위원회</a>와 함께 진행하세요.</div>
+
+<div class="card">
+  <h2>무엇이 바뀌었나 — 법률 제21045호 (2025-09-09 공포, 2026-03-10 시행)</h2>
+  <p>이른바 '노란봉투법'입니다. 새 제도를 만든 것이 아니라 <b>기존 법의 정의 조항을 넓힌 것</b>이어서,
+    교섭의 절차·기한은 기존 규정을 그대로 따릅니다.</p>
+  <div class="tblwrap"><table>
+    <thead><tr><th style="width:24%">조문</th><th>바뀐 내용</th><th style="width:34%">뜻</th></tr></thead>
+    <tbody>
+      <tr><td><b>제2조 제2호 후단</b><br><span class="muted">(사용자 정의)</span></td>
+        <td>"근로계약 체결 당사자가 아니더라도 근로자의 근로조건에 대하여 <b>실질적이고 구체적으로 지배·결정할 수 있는 지위</b>에 있는 자도 그 범위에 있어서는 사용자로 본다"</td>
+        <td>하청 노동자의 조건을 실제로 정하는 원청도, <b>그 정하는 범위 안에서는</b> 교섭 상대가 된다</td></tr>
+      <tr><td><b>제2조 제5호</b><br><span class="muted">(노동쟁의 정의)</span></td>
+        <td>쟁의 대상에 "근로조건에 영향을 미치는 <b>사업경영상의 결정</b>"과 "사용자의 <b>명백한 단체협약 위반</b>" 추가</td>
+        <td>구조조정·외주화 등도 근로조건에 닿으면 쟁의 대상이 될 수 있다</td></tr>
+      <tr><td><b>제3조</b><br><span class="muted">(손해배상 제한)</span></td>
+        <td>정당한 조합활동에 대한 손배 청구 금지, 개인별 책임비율 산정 의무화, 배상액 감면 청구, 신원보증인 면책, 노조 와해 목적의 손배 청구 금지</td>
+        <td>쟁의에 대한 '묻지마 연대책임 손배·가압류'를 제한</td></tr>
+      <tr><td><b>제2조 제4호 라목 삭제</b></td>
+        <td>해고자 등을 조합원 자격에서 배제하던 근거 조항 삭제</td>
+        <td>조합원 자격 시비의 근거 하나가 사라짐</td></tr>
+    </tbody>
+  </table></div>
+  <div class="warn"><b>소급 적용은 안 됩니다.</b> 부칙 제2조에 따라 손해배상 제한(제3조)은 시행 이후 발생한 손해부터 적용되고(책임 면제 제3조의2만 소급 가능),
+    대법원도 2026년 5월 전원합의체 판결(HD현대중공업 사건)에서 <b>시행 전에 생긴 분쟁에는 옛 법의 사용자 개념을 적용</b>한다고 정리했습니다.
+    2026년 3월 10일 이전의 교섭 거부를 새 법으로 다툴 수는 없습니다.</div>
+</div>
+
+<div class="card">
+  <h2>나는 해당되나 — 자가진단</h2>
+  <p>법의 기준은 한 문장입니다: 원청이 내 근로조건을 <b>"실질적이고 구체적으로 지배·결정할 수 있는 지위"</b>에 있는가.
+    고용노동부 해석지침(2025-12 행정예고안)은 이를 <b>'근로조건에 대한 구조적 통제'</b>를 중심으로 판단하고
+    '조직적 사업 편입'과 '경제적 종속성'을 보완 요소로 본다고 밝혔습니다. 아래는 실제 다툼에서 등장하는 징표들입니다. 해당하는 항목에 표시해 보세요.</p>
+  <div id="chks">
+    <label><input type="checkbox"> 작업 내용·방법·순서·물량을 원청이 정하거나 바꾼다</label>
+    <label><input type="checkbox"> 원청의 설비·공간에서 일하고, 출입·복장·안전 규칙을 원청이 정한다</label>
+    <label><input type="checkbox"> 원청이 정한 도급 단가·계약 조건이 사실상 내 임금 수준을 정한다</label>
+    <label><input type="checkbox"> 작업 시간·교대·휴게가 원청의 일정과 지시에 맞춰 정해진다</label>
+    <label><input type="checkbox"> 하청 업체가 바뀌거나 폐업해도 나는 같은 곳에서 같은 일을 계속해 왔다</label>
+    <label><input type="checkbox"> 하청 사장과 교섭하면 "그건 원청이 정한 것이라 우리 권한 밖"이라는 답이 돌아온다</label>
+    <label><input type="checkbox"> 원청 소속 노동자와 같은 라인·공정에서 섞여 일한다</label>
+    <label><input type="checkbox"> 안전 조치·보호구 지급·작업 중지 여부를 원청이 결정한다</label>
+  </div>
+  <div class="chkres" id="chkres">항목에 표시하면 여기에서 읽는 법을 알려드립니다.</div>
+  <div class="tip">체크 하나하나는 <b>주장</b>이 아니라 <b>증거로 입증할 사실</b>이어야 힘을 갖습니다.
+    원청 명의의 공문·작업지시서·단가 계약서·출입 기록·안전 지시 등, 각 항목을 뒷받침할 자료를 교섭 요구 전에 모아 두세요.
+    체크 내용은 이 화면 안에서만 계산되고 어디에도 저장·전송되지 않습니다.</div>
+</div>
+
+<div class="card">
+  <h2>절차와 날짜 — 교섭창구 단일화 일정 계산기</h2>
+  <p>교섭 요구가 접수되면 법정 기한이 연쇄적으로 돌아갑니다. 하루 이틀 차이로 <b>참여 자격을 잃는 절차</b>이므로 달력이 중요합니다.
+    예정일을 넣으면 단계별 일정을 만들어 드립니다.</p>
+  <div class="inrow">
+    <div><span>기존 단체협약 만료일 (없으면 비워 두세요)</span><input type="date" id="d_expire"></div>
+    <div><span>교섭 요구(예정)일</span><input type="date" id="d_demand"></div>
+  </div>
+  <div id="calout"></div>
+  <div class="warn"><b>이 달력은 어림값입니다.</b> 기간 계산에는 민법의 초일 불산입 원칙이 준용되어 실제 만료일이 하루쯤 다를 수 있고,
+    이의신청·노동위원회 결정(대개 10일, 원청 사건은 10일 연장 가능)이 끼면 단계마다 2~4주씩 늘어납니다.
+    실제 기한은 반드시 공고문의 날짜를 기준으로 다시 세어야 합니다.</div>
+  <h3>원청 교섭에서 다른 점</h3>
+  <ul>
+    <li>창구 단일화 절차 자체는 기존과 같습니다. 다만 시행령 개정(제36159호)으로 원청 상대 사건은 노동위원회의 시정 결정 기간이
+      10일에서 <b>한 차례 10일 연장 가능</b>해졌습니다(영 제14조의3③·제14조의5⑤ 단서).</li>
+    <li>고용노동부 매뉴얼은 원청 소속 노조와 하청 노조의 <b>교섭단위 분리를 원칙</b>으로 안내하며,
+      시행령 제14조의11 제4항(신설)은 원청 교섭의 분리 판단에서 노조 간 이해관계의 공통성, 이익 대표의 적절성,
+      갈등·노사관계 왜곡 가능성을 일반 기준보다 <b>우선</b> 고려하도록 했습니다.</li>
+    <li>다만 실제 결정은 엇갈립니다. 2026년 상반기 지방노동위원회의 교섭단위 분리 신청 처리에서
+      인정과 불인정이 함께 나오고 있습니다(아래 '시행 6개월' 참조).</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2>원청이 응하지 않으면 — 세 가지 대응 경로</h2>
+  <div class="tblwrap"><table>
+    <thead><tr><th>상황</th><th>수단</th><th>기한</th><th>근거</th></tr></thead>
+    <tbody>
+      <tr><td>교섭요구 사실을 공고하지 않거나 다르게 공고</td>
+        <td>노동위원회에 <b>시정 요청</b> (결정 10일, 원청 사건은 +10일 연장 가능)</td>
+        <td>기한 규정 없음 — 공고기간이 지나면 지체 없이</td>
+        <td>영 제14조의3②③</td></tr>
+      <tr><td>확정공고가 누락·상이 (사용자에 이의신청했는데도)</td>
+        <td>노동위원회에 <b>시정 요청</b></td>
+        <td>공고기간 종료(미공고 시 다음날)부터 <b>5일 이내</b></td>
+        <td>영 제14조의5④⑤</td></tr>
+      <tr><td>정당한 이유 없는 교섭 거부·해태</td>
+        <td>노동위원회에 <b>부당노동행위 구제신청</b></td>
+        <td>행위가 있은 날(계속되면 종료일)부터 <b>3개월 이내</b></td>
+        <td>법 제81조①3호 · 제82조②</td></tr>
+      <tr><td>원청 직고용 노조와 한 교섭단위로 묶이는 경우</td>
+        <td>노동위원회에 <b>교섭단위 분리 신청</b> (결정 30일 이내)</td>
+        <td>교섭요구 사실 공고 <b>전</b>, 또는 교섭대표노조 결정 <b>후</b></td>
+        <td>법 제29조의3 · 영 제14조의11</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>실제로는 어떻게 흘러가나 — 한 사업장의 6개월</h3>
+  <p>자동차 위탁생산 사업장 동희오토의 하청 노조가 공개한 2026년 경과입니다(금속노조 동희오토분회 보고, 2026-09).
+    법정 기한과 별개로, <b>사용자성 자체를 다투면 절차가 어디까지 길어질 수 있는지</b> 보여주는 사례입니다.</p>
+  <div class="tblwrap"><table>
+    <thead><tr><th style="width:18%">시점</th><th>진행</th></tr></thead>
+    <tbody>
+      <tr><td>1월 23일</td><td>노조, 원청에 교섭요구 공문 → 회신 없음</td></tr>
+      <tr><td>2월 3일</td><td>원청, 교섭 거부 공문 ("실질적·구체적 지배·결정 지위에 있지 않다")</td></tr>
+      <tr><td>3월 10일</td><td>법 시행일. 노조, 지방노동위원회에 교섭단위 분리 신청</td></tr>
+      <tr><td>4월 8일</td><td>지노위, 원청 사용자성 인정 + 교섭단위 분리 결정</td></tr>
+      <tr><td>5~6월</td><td>원청, 중앙노동위원회 재심 신청 → 6월 17일 중노위 초심 유지</td></tr>
+      <tr><td>7~8월</td><td>지노위·중노위, 교섭요구 사실 공고 시정 결정 → 원청, 행정소송 + 집행정지 신청. 1~5차 교섭 모두 원청 불참</td></tr>
+    </tbody>
+  </table></div>
+  <p class="muted">교섭 요구에서 반년이 지나도록 상견례가 열리지 않았습니다. 지노위 → 중노위 → 행정법원으로 이어지는 다툼은
+    사용자 측의 정당한 불복 절차이기도 합니다. 어느 쪽이든, 교섭을 준비하는 입장에서는 <b>이 기간을 견딜 계획(비용·전임시간·조합원 소통)까지가 준비</b>라는 뜻입니다.</p>
+</div>
+
+<div class="card">
+  <h2>시행 6개월, 숫자 — 2026년 8월 기준</h2>
+  <p>같은 제도를 두고 정부와 노동계가 각각 집계를 냈습니다. 집계 범위가 달라 직접 비교할 수는 없습니다(정부는 전체, 민주노총은 소속 조직만).
+    두 숫자를 나란히 놓습니다.</p>
+  <div class="tblwrap"><table>
+    <thead><tr><th>단계</th><th>고용노동부 집계<br><span class="muted">(3.10~8.14, 경향신문 2026-08-30 보도)</span></th><th>민주노총 자체 집계<br><span class="muted">(8.21 기준, 소속 조직만)</span></th></tr></thead>
+    <tbody>
+      <tr><td>교섭 요구</td><td>하청노조 1,218곳 → 원청 456곳</td><td>643개 단위 → 원청 518곳</td></tr>
+      <tr><td>교섭요구 사실 공고</td><td>149곳 <b>(요구받은 원청의 32.7%)</b></td><td>73곳</td></tr>
+      <tr><td>교섭요구 노조 확정 공고</td><td>—</td><td>52곳</td></tr>
+      <tr><td>교섭 개시</td><td>102곳</td><td>상견례 39곳 · 교섭 진행 14곳</td></tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li>공고율이 낮은 주된 배경으로는 원청이 사용자성을 다투며 노동위원회·법원 판단을 기다리는 관행이 지목됩니다(경향신문, 위 보도).</li>
+    <li>민주노총 집계 기준, 지노위의 교섭요구 사실공고 시정신청 133건 중 98건 인정. 교섭단위 분리는 신청 33건 중 18건이 불인정으로,
+      분리 결정이 자동적이지 않음을 보여줍니다.</li>
+    <li>업종별로는 건설(삼성물산·GS건설 등 10개 원청 공동교섭 진행), 조선(한화오션 — 원청 상대 쟁의권 확보 첫 사례),
+      자동차(울산지노위, 현대자동차 사내하청 사용자성 인정 — 단 의제는 시설·안전 중심으로 한정), 유통·택배(쿠팡CLS 분리신청 기각) 등에서 절차가 진행 중입니다.</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2>판례·결정이 지금까지 정한 것</h2>
+  <div class="tblwrap"><table>
+    <thead><tr><th style="width:30%">판단</th><th>내용</th></tr></thead>
+    <tbody>
+      <tr><td><b>대법원 전원합의체 2026-05-21</b><br><span class="muted">HD현대중공업 사건</span></td>
+        <td>개정법 시행 <b>전</b>에 생긴 분쟁에는 옛 법의 사용자 개념을 적용 — 원청의 과거 교섭 거부를 새 법으로 소급해 다툴 수 없음</td></tr>
+      <tr><td><b>대법원 2026-07-09</b><br><span class="muted">CJ대한통운 사건</span></td>
+        <td>구법 사건에서 택배기사와 원청 사이 근로계약관계를 부정, 원심 파기환송 — 위 전원합의체 법리를 재확인</td></tr>
+      <tr><td><b>대법원 2018-09-13, 2015두39361</b><br><span class="muted">교섭단위 분리 기준</span></td>
+        <td>교섭단위 분리는 현격한 근로조건 차이·고용형태·교섭 관행 등에 비추어 창구 단일화가 제도 취지에 맞지 않게 되는 <b>'예외적인 경우'</b>에 인정</td></tr>
+      <tr><td><b>2026년 노동위원회 결정 경향</b></td>
+        <td>사용자성을 인정하는 결정이 나오고 있으나(울산지노위 현대차 사내하청 등), 상당수가 교섭 의제를 <b>산업안전·시설 등으로 한정</b>해 인정.
+          임금 등 다른 의제가 '원청이 지배·결정하는 범위'에 드는지가 다음 다툼의 중심입니다</td></tr>
+    </tbody>
+  </table></div>
+  <p class="muted">대법원 사건번호는 언론 보도 기준(HD현대중공업 2018다296229)입니다. 문서에 인용할 때는 판결 원문을 확인하세요.</p>
+</div>
+
+<div class="card">
+  <h2>자주 하는 실수</h2>
+  <ul>
+    <li><b>공고를 확인하지 않는다.</b> 사용자의 교섭요구 사실 공고(7일)는 게시판에 붙습니다. 이 기간을 놓친 노조는 창구 단일화 절차에서 빠집니다.
+      요구서를 낸 날부터 매일 게시판을 확인하고 사진으로 남기세요.</li>
+    <li><b>기간을 하루 잘못 센다.</b> 초일 불산입 원칙 때문에 만료일 계산이 어긋나기 쉽습니다. 5일·14일 기한은 공고문 날짜 기준으로 두 번 세어 보세요.</li>
+    <li><b>서면 요건을 빠뜨린다.</b> 교섭 요구는 노조 명칭·조합원 수 등을 적은 <b>서면</b>이어야 하고(영 제14조의2②), 시정신청도 법정 서식과 첨부 자료가 필요합니다(규칙 제10조의3·10조의4).</li>
+    <li><b>준비 없이 노동위원회에 간다.</b> 사용자성 입증 자료가 부실하면 기각되고, 그 결정은 남습니다.
+      비슷한 처지의 다른 사업장 사건에 참고 자료로 등장할 수 있는 만큼, 신청 전에 상급단체·전문가와 자료를 함께 검토하세요.</li>
+    <li><b>격차의 숫자 없이 테이블에 앉는다.</b> 교섭이 열려도 결국 다투는 것은 숫자입니다.
+      <a href="./#c5">⑤ 하청·협력사 격차</a>와 <a href="./#c6">⑥ 해소 시나리오</a>에서 좁히려는 격차의 크기·비용·햇수를 계산해 가져가세요.</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2>이 페이지의 한계</h2>
+  <ul>
+    <li>개정법은 <b>특수고용·플랫폼·프리랜서 노동자의 노동자성 문제는 다루지 않았습니다.</b> '근로자'에 해당하는지 자체를 다투는 경우는 이 페이지의 범위 밖입니다.</li>
+    <li>원청이 응해야 하는 <b>교섭 의제의 범위</b>(안전만인지, 임금·고용까지인지)는 결정례가 엇갈리는 현재진행형 쟁점입니다. 이 페이지는 결론을 예단하지 않습니다.</li>
+    <li>원청 상대 <b>쟁의행위의 범위</b>도 마찬가지로 다툼 중입니다(조정중지 결정으로 쟁의권을 확보한 사례는 있음).</li>
+    <li>개별 임금체불·해고 등 근로기준법 영역, 공무원·교원의 별도 법제는 다루지 않습니다.</li>
+    <li>이 페이지의 통계·판례는 <b>2026-09-06에 수집한 것</b>이며 계산기의 데이터와 달리 자동 갱신되지 않습니다. 날짜가 오래됐다면 원 출처를 다시 확인하세요.</li>
+  </ul>
+</div>
+
+<div class="note">
+  <b>출처</b> — 법령: 국가법령정보센터, 노동조합 및 노동관계조정법(법률 제21045호)·같은 법 시행령(대통령령 제36159호)·같은 법 시행규칙(2026-03-10 시행) ·
+  고용노동부 개정법 해석지침 행정예고안(2025-12-26) ·
+  통계: <a href="https://www.khan.co.kr/article/202608301738001" target="_blank" rel="noopener">경향신문 2026-08-30</a>(고용노동부 집계),
+  민주노총 원청교섭 보고(2026-08-21, 2026 사회주의대회 자료집 수록) ·
+  판례: 대법원 2015두39361, 2026-05-21 전원합의체 판결 및 2026-07-09 판결(언론 보도 기준) ·
+  사례: 금속노조 동희오토분회 경과 보고(위 자료집).
+  이 페이지는 어느 쪽 주장도 대변하지 않으며, 확인된 사실과 그 출처만 적습니다.
+</div>
+
+</div>
+<script>
+(function(){
+  // 자가진단
+  var box=document.getElementById('chks'), res=document.getElementById('chkres');
+  function judge(){
+    var n=box.querySelectorAll('input:checked').length;
+    if(n===0){ res.textContent='항목에 표시하면 여기에서 읽는 법을 알려드립니다.'; return; }
+    var head='8개 중 '+n+'개 해당 — ';
+    if(n<=2){ res.innerHTML=head+'원청의 지배·결정을 뒷받침할 사실이 아직 적습니다. 표시한 항목부터 증거를 모으고, 하청 사용자와의 교섭에서 풀 수 있는 의제인지 먼저 살펴보세요.'; }
+    else if(n<=5){ res.innerHTML=head+'교섭 요구를 검토할 만한 사실들이 있습니다. 각 항목을 입증할 자료를 모으고 상급단체·전문가와 함께 사용자성 판단을 받아볼지 검토해 보세요.'; }
+    else { res.innerHTML=head+'\'실질적이고 구체적인 지배·결정\'을 주장할 사실이 많은 편입니다. 다만 <b>체크 개수가 인정을 보장하지 않습니다</b> — 인정 여부는 증거와 함께 노동위원회·법원이 개별 판단합니다.'; }
+  }
+  box.addEventListener('change',judge);
+
+  // 일정 계산기
+  var dEx=document.getElementById('d_expire'), dDm=document.getElementById('d_demand'), out=document.getElementById('calout');
+  function add(d,n){ var x=new Date(d); x.setDate(x.getDate()+n); return x; }
+  function fmt(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' ('+'일월화수목금토'[d.getDay()]+')'; }
+  function calc(){
+    var rows=[], html='';
+    if(dEx.value){
+      var ex=new Date(dEx.value+'T00:00:00'), open=new Date(ex); open.setMonth(open.getMonth()-3);
+      html+='<div class="tip">단체협약 만료일이 '+fmt(ex)+'이면, <b>'+fmt(open)+'</b>부터 교섭을 요구할 수 있습니다 (영 제14조의2①).</div>';
+      if(dDm.value && new Date(dDm.value+'T00:00:00')<open){
+        html+='<div class="warn">교섭 요구 예정일이 요구 가능 개시일보다 <b>이릅니다</b>. 개시일 이후로 잡아야 합니다.</div>';
+      }
+    }
+    if(dDm.value){
+      var d0=new Date(dDm.value+'T00:00:00');
+      var pEnd=add(d0,7), cStart=add(pEnd,1), cEnd=add(cStart,4), aEnd=add(cEnd,14), mEnd=add(aEnd,5), gEnd=add(mEnd,5), jEnd=add(aEnd,10);
+      rows=[
+        ['교섭 요구서 제출 (서면)', fmt(d0), '영 제14조의2'],
+        ['사용자의 교섭요구 사실 공고 — 7일간<br><span class="muted">다른 노조는 이 기간에만 참여 요구 가능. 매일 게시판 확인</span>', fmt(add(d0,1))+' ~ '+fmt(pEnd), '영 제14조의3·의4'],
+        ['교섭요구 노조 확정 공고 — 5일간<br><span class="muted">내 노조·조합원 수가 맞게 공고됐는지 확인, 다르면 이 기간에 이의신청</span>', fmt(cStart)+' ~ '+fmt(cEnd), '영 제14조의5'],
+        ['자율적 교섭대표노조 결정 — 14일 이내<br><span class="muted">이 기한 안에 사용자가 동의하면 개별 교섭도 가능</span>', '~ '+fmt(aEnd), '법 제29조의2③ · 영 제14조의6'],
+        ['과반수 노조 통지(5일 이내) 후 사용자 공고 5일간', '~ '+fmt(gEnd), '영 제14조의7'],
+        ['과반수 노조가 없으면: 공동교섭대표단 자율 구성 — 10일간<br><span class="muted">전체 조합원 10% 이상 노조만 참여. 실패 시 노동위원회가 인원 배분 결정</span>', '~ '+fmt(jEnd)+' 무렵', '영 제14조의8·의9'],
+      ];
+      html+='<div class="tblwrap"><table><thead><tr><th>단계</th><th style="width:34%">날짜</th><th style="width:18%">근거</th></tr></thead><tbody>';
+      rows.forEach(function(r){ html+='<tr><td>'+r[0]+'</td><td>'+r[1]+'</td><td class="muted">'+r[2]+'</td></tr>'; });
+      html+='</tbody></table></div>';
+      html+='<p class="muted">이의신청과 노동위원회 결정 절차 없이 순조롭게 진행될 때 교섭 요구부터 교섭대표 확정까지 <b>대략 한 달 반</b>입니다. 사용자성·공고를 다투게 되면 위 동희오토 사례처럼 수개월 단위로 늘어납니다.</p>';
+    }
+    out.innerHTML=html;
+  }
+  dEx.addEventListener('change',calc); dDm.addEventListener('change',calc);
+})();
+</script>
+</body>
+</html>
