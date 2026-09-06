@@ -2,10 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "lprc",
+      "name": "docs",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8000", "--directory", "docs"],
-      "port": 8000
+      "runtimeArgs": ["-m", "http.server", "8741", "--directory", "docs"],
+      "port": 8741
     }
   ]
 }

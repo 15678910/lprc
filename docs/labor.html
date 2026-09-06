@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
 <meta name="googlebot" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
-<title>원청교섭 가이드 — 실질임금 · 임금단협 · 노동 양극화 해소 계산기</title>
+<title>원청교섭 가이드 — 모두를 위한 단체교섭</title>
 <style>
   :root{--bg:#0b1017;--card:#131a24;--line:#20293a;--tx:#e6edf3;--mut:#8b98a9;
         --grn:#3fb950;--red:#f85149;--amb:#d29922;--acc:#58a6ff;}
@@ -66,7 +66,7 @@
 <header>
   <h1>원청교섭 가이드</h1>
   <nav class="nav">
-    <a href="./">🧮 계산기</a>
+    <a href="./">🧮 측정기</a>
     <a href="./guide.html">📖 소개 · 이용 방법</a>
     <a href="./labor.html" class="on">⚖️ 원청교섭 가이드</a>
     <a href="./future.html">🤖 AI 시대의 노동</a>
@@ -77,10 +77,13 @@
     ⑤⑥이 격차의 <b>크기</b>를 계산한다면, 이 페이지는 그 격차를 다룰 <b>테이블을 여는 법적 경로</b>를 다룹니다.</div>
 </header>
 
-<div class="warn"><b>먼저 읽어 주세요.</b> 이 페이지는 <b>2026-09-06 기준</b>의 법령·판례·통계를 정리한 것이며 자동으로 갱신되지 않습니다.
+<div class="warn"><b>먼저 읽어 주세요.</b> 이 페이지는 <b>2026-09-06 기준</b>의 법령·판례·통계를 정리한 것입니다.
+  본문은 자동으로 갱신되지 않지만, <b>기준 법령 3종(노동조합법·시행령·시행규칙)의 개정 여부는 매일 국가법령정보센터와 대조</b>해 아래 줄에 표시합니다
+  — 판례·통계·행정해석의 변동까지는 자동으로 감지하지 못합니다.
   법률 자문이 아니며, 노무·법률 상담을 대신할 수 없습니다. 인정 여부는 사안마다 노동위원회와 법원이 개별 판단하고,
   아래에 적힌 판례 흐름처럼 <b>지금도 다툼이 진행 중인 영역</b>입니다.
   실제 교섭을 준비한다면 소속 상급단체 · 공인노무사 · 변호사 · <a href="https://nlrc.go.kr" target="_blank" rel="noopener">노동위원회</a>와 함께 진행하세요.</div>
+<div id="lawwatch" class="muted" style="font-size:.9rem;margin:-6px 2px 14px" hidden></div>
 
 <div class="card">
   <h2>무엇이 바뀌었나 — 법률 제21045호 (2025-09-09 공포, 2026-03-10 시행)</h2>
@@ -130,7 +133,7 @@
 </div>
 
 <div class="card">
-  <h2>절차와 날짜 — 교섭창구 단일화 일정 계산기</h2>
+  <h2>절차와 날짜 — 교섭창구 단일화 일정 자동 계산</h2>
   <p>교섭 요구가 접수되면 법정 기한이 연쇄적으로 돌아갑니다. 하루 이틀 차이로 <b>참여 자격을 잃는 절차</b>이므로 달력이 중요합니다.
     예정일을 넣으면 단계별 일정을 만들어 드립니다.</p>
   <div class="inrow">
@@ -283,7 +286,8 @@
     <li>원청이 응해야 하는 <b>교섭 의제의 범위</b>(안전만인지, 임금·고용까지인지)는 결정례가 엇갈리는 현재진행형 쟁점입니다. 이 페이지는 결론을 예단하지 않습니다.</li>
     <li>원청 상대 <b>쟁의행위의 범위</b>도 마찬가지로 다툼 중입니다(조정중지 결정으로 쟁의권을 확보한 사례는 있음).</li>
     <li>개별 임금체불·해고 등 근로기준법 영역, 공무원·교원의 별도 법제는 다루지 않습니다.</li>
-    <li>이 페이지의 통계·판례는 <b>2026-09-06에 수집한 것</b>이며 계산기의 데이터와 달리 자동 갱신되지 않습니다. 날짜가 오래됐다면 원 출처를 다시 확인하세요.</li>
+    <li>이 페이지의 통계·판례는 <b>2026-09-06에 수집한 것</b>이며 측정기의 데이터와 달리 자동 갱신되지 않습니다.
+      기준 법령 3종의 <b>개정 여부만</b> 매일 자동 점검해 맨 위에 표시합니다 — 판례·통계·행정해석이 바뀌는 것은 감지하지 못하니, 날짜가 오래됐다면 원 출처를 다시 확인하세요.</li>
   </ul>
 </div>
 
@@ -312,7 +316,7 @@
   }
   box.addEventListener('change',judge);
 
-  // 일정 계산기
+  // 일정 계산
   var dEx=document.getElementById('d_expire'), dDm=document.getElementById('d_demand'), out=document.getElementById('calout');
   function add(d,n){ var x=new Date(d); x.setDate(x.getDate()+n); return x; }
   function fmt(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' ('+'일월화수목금토'[d.getDay()]+')'; }
@@ -344,6 +348,25 @@
     out.innerHTML=html;
   }
   dEx.addEventListener('change',calc); dDm.addEventListener('change',calc);
+
+  // 기준 법령 개정 감시 (law_watch.py 가 매일 갱신하는 docs/law_watch.json)
+  fetch('./law_watch.json').then(function(r){ return r.json(); }).then(function(w){
+    var el=document.getElementById('lawwatch');
+    if(!el||!w||!w.laws) return;
+    function d8(s){ return s&&s.length===8 ? s.slice(0,4)+'-'+s.slice(4,6)+'-'+s.slice(6) : s; }
+    el.hidden=false;
+    if(w.any_changed){
+      el.className='warn';
+      el.removeAttribute('style');
+      el.innerHTML='<b>⚠️ 기준 법령이 개정되었습니다</b> — '+
+        w.laws.filter(function(l){return l.changed;}).map(function(l){
+          return l.name+' (새 공포번호 '+l.current_pub_no+', 시행 '+d8(l.current_eff_date)+')';
+        }).join(', ')+
+        '. 이 페이지 본문은 개정 전 기준으로 작성된 상태이니, 국가법령정보센터에서 바뀐 조문을 먼저 확인하세요.';
+    } else {
+      el.textContent='기준 법령 자동 점검 — '+w.checked_at+' 확인: 노동조합법·시행령·시행규칙 개정 없음 (국가법령정보센터 대조)';
+    }
+  }).catch(function(){});
 })();
 </script>
 </body>

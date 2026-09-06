@@ -1,0 +1,36 @@
+{
+ "generated_at": "2026-09-06T15:31:42+09:00",
+ "checked_at": "2026-09-06",
+ "source": "국가법령정보센터(law.go.kr) 법제처 DRF",
+ "baseline_note": "labor.html 2026-09-06 작성 기준",
+ "any_changed": false,
+ "laws": [
+  {
+   "name": "노동조합 및 노동관계조정법",
+   "short": "법",
+   "baseline_pub_no": 21045,
+   "baseline_eff_date": "20260310",
+   "current_pub_no": 21045,
+   "current_eff_date": "20260310",
+   "changed": false
+  },
+  {
+   "name": "노동조합 및 노동관계조정법 시행령",
+   "short": "영",
+   "baseline_pub_no": 36159,
+   "baseline_eff_date": "20260310",
+   "current_pub_no": 36159,
+   "current_eff_date": "20260310",
+   "changed": false
+  },
+  {
+   "name": "노동조합 및 노동관계조정법 시행규칙",
+   "short": "규칙",
+   "baseline_pub_no": 463,
+   "baseline_eff_date": "20260310",
+   "current_pub_no": 463,
+   "current_eff_date": "20260310",
+   "changed": false
+  }
+ ]
+}
