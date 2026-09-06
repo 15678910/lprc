@@ -2363,6 +2363,42 @@ function rgDerive(reg,y){
     hdi:(s.pc_grdp&&s.pc_hdi!=null)?s.pc_hdi/s.pc_grdp*100:null,              // 가계소득 ÷ 생산(%)
   };
 }
+/* ⑫ 임금 블록 — 사업체노동력조사 시도별 상용 월급여액. 지역소득보다 한 해 앞선다.
+   지역소득의 시도 이름(충청남도)과 이 표의 이름(충남)은 앞 두 글자가 같다 — 그걸로 잇는다. */
+function rgWage(me,all){
+  const Wg=RG&&RG.wage; if(!Wg||!Wg.regions)return '';
+  // 충청남도→충남, 전라남도→전남, 경상북도→경북 (첫 글자+셋째 글자). 나머지는 앞 두 글자.
+  const short=n=>n==='전국'?'전국':/^(충청|전라|경상)/.test(n)?n[0]+n[2]:n.slice(0,2);
+  const key=short(me.name), nat=Wg.regions['전국']||{};
+  const yrs=Wg.years||[], Y=[...yrs].reverse().find(y=>(Wg.regions[key]||{})[y]&&(Wg.regions[key][y].pay_all!=null));
+  if(!Y)return '';
+  const cur=Wg.regions[key][Y], prev=(Wg.regions[key]||{})[String(+Y-1)]||{}, nt=nat[Y]||{};
+  const isNat=key==='전국';
+  const yoy=(cur.pay_all&&prev.pay_all)?(cur.pay_all/prev.pay_all-1)*100:null;
+  const gap=(cur.pay_large&&cur.pay_small)?cur.pay_large/cur.pay_small:null;      // 300인 이상 ÷ 1~29인
+  const ngap=(nt.pay_large&&nt.pay_small)?nt.pay_large/nt.pay_small:null;
+  // 순위 — 17개 시도(전국 제외) 중 월급여액 높은 순
+  const sido=all.filter(r=>r.code!=='00').map(r=>{const d=(Wg.regions[short(r.name)]||{})[Y];return d&&d.pay_all!=null?{n:short(r.name),v:d.pay_all}:null}).filter(Boolean)
+    .sort((a,b)=>b.v-a.v);
+  const rk=sido.findIndex(x=>x.n===key)+1, n=sido.length;
+  const man=v=>v==null?'—':won(v/1e4);
+  return `<div class="lab" style="margin:16px 0 4px"><b>지금은 얼마를 받나</b> — 사업체노동력조사 ${esc(Y)}년, 상용노동자 월평균</div>
+  <div class="row">
+    <div class="box"><div class="lab">상용 월급여액 (1인 이상 사업체)</div>
+      <div class="big mono">${man(cur.pay_all)}<span style="font-size:1rem;font-weight:400">만원</span></div>
+      <div class="lab">전년 대비 <b class="${sc(yoy)}">${sgn(yoy)}${fmt(yoy,1)}%</b>${isNat?'':` · 전국 ${man(nt.pay_all)}만원 (<b class="${sc(cur.pay_all/nt.pay_all*100-100)}">${sgn(cur.pay_all/nt.pay_all*100-100)}${fmt(cur.pay_all/nt.pay_all*100-100,1)}%</b>) · ${n}개 시도 중 ${rk||'—'}위`}</div></div>
+    <div class="box"><div class="lab">지역 안의 규모 격차 — 300인 이상 ÷ 1~29인</div>
+      <div class="big mono">${fmt(gap,2)}<span style="font-size:1rem;font-weight:400">배</span></div>
+      <div class="lab">${man(cur.pay_large)}만원 vs ${man(cur.pay_small)}만원${isNat?'':` · 전국 ${fmt(ngap,2)}배`}<br>
+        같은 지역 안에서 큰 사업장과 작은 사업장의 임금 차이 — ⑤⑥이 재는 격차의 지역판</div></div>
+    <div class="box"><div class="lab">월 총근로시간</div>
+      <div class="big mono">${fmt(cur.hrs_all,1)}<span style="font-size:1rem;font-weight:400">시간</span></div>
+      <div class="lab">${isNat?'상용노동자 1인당':`전국 ${fmt(nt.hrs_all,1)}시간 (<b class="${sc(cur.hrs_all-nt.hrs_all)}">${sgn(cur.hrs_all-nt.hrs_all)}${fmt(cur.hrs_all-nt.hrs_all,1)}시간</b>)`}
+        · 시간당으로는 ${cur.hrs_all?won(cur.pay_all/cur.hrs_all):'—'}원</div></div>
+  </div>
+  <div class="lab" style="margin-top:6px">${esc(Wg.note||'')} 산업·규모 구성이 달라 시도 간 차이가 곧 '같은 일의 임금 차이'는 아닙니다.</div>`;
+}
+
 function rgCard(){
   if(!RG||!RG.regions)return `<div class="card">
     <h2>⑫ 우리 지역 — 만든 가치와 남는 소득</h2>
@@ -2439,7 +2475,9 @@ function rgCard(){
         <div class="lab">지역총소득 중 노동자 보수${isNat?'':` · 전국 ${fmt(dn.labor,1)}% (<b class="${sc(d.labor-dn.labor)}">${sgn(d.labor-dn.labor)}${fmt(d.labor-dn.labor,1)}%p</b>) · ${n}개 시도 중 ${rank('labor',true)}위`}</div></div>
     </div>
 
-    <div class="lab" style="margin:16px 0 4px"><b>${esc(me.name)} 최근 10년</b></div>
+    ${rgWage(me,all)}
+
+    <div class="lab" style="margin:16px 0 4px"><b>${esc(me.name)} 최근 10년</b> — 지역소득</div>
     ${trend}
 
     <div class="lab" style="margin:16px 0 4px"><b>17개 시도 한눈에</b> — 생산 대비 순수취가 낮은(밖으로 많이 나간) 순</div>
@@ -2454,8 +2492,10 @@ function rgCard(){
       · 출처: <b>${esc(RG.source||'통계청 지역소득')}</b> ·
         ${ext('https://kosis.kr/statHtml/statHtml.do?orgId=101&tblId=DT_1C96','1인당')} ·
         ${ext('https://kosis.kr/statHtml/statHtml.do?orgId=101&tblId=DT_1C95','지역외순수취본원소득')} ·
-        ${ext('https://kosis.kr/statHtml/statHtml.do?orgId=101&tblId=DT_1C94','제도부문별 소득계정')} ·
+        ${ext('https://kosis.kr/statHtml/statHtml.do?orgId=101&tblId=DT_1C94','제도부문별 소득계정')}${RG.wage?` · <b>${esc(RG.wage.source)}</b> ${ext('https://kosis.kr/statHtml/statHtml.do?orgId=118&tblId='+encodeURIComponent(RG.wage.table),'시도/규모별 임금·근로시간')}`:''} ·
         수집 ${esc((RG.generated_at||'').slice(0,10))}<br>
+      · <b>기준연도가 다른 이유</b> — 지역소득은 연 1회, 발표까지 1년 남짓 걸립니다(2024년 값이 2025년 말 발표). 임금은 그보다 한 해 앞섭니다.
+        2026년 값은 두 통계 모두 아직 없습니다 — 있는 척하지 않습니다.<br>
       ${(RG.limits||[]).map(x=>`· ⚠️ ${esc(x)}`).join('<br>')}<br>
       🚨 어느 쪽 주장도 대변하지 않는 계산 결과이며 노무·법률 자문이 아닙니다.</div>
   </div>`;
