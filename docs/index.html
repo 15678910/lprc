@@ -160,6 +160,14 @@ function loadPV(){
     .then(r=>r.ok?r.json():null).catch(()=>null)
     .then(j=>{PV=j;pvFail=!j;delete PSLOAD.__pv;render()});
 }
+/* ⑫ 우리 지역 — 시도별 지역소득. 34KB. ⑩⑪ 과 함께 화면 아래에 닿을 때 받는다. */
+let RG=null, rgFail=false;
+function loadRG(){
+  if(RG||PSLOAD.__rg)return; PSLOAD.__rg=1;
+  fetch('./region.json?v='+Date.now(),{cache:'no-store'})
+    .then(r=>r.ok?r.json():null).catch(()=>null)
+    .then(j=>{RG=j;rgFail=!j;delete PSLOAD.__rg;render()});
+}
 
 let PS=null; const PSCACHE={}, PSLOAD={};
 let psFail=false;
@@ -1994,6 +2002,7 @@ function psCard(){
    보수를 대통령령이 정하므로 단협으로 정할 수 없다(공무원노조법 제10조).
    그래서 이 화면의 목적은 교섭 문안이 아니라 **예산·법령을 바꿀 근거**를 만드는 것이다. */
 window.setPv=(k,v)=>{S.pv=S.pv||{};S.pv[k]=v;save();render()};
+window.setRg=(k,v)=>{S.rg=S.rg||{};S.rg[k]=v;save();render()};
 
 function pvCard(){
   if(!PV||!PV.general)return `<div class="card">
@@ -2338,9 +2347,121 @@ function psNote(){
     🚨 어느 쪽 주장도 대변하지 않는 계산 결과이며 노무·법률 자문이 아닙니다.</div>`;
 }
 
+/* ⑫ 우리 지역 — 이 지역에서 만든 가치가 이 지역 사람의 소득으로 남는가.
+   원자료는 시도×연도 여섯 값(region.json). 비율·순위는 여기서 낸다.
+   부호 규칙: net_inflow 는 통계청의 '지역외순수취본원소득' 그대로 — 양수면 밖에서 들어온 소득,
+   음수면 밖으로 나간 소득. 화면 문장도 이 부호를 그대로 따른다(뒤집어 적으면 반박당한다). */
+function rgDerive(reg,y){
+  const s=(reg.s||{})[y]; if(!s)return null;
+  const grdp=(s.gni!=null&&s.net_inflow!=null)?s.gni-s.net_inflow:null;   // 지역총소득 − 순수취 = 지역내총생산(백만원)
+  return {
+    pc_grdp:s.pc_grdp, pc_grni:s.pc_grni, pc_hdi:s.pc_hdi, net:s.net_inflow, grdp,
+    inflow:(grdp&&s.net_inflow!=null)?s.net_inflow/grdp*100:null,            // 생산 대비 순수취(%)
+    labor:(s.gni&&s.comp!=null)?s.comp/s.gni*100:null,                        // 노동자 보수 ÷ 지역총소득(%)
+    hdi:(s.pc_grdp&&s.pc_hdi!=null)?s.pc_hdi/s.pc_grdp*100:null,              // 가계소득 ÷ 생산(%)
+  };
+}
+function rgCard(){
+  if(!RG||!RG.regions)return `<div class="card">
+    <h2>⑫ 우리 지역 — 만든 가치와 남는 소득</h2>
+    <div class="hint">임금 격차는 지역의 문제이기도 합니다. 이 지역에서 생산된 가치 중 얼마가 이 지역 사람의 소득으로 남는지 봅니다.</div>
+    <div class="lab">${rgFail?'자료를 불러오지 못했습니다. 새로고침해 주세요.':'⏳ 지역소득 자료를 불러오는 중입니다…'}</div></div>`;
+
+  const all=RG.regions, nat=all.find(r=>r.code==='00'), sido=all.filter(r=>r.code!=='00');
+  // 여섯 값이 다 있는 마지막 연도
+  const Y=[...(RG.years||[])].reverse().find(y=>{const d=nat&&rgDerive(nat,y);return d&&d.inflow!=null&&d.labor!=null&&d.hdi!=null});
+  if(!Y)return '';
+  const R=S.rg||{}, code=all.some(r=>r.code===R.c)?R.c:'00';
+  const me=all.find(r=>r.code===code), d=rgDerive(me,Y), dn=rgDerive(nat,Y);
+  const rows=sido.map(r=>({r,d:rgDerive(r,Y)})).filter(x=>x.d&&x.d.inflow!=null);
+  const rank=(key,desc)=>{const a=[...rows].sort((p,q)=>desc?q.d[key]-p.d[key]:p.d[key]-q.d[key]);
+    const i=a.findIndex(x=>x.r.code===code); return i<0?null:i+1};
+  const n=rows.length;
+  const man=v=>v==null?'—':won(v/10);                 // 천원 → 만원
+  const jo=v=>v==null?'—':fmt(Math.abs(v)/1e6,1);      // 백만원 → 조원
+  const isNat=code==='00';
+  const dir=d.net==null?'':d.net>=0?'밖에서 들어온':'밖으로 나간';
+
+  const sel=`<select onchange="setRg('c',this.value)" style="background:#0d1219;border:1px solid var(--line);
+      color:var(--tx);border-radius:7px;padding:7px 9px;font-size:.95rem;min-width:180px">
+    ${all.map(r=>`<option value="${esc(r.code)}"${r.code===code?' selected':''}>${esc(r.name)}</option>`).join('')}</select>`;
+
+  const trend=(()=>{
+    const ys=(RG.years||[]).filter(y=>rgDerive(me,y)).slice(-10);
+    return `<div style="overflow-x:auto"><table><thead><tr><th>연도</th>
+      ${ys.map(y=>`<th>${esc(y)}</th>`).join('')}</tr></thead><tbody>
+      <tr><td>생산 대비 순수취</td>${ys.map(y=>{const v=rgDerive(me,y).inflow;
+        return `<td class="mono ${sc(v)}" style="font-size:.88rem">${sgn(v)}${fmt(v,1)}%</td>`}).join('')}</tr>
+      <tr><td>노동자 보수 몫</td>${ys.map(y=>`<td class="mono" style="font-size:.88rem">${fmt(rgDerive(me,y).labor,1)}%</td>`).join('')}</tr>
+      <tr><td>가계소득 ÷ 생산</td>${ys.map(y=>`<td class="mono" style="font-size:.88rem">${fmt(rgDerive(me,y).hdi,1)}%</td>`).join('')}</tr>
+    </tbody></table></div>`;
+  })();
+
+  const table=`<div style="overflow-x:auto"><table><thead><tr><th>시도</th><th>1인당 생산</th>
+      <th>생산 대비 순수취</th><th>노동자 보수 몫</th><th>가계소득 ÷ 생산</th></tr></thead><tbody>
+    ${[...rows].sort((p,q)=>p.d.inflow-q.d.inflow).map(({r,d:x})=>`<tr${r.code===code?' style="background:rgba(88,166,255,.10)"':''}>
+      <td>${r.code===code?'<b>':''}${esc(r.name)}${r.code===code?'</b>':''}</td>
+      <td class="mono">${man(x.pc_grdp)}만원</td>
+      <td class="mono ${sc(x.inflow)}">${sgn(x.inflow)}${fmt(x.inflow,1)}%</td>
+      <td class="mono">${fmt(x.labor,1)}%</td>
+      <td class="mono">${fmt(x.hdi,1)}%</td></tr>`).join('')}
+    <tr style="color:var(--mut)"><td>전국</td><td class="mono">${man(dn.pc_grdp)}만원</td>
+      <td class="mono">${sgn(dn.inflow)}${fmt(dn.inflow,1)}%</td><td class="mono">${fmt(dn.labor,1)}%</td><td class="mono">${fmt(dn.hdi,1)}%</td></tr>
+  </tbody></table></div>`;
+
+  return `<div class="card">
+    <h2>⑫ 우리 지역 — 만든 가치와 남는 소득</h2>
+    <div class="hint">임금 격차는 지역의 문제이기도 합니다. 하청 임금은 그 지역에서 쓰이지만 원청 이윤은 본사와 주주에게 갑니다.
+      그 흔적이 <b>지역내총생산(생산지 기준)</b>과 <b>지역총소득(거주지 기준)</b>의 차이에 남습니다.
+      원청과 교섭할 때 지역이 왜 이해당사자인지는 <a href="./labor.html">원청교섭 가이드 '지역 경로'</a>에 정리했습니다.</div>
+    <div class="row" style="align-items:center;margin-bottom:12px">
+      <div><div class="lab">시도</div>${sel}</div>
+      <div class="lab">기준 ${esc(Y)}년 · 통계청 지역소득(2020년 기준)</div>
+    </div>
+    <div class="row">
+      <div class="box"><div class="lab">1인당 지역내총생산</div>
+        <div class="big mono">${man(d.pc_grdp)}<span style="font-size:1rem;font-weight:400">만원</span></div>
+        <div class="lab">이 지역에서 한 사람당 만든 가치${isNat?'':` · 전국 ${man(dn.pc_grdp)}만원`}</div></div>
+      <div class="box"><div class="lab">1인당 지역총소득</div>
+        <div class="big mono">${man(d.pc_grni)}<span style="font-size:1rem;font-weight:400">만원</span></div>
+        <div class="lab">이 지역 사람이 실제로 받은 소득 — 생산보다
+          <b class="${sc(d.inflow)}">${sgn(d.inflow)}${fmt(d.inflow,1)}%</b></div></div>
+      <div class="box"><div class="lab">지역 ${dir} 소득</div>
+        <div class="big mono ${sc(d.net)}">${jo(d.net)}<span style="font-size:1rem;font-weight:400">조원</span></div>
+        <div class="lab">${isNat?'전국은 국외와의 순수취입니다':`생산 대비 ${sgn(d.inflow)}${fmt(d.inflow,1)}% · ${n}개 시도 중 ${d.net<0?'유출':'유입'} ${d.net<0?rank('inflow',false):rank('inflow',true)}위`}</div></div>
+      <div class="box"><div class="lab">1인당 가계총처분가능소득</div>
+        <div class="big mono">${man(d.pc_hdi)}<span style="font-size:1rem;font-weight:400">만원</span></div>
+        <div class="lab">생산 1만원 중 가계 손에 <b>${fmt(d.hdi==null?null:d.hdi*100,0)}원</b>${isNat?'':` · 전국 ${fmt(dn.hdi==null?null:dn.hdi*100,0)}원`}</div></div>
+      <div class="box"><div class="lab">노동자 보수 몫</div>
+        <div class="big mono">${fmt(d.labor,1)}%</div>
+        <div class="lab">지역총소득 중 노동자 보수${isNat?'':` · 전국 ${fmt(dn.labor,1)}% (<b class="${sc(d.labor-dn.labor)}">${sgn(d.labor-dn.labor)}${fmt(d.labor-dn.labor,1)}%p</b>) · ${n}개 시도 중 ${rank('labor',true)}위`}</div></div>
+    </div>
+
+    <div class="lab" style="margin:16px 0 4px"><b>${esc(me.name)} 최근 10년</b></div>
+    ${trend}
+
+    <div class="lab" style="margin:16px 0 4px"><b>17개 시도 한눈에</b> — 생산 대비 순수취가 낮은(밖으로 많이 나간) 순</div>
+    ${table}
+
+    <div class="note">
+      · <b>읽는 법</b> — '생산 대비 순수취'가 음수면 이 지역에서 만든 가치의 그만큼이 다른 지역 거주자의 소득이 되었다는 뜻입니다.
+        공장이 많고 본사가 밖에 있는 지역에서 크게 음수가 나오고, 본사·주주가 모여 있는 지역에서 양수가 나옵니다.
+        다만 통근(옆 시도에 살며 출근)도 같은 항목에 섞여 있어, <b>전부를 '본사 유출'로 읽으면 반박당합니다.</b><br>
+      · <b>노동자 보수 몫</b>은 지역총소득(거주자 기준) 대비입니다. ⑦의 노동 몫(GDP 대비)과 개념이 달라 숫자를 직접 견주지 마세요.
+        시도 간 비교와 같은 지역의 추이 비교에만 쓰세요.<br>
+      · 출처: <b>${esc(RG.source||'통계청 지역소득')}</b> ·
+        ${ext('https://kosis.kr/statHtml/statHtml.do?orgId=101&tblId=DT_1C96','1인당')} ·
+        ${ext('https://kosis.kr/statHtml/statHtml.do?orgId=101&tblId=DT_1C95','지역외순수취본원소득')} ·
+        ${ext('https://kosis.kr/statHtml/statHtml.do?orgId=101&tblId=DT_1C94','제도부문별 소득계정')} ·
+        수집 ${esc((RG.generated_at||'').slice(0,10))}<br>
+      ${(RG.limits||[]).map(x=>`· ⚠️ ${esc(x)}`).join('<br>')}<br>
+      🚨 어느 쪽 주장도 대변하지 않는 계산 결과이며 노무·법률 자문이 아닙니다.</div>
+  </div>`;
+}
+
 function sideNav(){
   const nav=$('snav'); if(!nav)return;
-  const marks='①②③④⑤⑥⑦⑧⑨⑩⑪';
+  const marks='①②③④⑤⑥⑦⑧⑨⑩⑪⑫';
   const hs=[...document.querySelectorAll('#app .card>h2')]
     .filter(h=>marks.indexOf((h.textContent.trim()[0]||''))>=0);
   if(!hs.length){nav.innerHTML='';return}
@@ -2387,7 +2508,7 @@ function restoreFocus(k){
    '카드 윗변이 화면 아래에서 600px 안으로 들어왔는가'만 보면 된다. */
 let psHook=null;
 function psWatch(){
-  if((PS&&PV)||psHook)return;
+  if((PS&&PV&&RG)||psHook)return;
   const near=()=>{
     const h=[...document.querySelectorAll('#app .card>h2')]
       .find(x=>x.textContent.trim()[0]==='⑩');
@@ -2396,7 +2517,7 @@ function psWatch(){
   psHook=()=>{
     if(PS||PSLOAD.__ix||!near())return;
     removeEventListener('scroll',psHook); removeEventListener('resize',psHook);
-    psHook=null; loadPS(); loadPV();
+    psHook=null; loadPS(); loadPV(); loadRG();
   };
   addEventListener('scroll',psHook,{passive:true});
   addEventListener('resize',psHook,{passive:true});
@@ -2566,6 +2687,8 @@ function render(){
   ${psCard()}
 
   ${pvCard()}
+
+  ${rgCard()}
 
   <div class="card">
     <h2>출처 · 기준시점</h2>
