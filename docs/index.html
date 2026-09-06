@@ -55,6 +55,8 @@
   .tag{display:inline-block;background:#0d1219;border:1px solid var(--line);border-radius:20px;
        padding:3px 11px;font-size:.88rem;margin:2px 3px 2px 0}
   a.ext{color:var(--acc);text-decoration:none;border-bottom:1px solid rgba(88,166,255,.35)}
+  /* 본문 안의 내부 링크 — 규칙이 없으면 브라우저 기본색(방문 후 보라)이 어두운 배경에 묻힌다 */
+  #app a:not(.ext){color:var(--acc);font-weight:600;text-decoration:underline;text-underline-offset:3px}
   a.ext:hover{border-bottom-color:var(--acc);background:rgba(88,166,255,.1)}
   a.ext::after{content:" ↗";font-size:.85em;opacity:.7}
   .srcbox{background:#0d1219;border:1px solid var(--line);border-radius:10px;padding:13px 15px;margin-top:10px}
