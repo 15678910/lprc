@@ -37,7 +37,8 @@ DART 에 없는 축이 세 개 더 있습니다 — **성별 보수·근속**, *
 ```
 lprc/
 ├─ docs/                    GitHub Pages 로 서비스되는 정적 파일
-│    index.html            측정기 본체 (단일 파일, 외부 라이브러리 없음)
+│    index.html            홈(소개·입구) — 정적. 옛 앵커(#c5 등)는 measure.html 로 넘긴다
+│    measure.html          측정기 본체 (단일 파일, 외부 라이브러리 없음)
 │    guide.html            소개 · 이용 방법
 │    future.html           AI 시대의 노동
 │    about.html            이용 안내 · 출처 · 면책
