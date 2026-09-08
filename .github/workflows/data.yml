@@ -80,6 +80,16 @@ jobs:
           PYTHONIOENCODING: utf-8
         run: python wage_negotiation.py || echo "wage_negotiation had errors, continuing..."
 
+      # ⑬ 국민연금 가입 사업장 내역 — 36MB ZIP 을 받아 30인 이상 사업장만 시도별로 쪼갠다. 키 불필요.
+      # 국민연금공단이 매달 올리지는 않아 같은 파일이면 아무것도 안 한다(idx 의 file_date 비교).
+      # 회사 재무처럼 주 1회면 충분하다.
+      - name: Collect pension sites
+        if: github.event.schedule == '0 2 * * 0' || github.event.inputs.companies == 'true'
+        timeout-minutes: 15
+        env:
+          PYTHONIOENCODING: utf-8
+        run: python pension_sites.py || echo "pension_sites had errors, continuing..."
+
       # 공공부문 (알리오) — 키가 필요 없다. 화면이 쓰는 JSON 을 그대로 부른다.
       # 알리오 화면 구조가 바뀌면 깨질 수 있어, 실패해도 앞의 데이터는 살린다.
       # 원인은 출력 JSON 의 diag 배열에 남는다.
@@ -132,7 +142,7 @@ jobs:
           # 'docs/*.json' 글롭은 하위 폴더를 잡지 않으므로 디렉터리째 넣는다.
           # (그렇게 안 해서 docs/co 가 수동 커밋 이후 자동 갱신되지 않고 있었다.
           #  디렉터리로 넣으면 파일이 사라진 경우의 삭제도 함께 기록된다.)
-          GEN="docs/co docs/ps"
+          GEN="docs/co docs/ps docs/np"
           # 폴더가 없을 때 함수가 0이 아닌 값을 돌려주면 bash -e 가 스텝을 끊는다.
           # 마지막에 return 0 을 박아 둔다.
           save() { rm -rf /tmp/collected; mkdir -p /tmp/collected
