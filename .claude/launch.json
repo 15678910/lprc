@@ -4,8 +4,26 @@
     {
       "name": "docs",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8741", "--directory", "docs"],
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8741",
+        "--directory",
+        "docs"
+      ],
       "port": 8741
+    },
+    {
+      "name": "members",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8742",
+        "--directory",
+        "../lprc-members"
+      ],
+      "port": 8742
     }
   ]
 }
