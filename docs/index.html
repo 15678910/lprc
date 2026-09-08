@@ -38,6 +38,8 @@
   .now div{background:#0d1219;border:1px solid var(--line);border-radius:10px;padding:10px 16px;min-width:180px;text-align:center}
   .now b{display:block;font-size:1.35rem;font-variant-numeric:tabular-nums;line-height:1.2}
   .now span{color:var(--mut);font-size:.86rem}
+  .now i{display:block;font-style:normal;color:var(--acc);font-size:.8rem;font-weight:700;letter-spacing:.02em;margin-bottom:3px}
+  .nowcap{text-align:center;color:var(--mut);font-size:.9rem;margin:-8px 0 10px}
   h2{font-size:1.3rem;margin:34px 0 12px}
   .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
   .card{display:block;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;
@@ -81,6 +83,7 @@
   </div>
 </section>
 
+<div class="nowcap" id="nowcap" hidden>지금 이 사이트의 상태 — 네 값 모두 매일 자동으로 갱신됩니다</div>
 <div class="now" id="now" hidden></div>
 
 <h2>무엇이 있나</h2>
@@ -138,17 +141,17 @@
 /* 홈이 살아 있다는 표시 — 자동 갱신되는 값 몇 개. 어느 하나라도 못 받으면 그 칸만 뺀다. */
 (function(){
   var box=document.getElementById('now'), cells=[];
-  function add(v,l){cells.push('<div><b>'+v+'</b><span>'+l+'</span></div>')}
+  function add(t,v,l){cells.push('<div><i>'+t+'</i><b>'+v+'</b><span>'+l+'</span></div>')}
   function get(u){return fetch(u+'?v='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null}).catch(function(){return null})}
   Promise.all([get('./money_macro.json'),get('./law_watch.json'),get('./region.json')]).then(function(a){
     var m=a[0],w=a[1],r=a[2];
     if(m&&m.cpi_items&&m.cpi_items.total_yoy_pct!=null){
-      var v=Number(m.cpi_items.total_yoy_pct); add((v>=0?'+':'')+v.toFixed(1)+'%','소비자물가 전년동월비 · '+(m.cpi_items.asof||''));
+      var v=Number(m.cpi_items.total_yoy_pct); add('① 물가 기준선',(v>=0?'+':'')+v.toFixed(1)+'%','소비자물가 전년동월비 · '+(m.cpi_items.asof||''));
     }
-    if(m&&m.generated_at) add(String(m.generated_at).slice(0,10),'통계 자동 갱신');
-    if(w&&w.checked_at) add(w.any_changed?'개정 감지':'개정 없음','기준 노동법령 점검 · '+w.checked_at);
-    if(r&&r.years&&r.years.length) add(r.years[r.years.length-1]+'년','지역소득 최신 연도');
-    if(cells.length){box.innerHTML=cells.join(''); box.hidden=false;}
+    if(m&&m.generated_at) add('② 데이터가 최신인가',String(m.generated_at).slice(0,10),'통계 자동 갱신일');
+    if(w&&w.checked_at) add('③ 법령이 바뀌었나',w.any_changed?'개정 감지':'개정 없음','노동조합법·시행령·시행규칙 점검 · '+w.checked_at);
+    if(r&&r.years&&r.years.length) add('④ 지역 통계는 어느 해',r.years[r.years.length-1]+'년','통계청 지역소득 최신 연도');
+    if(cells.length){box.innerHTML=cells.join(''); box.hidden=false; document.getElementById('nowcap').hidden=false;}
   });
 })();
 </script>
