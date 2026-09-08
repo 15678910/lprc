@@ -119,6 +119,14 @@ jobs:
           PYTHONIOENCODING: utf-8
         run: python region_income.py || echo "region_income had errors, continuing..."
 
+      # 업종·규모별 지불능력 기준선 — 한국은행 기업경영분석(KOSIS). 연 1회(10~11월) 갱신, 호출 3번.
+      - name: Collect industry finance
+        timeout-minutes: 5
+        env:
+          KOSIS_API_KEY: ${{ secrets.KOSIS_API_KEY }}
+          PYTHONIOENCODING: utf-8
+        run: python industry_finance.py || echo "industry_finance had errors, continuing..."
+
       # 원청교섭 가이드(labor.html)의 기준 법령 3종이 개정됐는지 법제처와 대조한다.
       # 키 불필요, 몇 초면 끝난다. 개정이 감지되면 labor.html 이 화면에 경고를 띄운다.
       # 본문을 새 법령에 맞춰 고친 뒤에는 law_watch.py 의 BASELINE 도 같이 올릴 것.

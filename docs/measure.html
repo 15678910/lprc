@@ -519,6 +519,14 @@ function coCard(c){
   const picked=sel==='manual'?null:coFull(sel);
   const D_=picked||{headcount:M.headcount||0,avg_pay:M.avg_pay||0,
     payroll_total:(M.headcount||0)*(M.avg_pay||0),revenue:M.revenue||0,operating_income:M.op||0,year:'직접입력'};
+  /* 직접 입력에서 매출·영업이익이 비면 업종 평균으로 추정해 산식을 세운다 — 추정임을 화면에 남긴다 */
+  const BK=(sel==='manual')?bokPick():null;
+  if(BK&&!picked){
+    const v=BK.v, opm=v.opm_med!=null?v.opm_med:v.opm;
+    if(!D_.revenue&&D_.payroll_total&&v.labor_to_sales){D_.revenue=D_.payroll_total/(v.labor_to_sales/100);D_.rev_est=true}
+    if(!M.op&&D_.revenue&&opm!=null){D_.operating_income=D_.revenue*opm/100;D_.op_est=true}
+    if(D_.rev_est||D_.op_est)D_.year='직접입력+업종추정';
+  }
   const pay=D_.payroll_total,rev=D_.revenue,op=D_.operating_income;
   const p2r=pay&&rev?pay/rev*100:null, opm=op!=null&&rev?op/rev*100:null;
   const rates=[2,3,5,c.felt].filter(x=>x!=null&&isFinite(x));
@@ -548,18 +556,19 @@ function coCard(c){
             ${ext('https://www.cleaneye.go.kr','클린아이')}(지방)에 인원·보수가 훨씬 자세히 나옵니다.</dd>
         <dd>· <b>외부감사 대상도 아닌 소규모</b>는 공시 자체가 없습니다. 단체협약 자료·급여명세로
             직접 확인하거나 ${ext('https://sminfo.mss.go.kr','중소기업현황정보시스템')}을 참고하세요.</dd>
-      </dl></div>`:''}
+      </dl></div>
+      ${bokBench({payroll:(M.headcount||0)*(M.avg_pay||0),revenue:M.revenue||0,op:M.op||0})}`:''}
     ${!pay||!rev?`<div class="lab">${coLoading(sel)
         ?'⏳ 해당 업종 자료를 불러오는 중입니다…'
         :'회사를 선택하거나 직접 입력하면 지불능력 지표가 계산됩니다.'}</div>`:`
     <div class="row">
       <div class="box"><div class="lab">직원 수 / 1인평균 연봉</div>
         <div class="big mono" style="font-size:1.15rem">${won(D_.headcount)}명</div>
-        <div class="lab">${won(D_.avg_pay)}원 · ${esc(String(D_.year))}년 기준</div></div>
-      <div class="box"><div class="lab">인건비 / 매출</div>
+        <div class="lab">${won(D_.avg_pay)}원 · ${/^\d+$/.test(String(D_.year))?esc(String(D_.year))+'년 기준':esc(String(D_.year))}</div></div>
+      <div class="box"><div class="lab">인건비 / 매출${D_.rev_est?' <b class="warn">(매출 업종추정)</b>':''}</div>
         <div class="big mono ${p2r>25?'warn':''}">${fmt(p2r)}%</div>
         <div class="lab">연간급여총액 ${won(pay/1e8)}억 ÷ 매출 ${won(rev/1e8)}억</div></div>
-      <div class="box"><div class="lab">영업이익률</div>
+      <div class="box"><div class="lab">영업이익률${D_.op_est?' <b class="warn">(업종 중위로 추정)</b>':''}</div>
         <div class="big mono ${sc(opm)}">${fmt(opm)}%</div>
         <div class="lab">영업이익 ${won(op/1e8)}억원</div></div>
       <div class="box"><div class="lab">1인당 매출</div>
@@ -2529,6 +2538,64 @@ function rgCard(){
   </div>`;
 }
 
+/* 업종 평균 지불능력(한국은행 기업경영분석) — ④ 직접 입력의 빈칸을 추정으로 채우고, ⑬ 에서 매출 규모를 거꾸로 짚는다.
+   100KB 남짓이라 ④ 직접 입력이나 ⑬ 이 필요로 할 때 받는다. */
+let IF=null, ifFail=false;
+function loadIF(){
+  if(IF||PSLOAD.__if)return; PSLOAD.__if=1;
+  fetch('./industry_finance.json?v='+Date.now(),{cache:'no-store'})
+    .then(r=>r.ok?r.json():null).catch(()=>null)
+    .then(j=>{IF=j;ifFail=!j;delete PSLOAD.__if;render()});
+}
+window.setBok=(k,v)=>{S.bok=S.bok||{};S.bok[k]=v;save();render()};
+/* 고른 업종·규모의 지표 묶음. 없으면 null. 규모에 값이 없으면 '종합' 으로 물러선다. */
+function bokPick(){
+  if(!IF||!IF.data)return null;
+  const B=S.bok||{}, code=B.code||'', sc=B.scale||'M';
+  const d=IF.data[code]; if(!d)return null;
+  const v=d[sc]||d.A; if(!v)return null;
+  return {code, scale:d[sc]?sc:'A', name:((IF.industries||[]).find(i=>i.code===code)||{}).name||code, v};
+}
+/* 공용 블록. ctx: {payroll(연 인건비, 원), revenue, op} — 있으면 업종 비율로 빈칸을 추정해 보여준다 */
+function bokBench(ctx){
+  if(!IF){loadIF(); return `<div class="lab" style="margin-top:12px">${ifFail?'업종 평균 자료를 불러오지 못했습니다.':'⏳ 업종 평균(한국은행 기업경영분석)을 불러오는 중…'}</div>`}
+  const B=S.bok||{}, sel=bokPick();
+  const opts=(IF.industries||[]).map(i=>`<option value="${esc(i.code)}"${i.code===B.code?' selected':''}>${esc(i.name)}</option>`).join('');
+  const scales=Object.entries(IF.scales||{}).map(([k,n])=>`<option value="${k}"${(B.scale||'M')===k?' selected':''}>${esc(n)}</option>`).join('');
+  const pick=`<div class="row" style="align-items:flex-end;margin-top:6px">
+    <div style="flex:2;min-width:240px"><div class="lab">업종 (한국표준산업분류)</div>
+      <select onchange="setBok('code',this.value)" style="width:100%;background:#0d1219;border:1px solid var(--line);color:var(--tx);border-radius:7px;padding:7px 9px;font-size:.93rem">
+        <option value="">업종을 고르세요</option>${opts}</select></div>
+    <div style="flex:1;min-width:130px"><div class="lab">규모</div>
+      <select onchange="setBok('scale',this.value)" style="width:100%;background:#0d1219;border:1px solid var(--line);color:var(--tx);border-radius:7px;padding:7px 9px;font-size:.93rem">${scales}</select></div>
+  </div>`;
+  let body='';
+  if(sel){
+    const v=sel.v, pm=x=>x==null?'—':fmt(x,1)+'%';
+    const q=[v.opm_q1,v.opm_med,v.opm_q3].every(x=>x!=null);
+    let est='';
+    if(ctx){
+      const lts=v.labor_to_sales, opm=v.opm_med!=null?v.opm_med:v.opm;
+      if(ctx.payroll&&!ctx.revenue&&lts)
+        est+=`<br>· 연 인건비 ${won(ctx.payroll/1e8)}억원 ÷ 업종 인건비/매출액 ${pm(lts)} → <b>매출 약 ${won(ctx.payroll/(lts/100)/1e8)}억원 규모</b>로 추정됩니다.`;
+      if(ctx.revenue&&!ctx.op&&opm!=null)
+        est+=`<br>· 매출 ${won(ctx.revenue/1e8)}억원 × 업종 영업이익률 ${pm(opm)}(중위) → <b>영업이익 약 ${won(ctx.revenue*opm/100/1e8)}억원</b>으로 추정됩니다.`;
+      if(ctx.payroll&&ctx.revenue&&lts)
+        est+=`<br>· 우리 인건비/매출액 <b>${pm(ctx.payroll/ctx.revenue*100)}</b> vs 업종 ${pm(lts)} — ${ctx.payroll/ctx.revenue*100>lts?'업종보다 높습니다':'업종보다 낮습니다'}.`;
+    }
+    body=`<div style="overflow-x:auto"><table style="margin-top:10px"><thead><tr><th>지표 (${esc(IF.year)}년, ${esc(IF.scales[sel.scale])})</th><th>값</th><th>뜻</th></tr></thead><tbody>
+      <tr><td>매출액영업이익률 — 평균</td><td class="mono ${sc(v.opm)}">${pm(v.opm)}${v.opm_prev!=null?` <span class="lab">(전년 ${pm(v.opm_prev)})</span>`:''}</td><td class="lab">큰 회사가 끌어올린 값</td></tr>
+      ${q?`<tr><td>매출액영업이익률 — 1분위 / <b>중위</b> / 3분위</td><td class="mono">${pm(v.opm_q1)} / <b>${pm(v.opm_med)}</b> / ${pm(v.opm_q3)}</td><td class="lab">회사 하나의 형편은 중위가 가깝습니다</td></tr>`:''}
+      <tr><td>인건비 ÷ 매출액 (추정)</td><td class="mono">${pm(v.labor_to_sales)}</td><td class="lab">부가가치율 ${pm(v.va_rate)} × 노동소득분배율 ${pm(v.labor_share)}</td></tr>
+      <tr><td>노동소득분배율</td><td class="mono">${pm(v.labor_share)}</td><td class="lab">부가가치 중 인건비 몫 — ⑦의 노동 몫과 같은 개념의 업종판</td></tr>
+      ${v.growth_med!=null?`<tr><td>매출액증가율 — 중위</td><td class="mono ${sc(v.growth_med)}">${pm(v.growth_med)}</td><td class="lab">업종이 크고 있는가</td></tr>`:''}
+    </tbody></table></div>
+    <div class="lab" style="margin-top:6px">${esc(sel.name)}${sel.scale!==(B.scale||'M')?' · 이 규모 값이 없어 종합으로 보여줍니다':''}${est}</div>`;
+  }
+  return `<div class="lab" style="margin-top:14px"><b>업종 평균 — 한국은행 기업경영분석</b> · 우리 회사 숫자가 없거나 사측 숫자를 대조할 때 쓰는 기준선</div>${pick}${body}
+    <div class="lab" style="margin-top:6px">${(IF.limits||[]).slice(0,2).map(x=>'⚠️ '+esc(x)).join(' ')}</div>`;
+}
+
 /* ⑬ 회사가 공시에 없을 때 — 국민연금 신고로 보는 우리 사업장.
    ④ 는 DART 사업보고서라 상장·외감 법인만 있다. 그 밖의 회사는 여기서 '몇 명이 신고돼 있고
    평균 신고소득이 얼마인지' 를 본다. 정확한 임금이 아니라 **대조용 공개 자료**다 — 화면에 그렇게 적는다. */
@@ -2582,7 +2649,8 @@ function npCard(){
           · <b>읽는 법</b> — '평균 신고소득'은 임금이 아니라 국민연금 <b>기준소득월액</b>의 평균입니다. 전년도 소득을 바탕으로 정해지고 상한(월 ${man(NP.cap)}만원)에서 잘리며,
             비과세 수당은 빠집니다. 그래서 <b>실제 평균임금보다 낮게</b> 나오는 쪽으로 치우칩니다 — 사측이 "우리 평균은 이보다 낮다"고 하면 이 숫자가 반박 자료가 됩니다.<br>
           · <b>④와 잇기</b> — ④ '직접 입력'에 인원 ${won(m.n)}명과 연 급여 ${man(inc!=null?inc*12:null)}만원을 넣으면 지불능력 산식을 돌려볼 수 있습니다. 매출·영업이익은 노사협의회 보고(근참법 제22조)나 감사보고서로 따로 확보해야 합니다.<br>
-          · <b>이동률</b>은 한 달 신규·상실의 평균을 가입자로 나눈 값입니다. 계절·채용 시기에 따라 크게 출렁이므로 한 달치로 단정하지 마세요.</div>`;
+          · <b>이동률</b>은 한 달 신규·상실의 평균을 가입자로 나눈 값입니다. 계절·채용 시기에 따라 크게 출렁이므로 한 달치로 단정하지 마세요.</div>
+        ${bokBench({payroll:inc!=null?inc*12*m.n:0})}`;
       }
     }
   }
@@ -2665,7 +2733,7 @@ function psWatch(){
   psHook=()=>{
     if(PS||PSLOAD.__ix||!near())return;
     removeEventListener('scroll',psHook); removeEventListener('resize',psHook);
-    psHook=null; loadPS(); loadPV(); loadRG(); loadNP();
+    psHook=null; loadPS(); loadPV(); loadRG(); loadNP(); loadIF();
   };
   addEventListener('scroll',psHook,{passive:true});
   addEventListener('resize',psHook,{passive:true});
