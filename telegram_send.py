@@ -15,6 +15,7 @@
 import json
 import os
 import sys
+import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime, timezone, timedelta
@@ -34,8 +35,17 @@ def send(token, chat, text):
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     body = urllib.parse.urlencode({"chat_id": chat, "text": text, "parse_mode": "HTML",
                                    "disable_web_page_preview": "true"}).encode()
-    r = urllib.request.urlopen(urllib.request.Request(url, data=body), timeout=30)
-    return json.loads(r.read()).get("ok", False)
+    try:
+        r = urllib.request.urlopen(urllib.request.Request(url, data=body), timeout=30)
+        return json.loads(r.read()).get("ok", False)
+    except urllib.error.HTTPError as e:
+        # 텔레그램은 이유를 본문에 준다(chat not found / bot is not a member / can't parse entities …).
+        # 토큰은 URL 에만 있으므로 본문을 찍어도 새지 않는다.
+        try:
+            why = json.loads(e.read()).get("description", "")
+        except Exception:
+            why = ""
+        raise RuntimeError(f"HTTP {e.code} {why}") from None
 
 
 def main():
@@ -46,6 +56,9 @@ def main():
     if not token or not chat:
         print("  [INFO] TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID 없음 — 발송 생략")
         return 0
+    if not chat.startswith("@") and not chat.lstrip("-").isdigit():
+        chat = "@" + chat            # 사용자명을 @ 없이 넣은 경우
+    print(f"  chat_id 형식: {'채널 사용자명' if chat.startswith('@') else '숫자 ID'} (길이 {len(chat)})")
     if not os.path.exists(NEWS):
         print("  news.json 없음"); return 0
     news = json.load(open(NEWS, encoding="utf-8"))
