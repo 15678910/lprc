@@ -132,7 +132,7 @@ def main():
         "categories": [c[0] for c in CATS] + ["기타"],
         "rules": {c[0]: c[1] for c in CATS},
         "labor_words": LABOR_WORDS,
-        "telegram": "",          # 채널 주소(예: https://t.me/xxxx). 비어 있으면 화면에 구독 안내를 띄우지 않는다
+        "telegram": "https://t.me/labornews_lprc",   # 채널 주소. 비어 있으면 화면에 구독 안내를 띄우지 않는다
         "note": "제목·링크·출처·날짜만 싣습니다. 본문은 각 언론사 페이지에서 읽으세요. 갈래는 낱말 규칙으로 나눈 것이라 틀릴 수 있습니다.",
         "diag": diag,
         "items": kept,

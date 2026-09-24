@@ -96,7 +96,13 @@ law_watch.py·region_income.py 는 2026-09-06 오후에 푸시돼 그날 아침 
 - **텔레그램은 채널 게시 방식**: 개인 발송·구독자 명단 없음. `TELEGRAM_BOT_TOKEN`·`TELEGRAM_CHAT_ID`(공개 채널 '@이름' / 비공개 '-100…')
   시크릿이 둘 다 있을 때만 발송. 보낸 링크는 `docs/news_sent.json`(첫 실행은 최신 25건만 보내고 나머지는 보낸 것으로 처리).
   HTML parse_mode, 3,900자 단위 분할. **채널 주소를 화면에 띄우려면 news_watch.py 의 `"telegram": ""` 에 넣을 것.**
-- 사용자가 할 일: @BotFather 로 봇 생성 → 채널 만들고 봇을 관리자로 → 시크릿 2개 등록. 아직 미등록(발송은 자동 생략).
+- **연결 완료(2026-09-24)**: 채널 `@labornews_lprc`(공개, id -1003935541617), 봇은 시민법정 알림봇 `@siminbupjung_bot` 을 함께 씀
+  (채널 관리자, 메시지 게시 권한). lprc 시크릿 `TELEGRAM_CHAT_ID` 는 `gh secret set` 으로 넣었다. news_watch.py `"telegram"` 에 채널 주소 반영.
+- **함정(실제로 겪음)**: (1) 시크릿에 다른 채널(시민법정) 이름을 넣으면 `chat not found`; (2) 채널은 맞는데 봇이 관리자가 아니면
+  `bot is not a member of the channel chat`; (3) 캡처에 노출된 토큰을 폐기(Revoke)했더니 **같은 토큰을 쓰던 시민법정 Firebase 함수**
+  (`hybrid-jury-system/functions/.env` → `collectReformNewsCron`)가 401 로 멈췄다 → 새 토큰을 .env 에 넣고 사용자 승인 후
+  `firebase deploy --only functions:collectReformNewsCron --project siminbupjung-blog` 로 복구. **토큰을 폐기하기 전에 그 토큰을 쓰는
+  다른 곳이 있는지 먼저 확인할 것.** telegram_send.py 는 발송 전에 `getMe` 로 봇 이름을 로그에 찍는다(토큰은 안 찍음).
 - nav 7곳(news 포함)에 '📰 노동뉴스', 홈 카드, about 출처 행 추가. news.html 은 sidenav.js 를 싣지만 카드가 2개라 목차는 안 뜬다.
 
 ### 홈/측정기 분리 (2026-09-08, 사용자 지시 '방법 A')
