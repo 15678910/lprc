@@ -59,6 +59,12 @@ def main():
     if not chat.startswith("@") and not chat.lstrip("-").isdigit():
         chat = "@" + chat            # 사용자명을 @ 없이 넣은 경우
     print(f"  chat_id 형식: {'채널 사용자명' if chat.startswith('@') else '숫자 ID'} (길이 {len(chat)})")
+    # 어느 봇인지 이름만 찍는다(토큰은 찍지 않는다). 채널 관리자로 넣어야 할 봇을 로그에서 알 수 있게.
+    try:
+        me = json.loads(urllib.request.urlopen(f"https://api.telegram.org/bot{token}/getMe", timeout=20).read())
+        print(f"  봇: @{me.get('result', {}).get('username', '?')}")
+    except urllib.error.HTTPError as e:
+        print(f"  [ERR] 봇 토큰 확인 실패: HTTP {e.code} — 토큰이 폐기됐거나 잘못됨"); return 0
     if not os.path.exists(NEWS):
         print("  news.json 없음"); return 0
     news = json.load(open(NEWS, encoding="utf-8"))
