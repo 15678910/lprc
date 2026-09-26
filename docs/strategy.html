@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+<meta name="googlebot" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>전략과 대안 — 모두를 위한 단체교섭</title>
+<style>
+  :root{--bg:#0b1017;--card:#131a24;--line:#20293a;--tx:#e6edf3;--mut:#8b98a9;
+        --grn:#3fb950;--red:#f85149;--amb:#d29922;--acc:#58a6ff;--vio:#bc8cff;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--tx);
+       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Malgun Gothic",sans-serif;
+       font-size:17px;line-height:1.68;word-break:keep-all;overflow-wrap:break-word}
+  .wrap{max-width:1000px;margin:0 auto;padding:24px 16px 70px}
+  header{border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:22px}
+  h1{font-size:1.62rem;margin:0 0 6px}
+  .sub{color:var(--mut);font-size:1rem}
+  .nav{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 12px}
+  .nav a{color:var(--mut);text-decoration:none;font-size:.95rem;padding:6px 13px;
+         border:1px solid var(--line);border-radius:20px;background:#0d1219;white-space:nowrap}
+  .nav a:hover{color:var(--tx);border-color:var(--acc)}
+  .nav a.on{color:var(--tx);border-color:var(--acc);background:rgba(88,166,255,.12);font-weight:600}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:16px}
+  .card h2{font-size:1.24rem;margin:0 0 10px}
+  h3{font-size:1.06rem;margin:18px 0 6px}
+  p,li,td,th{font-size:1rem}
+  ul,ol{padding-left:20px;margin:6px 0}
+  li{margin-bottom:6px}
+  .tblwrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;margin-top:8px}
+  th,td{padding:8px 9px;text-align:left;border-top:1px solid var(--line);vertical-align:top}
+  th{color:var(--mut);font-weight:600;font-size:.9rem;border-top:none}
+  td{font-size:.95rem}
+  a{color:var(--acc)}
+  .note{color:var(--mut);font-size:.94rem;line-height:1.72;border-top:1px solid var(--line);padding-top:12px;margin-top:14px}
+  .tip{background:rgba(63,185,80,.08);border:1px solid rgba(63,185,80,.35);border-radius:8px;padding:10px 13px;margin:10px 0;font-size:.97rem}
+  .risk{background:rgba(248,81,73,.07);border:1px solid rgba(248,81,73,.35);border-radius:8px;padding:10px 13px;margin:10px 0;font-size:.97rem}
+  .muted{color:var(--mut)}
+  .big{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:8px 0}
+  .big>div{background:#0d1219;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  .big b{display:block;font-size:1.5rem;line-height:1.2}
+  .big span{color:var(--mut);font-size:.88rem}
+  .stage{border-left:3px solid var(--acc);padding:2px 0 2px 14px;margin:14px 0}
+  .stage.s2{border-color:var(--vio)} .stage.s3{border-color:var(--grn)}
+  .stage h3{margin-top:4px}
+  .tag{display:inline-block;font-size:.78rem;border:1px solid var(--line);border-radius:6px;padding:0 7px;color:var(--mut);margin-left:6px;vertical-align:2px}
+  .toc{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin:4px 0 4px}
+  .toc a{display:block;background:#0d1219;border:1px solid var(--line);border-radius:10px;padding:8px 12px;
+         color:var(--tx);text-decoration:none;font-size:.95rem}
+  .toc a:hover{border-color:var(--acc)}
+  .toc a span{display:block;color:var(--mut);font-size:.84rem}
+  .iss td:first-child{white-space:nowrap;color:var(--mut);font-size:.88rem;width:92px}
+  @media print{body{background:#fff;color:#000;font-size:14.5px}.card,.big>div,.toc a{background:#fff;border-color:#bbb}
+    .nav{display:none}a{color:#000}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>전략과 대안</h1>
+  <nav class="nav">
+    <a href="./">🏠 모두를 위한 단체교섭</a>
+    <a href="./guide.html">📖 소개</a>
+    <a href="./measure.html">🧮 측정기</a>
+    <a href="./labor.html">⚖️ 원청교섭 가이드</a>
+    <a href="./news.html">📰 노동뉴스</a>
+    <a href="./ilo.html">🌐 현장과 ILO 기준</a>
+    <a href="./strategy.html" class="on">🧭 전략과 대안</a>
+    <a href="./future.html">🤖 AI 시대의 노동</a>
+    <a href="./about.html">📋 출처 · 면책</a>
+  </nav>
+  <div class="sub">이 페이지는 <b>목표가 있는 전략안</b>입니다 — 프랑스처럼 조합원이든 아니든 업종의 모든 노동자에게 단체협약이 닿는 구조를 한국에 만드는 것,
+    그리고 <a href="./ilo.html">현장과 ILO 기준</a>의 여덟 쟁점마다 대안을 찾는 것.
+    전략을 숨기지 않고 공개하는 이유는 하나입니다. <b>노사가 같은 설계도와 같은 숫자를 보고 앉으면 설득이 빨라지고 교섭이 짧아집니다.</b>
+    그래서 전략마다 <b>상대가 걱정하는 점과 그에 대한 설계 보완</b>을 같은 줄에 적었습니다.
+    <span class="muted" style="display:block;margin-top:6px;font-size:.92rem">기준 시점 2026-09-26 · 측정기·가이드 같은 데이터 페이지와 달리 방향을 제시하는 문서입니다 · 법률 자문이 아닙니다.</span></div>
+</header>
+
+<div class="card">
+  <h2>왜 프랑스인가 — 조직률이 아니라 장치가 적용률을 만든다</h2>
+  <div class="big">
+    <div><b>13.0%</b><span>한국 노조 조직률 (2024)</span></div>
+    <div><b>9.8%</b><span>한국 민간부문 조직률</span></div>
+    <div><b>0.1%</b><span>한국 30인 미만 사업장 조직률</span></div>
+    <div><b>약 12%</b><span>한국 단체협약 적용률 (2017, 최신 공식치 미확인)</span></div>
+    <div><b>약 10%</b><span>프랑스 노조 조직률</span></div>
+    <div><b>약 98%</b><span>프랑스 민간 단체협약 적용률</span></div>
+  </div>
+  <p>두 나라의 조직률은 크게 다르지 않습니다. 2017년 기준으로 한국(조직률 10.7%, 적용률 약 12%)과 프랑스의 적용률은 <b>약 8배</b> 차이가 났습니다. 그 차이는 노동자가 더 많이 가입해서가 아니라 <b>업종 협약을 비조합원·비서명 기업에까지 넓히는 장치</b>, 그리고 그 장치가 작동하게 하는 <b>높은 사용자단체 가입률</b>에서 나옵니다.
+    한국에서 30인 미만 사업장의 조직률 0.1%는 기업별 교섭만으로는 그 노동자들에게 협약이 <b>닿기 어렵다</b>는 뜻입니다.</p>
+  <p class="muted">출처: 고용노동부「2024년 전국 노동조합 조직현황」(2025.12), OECD·노동부 자료를 인용한 보도(한국 적용률, 2017), 프랑스 재무부 국고국(DG Trésor)·OECD/AIAS ICTWSS.</p>
+</div>
+
+<div class="card">
+  <h2>프랑스 시스템의 다섯 부품과 한국의 빈 곳</h2>
+  <div class="tblwrap"><table>
+    <thead><tr><th>부품</th><th>프랑스</th><th>한국 지금</th><th>빈 곳</th></tr></thead>
+    <tbody>
+      <tr><td><b>① 대표성 측정</b></td>
+        <td>노조는 직장 선거 득표로 산별 <b>8%</b>·기업 <b>10%</b> 이상이면 대표성 인정(2008년 법). 사용자단체도 업종 가입기업의 <b>8%</b> 이상(2014년 법). <b>4년마다</b> 측정</td>
+        <td>교섭대표는 사업장 단위 창구단일화(노조법 제29조의2)로만 정함. 초기업 단위 대표성 측정 없음. 프랑스처럼 모든 사업장의 직장 선거로 잴 수단도 없음</td>
+        <td>업종 단위에서 "누가 대표인가"를 정하는 공인된 방법이 없음</td></tr>
+      <tr><td><b>② 협약 유효 요건</b></td>
+        <td>산별 협약은 득표 합산 <b>30% 이상</b> 노조가 서명하고 <b>과반</b> 노조가 반대하지 않으면 유효(노동법전 L2232-6)</td>
+        <td>초기업 협약의 유효 요건을 따로 정한 규정 없음 — 서명한 당사자끼리의 계약</td>
+        <td>업종 전체를 대표하는 협약임을 인정할 기준이 없음</td></tr>
+      <tr><td><b>③ 효력 확장</b></td>
+        <td>노동부 장관이 전국단체교섭위원회(CNNCEFP) 의견을 들어 명령으로 <b>업종 전체에 적용</b>(L2261-15). 협약이 없는 업종·지역에 다른 협약을 넓히는 <b>'확대'</b>도 가능(L2261-17)</td>
+        <td>노조법 제36조 — 한 지역 동종 근로자 <b>3분의 2 이상</b>이 적용받을 때 행정관청이 노동위원회 의결을 얻어 결정할 <b>수 있음</b>. 행정해석에 지역 시내버스 사례가 보이는 등 알려진 사례는 극소수</td>
+        <td>신청권(당사자 쌍방·일방, 행정관청 직권)과 공고 의무는 있으나 <b>처리 기한·거부 사유</b>가 없고, 요건이 높으며 재량. <b>"하나의 지역"</b>만 대상이라 전국 업종 협약을 넓힐 규정이 없음</td></tr>
+      <tr><td><b>④ 정기교섭과 위계</b></td>
+        <td>산별은 임금을 최소 4년마다(따로 정하지 않으면 <b>매년</b>), 직무분류를 <b>5년마다</b> 교섭. 2017년 개편 뒤 <b>직급별 최저임금·직무분류</b> 등 정해진 사항만 산별이 우선하고(L2253-1), 그 밖에서는 <b>기업 협약이 산별보다 불리해도 우선</b></td>
+        <td>노조법 제30조가 <b>사용자단체에도 성실교섭 의무</b>를 지우고, 같은 조 제3항은 국가가 산업·지역별 교섭을 지원하도록 정함(2021 신설). 그러나 부당노동행위(제81조)는 <b>사용자만</b> 대상. 정기교섭 의무, 산별·기업 협약의 관계 규정 없음</td>
+        <td>의무는 있으나 <b>제재가 없고</b>, 기업이 사용자단체에 가입하거나 교섭 권한을 맡길 이유도 없음</td></tr>
+      <tr><td><b>⑤ 업종 정비와 재정</b></td>
+        <td>2016년 법으로 700여 개 업종을 약 200개로 통폐합하기 시작해 지금도 진행 중. 최저임금(SMIC)보다 낮은 업종 최저임금을 방치하면 통폐합 사유(2022). 미달 업종이 112개(2022.7)에서 39개(2023.11)로 줄었음. 사용자가 임금총액의 <b>0.016%</b>를 내고 노사가 함께 관리하는 사회적 대화 기금(AGFPN)</td>
+        <td>사용자단체 조직이 약함(금속산업사용자협의회가 2006년 첫 설립, 회원사 68곳). 교섭 활동 재정 지원 없음</td>
+        <td>교섭할 상대(사용자단체)와 교섭 비용이 모두 부족</td></tr>
+    </tbody>
+  </table></div>
+  <p class="muted">출처: 프랑스 노동법전(Légifrance) L2232-6·L2253-1·L2261-15·L2261-17, 2008-789 법률, 2014-288 법률, 상원 보고서(업종 정비), 상원 회의록 2022.7.28, AEF info 2023.11, 감사원(Cour des comptes) AGFPN 보고서.</p>
+</div>
+
+<div class="card">
+  <h2>한국의 출발점 — 이미 있는 것</h2>
+  <ul>
+    <li><b>산별 교섭의 실제 경험</b> — 금융노조와 금융산업사용자협의회(34개 기관), 보건의료노조 산별중앙교섭(71개 의료기관, 임금은 사업장 교섭으로 위임), 금속노조와 금속산업사용자협의회(2025년 <b>금속산업 최저임금</b> 합의, 작업중지권 조항 신설 보도).</li>
+    <li><b>확장 장치</b> — 노조법 제35조(사업장 반수 이상이면 일반적 구속력), 제36조(지역 3분의 2 이상이면 지역적 구속력).</li>
+    <li><b>국가의 지원 의무</b> — 노조법 제30조 제3항은 국가와 지자체가 기업·산업·지역별 교섭 등 다양한 교섭 방식을 지원하고 활성화하도록 <b>노력해야 한다</b>고 정합니다. 1단계 요구의 법적 근거입니다.</li>
+    <li><b>원청교섭</b> — 2026년 3월 시행된 개정 노조법으로 하청 노동자가 원청과 교섭할 길이 열렸습니다 (<a href="./labor.html">원청교섭 가이드</a>).</li>
+    <li><b>정부 계획</b> — 고용노동부는 동일가치노동 동일임금 법제화·임금정보 제공 강화·<b>초기업 단위 교섭 촉진</b>을 담은 로드맵을 2026년 12월까지 마련하겠다고 했습니다(2026년 하반기 업무추진방향). 2026년 업무보고에는 초기업 교섭단위 결정·촉진제, 공공부문 초기업 자율교섭 모델, 초기업 교섭에 참여하는 공공조달 민간기업 지원이 과제로 올라 있습니다.</li>
+    <li><b>제약</b> — 헌법재판소는 2024년 6월 27일 교섭창구 단일화 조항을 합헌으로 결정했습니다. 사용자단체는 부당노동행위의 수범자로 명시돼 있지 않아 산별교섭 불참에 제재 수단이 없습니다.</li>
+  </ul>
+  <p class="muted">출처: 이투데이·매일노동뉴스(금융 2025), 병원신문·참여와혁신(보건의료 2025), 금속노동자(금속 2025), 고용노동부 2026년 업무보고·법률신문 2026.8.4, 신김앤장 뉴스레터(헌재 2024.6.27).</p>
+</div>
+
+<div class="card" id="roadmap">
+  <h2>로드맵 — 세 단계</h2>
+  <p>한 번에 프랑스를 옮겨 올 수는 없습니다. 법을 바꾸기 전에 <b>실적</b>을 만들고, 실적을 근거로 <b>법의 걸림돌</b>을 치우고, 마지막에 <b>제도</b>로 굳힙니다. 단계에 연도를 박지 않은 이유가 있습니다 — 프랑스도 2008년 대표성 법을 만든 뒤 첫 측정 결과가 나오기까지 5년이 걸렸고, 법 개정은 국회 일정(22대 국회 임기 2028년 5월)에 달려 있습니다.</p>
+
+  <div class="stage">
+    <h3>1단계 · 법 개정 없이 지금 <span class="tag">지금 시작</span></h3>
+    <ol>
+      <li><b>업종 공동 기준표를 먼저 공개한다</b> — 측정기(<a href="./measure.html#c4">④</a>·<a href="./measure.html#c5">⑤</a>·<a href="./measure.html#c6">⑥</a>·<a href="./measure.html#c13">⑬</a>)와 한국은행 업종 기준선으로 업종별 임금·노동비용 비중·지불능력 분포를 한 장으로 만듭니다. 교섭의 첫 회의에서 숫자 다툼을 줄이는 것이 목적입니다. 이 표는 공개 통계로 <b>노동조합이</b> 만들어 공개합니다 — 사용자끼리 임금 정보를 주고받는 방식은 공정거래법 제40조(정보 교환 담합) 논란을 부를 수 있기 때문입니다.</li>
+      <li><b>이미 있는 산별 협약의 '업종 최저선' 조항을 표준 문안으로 만든다</b> — 금속산업 최저임금처럼 <b>직급별 최저임금과 직무분류</b>를 업종 협약의 핵심으로. 프랑스에서도 이 두 가지가 산별의 몫입니다.</li>
+      <li><b>제36조를 실제로 신청한다</b> — 3분의 2 요건을 채울 수 있는 지역·업종(시내버스·택시·지역 공공부문 공무직 등)을 찾아 신청하고, 결정·거부 사유를 기록으로 남깁니다. 법 개정의 가장 강한 근거는 "써 봤더니 막혔다"는 기록입니다.</li>
+      <li><b>공공부문에서 먼저 모델을 만든다</b> — 정부가 과제로 올린 공공부문 초기업 자율교섭 모델에 공무직·지방의료원·자회사 공동교섭을 구체안으로 제출합니다.</li>
+      <li><b>지자체·공공조달을 지렛대로</b> — 입찰 평가 항목은 지방계약법령과 행정안전부 예규(낙찰자 결정기준)가 정하므로, 조례가 아니라 <b>예규의 평가 항목이나 계약 특수조건</b>에 '업종 협약 준수'를 넣도록 요구합니다. 조례로는 생활임금처럼 지자체가 직접 고용·위탁하는 범위에서 먼저 적용합니다. 정부 과제인 "초기업 교섭 참여 조달기업 지원"과 방향이 같습니다.</li>
+    </ol>
+    <div class="tip"><b>상대를 설득하는 논리</b> — 업종 협약은 사용자에게도 이득이 있습니다. ① 같은 업종 안에서 <b>임금을 깎아 경쟁하는 것</b>을 막아 공정한 경쟁이 되고 ② 업종 공통 의제를 한 번에 정해 <b>사업장마다 되풀이되는 교섭 의제</b>가 줄며(사업장 보충교섭은 남습니다) ③ 분쟁 시기가 예측 가능해집니다. 인력난 업종의 이직이 줄어든다는 주장도 있으나 한국 근거는 아직 없습니다.</div>
+  </div>
+
+  <div class="stage s2">
+    <h3>2단계 · 걸림돌을 치우는 법 개정 <span class="tag">1단계 실적이 쌓인 뒤</span></h3>
+    <ol>
+      <li><b>제36조 개정</b> — 적용 비율(3분의 2) 대신 <b>누가 체결했느냐</b>를 기준으로 삼습니다. 조직률 0.1%인 업종은 어떤 적용 비율도 넘기 어렵기 때문입니다. 프랑스처럼 대표성 있는 노조와 사용자단체가 체결한 협약이면 확장을 신청할 수 있게 하고, <b>처리 기한·의견 청취·거부 사유</b>를 명문화하며, "하나의 지역"을 넘어 <b>전국 업종</b>에도 적용되게 합니다.<br>
+        사용자 보호장치도 프랑스에서 함께 가져옵니다 — ⓐ 업종 노동자의 과반을 고용하는 사용자단체가 반대하면 확장하지 않고(L2261-19) ⓑ 협약에 <b>50인 미만 사업장용 조항</b>을 두게 하며(L2261-23-1) ⓒ 경쟁·경제적 영향이 과도하면 장관이 확장을 거부할 수 있게(L2261-25) 합니다.</li>
+      <li><b>대표성 측정 제도</b> — 한국에는 모든 사업장의 직장 선거가 없으므로 프랑스의 득표율을 그대로 쓸 수 없습니다. 노조는 <b>검증된 조합원 수</b>(조직현황 신고의 검증), 사용자단체는 <b>회원사 고용 인원</b>으로 대표성을 재는 한국형 기준을 만듭니다.</li>
+      <li><b>사용자단체 — 의무보다 유인</b> — 성실교섭 의무는 이미 제30조에 있습니다. 빠진 것은 제재(제81조의 수범자에 사용자단체 포함)와, 기업이 <b>사용자단체에 들어갈 이유</b>입니다. 확장 여부에 사용자단체의 동의·반대가 영향을 주게 하면(위 ⓐ) 가입해야 목소리를 낼 수 있게 되어 조직화의 유인이 생깁니다.</li>
+      <li><b>초기업 교섭단위 결정제</b> — 창구단일화가 초기업 교섭을 막지 않도록 초기업 단위를 따로 정할 수 있게 합니다(정부 과제명과 같은 방향).</li>
+      <li><b>초기업 협약의 유효 요건</b> — 프랑스식 '30% 서명·과반 반대 없음'을 참고해 업종 협약이 업종을 대표한다고 볼 기준을 둡니다.</li>
+    </ol>
+  </div>
+
+  <div class="stage s3">
+    <h3>3단계 · 제도로 굳히기 <span class="tag">대표성 측정이 한 번 돈 뒤</span></h3>
+    <ol>
+      <li><b>업종 정기교섭</b> — 대표성 있는 업종 노사가 임금과 직무분류를 정기적으로(프랑스는 임금 최소 4년·기본 매년, 분류 5년) 교섭합니다.</li>
+      <li><b>확장 심의 기구</b> — 프랑스 CNNCEFP처럼 노사정이 확장 신청을 심의하는 상설 기구. 경사노위 업종별위원회나 중앙노동위원회에 역할을 줄 수 있습니다.</li>
+      <li><b>교섭 재정</b> — 임금총액의 아주 작은 비율(프랑스는 사용자가 0.016% 부담)을 모아 노사가 함께 관리하며 업종 교섭·조사를 지원합니다.</li>
+      <li><b>업종 최저선과 법정 최저임금의 관계</b> — 업종 최저임금이 법정 최저임금보다 낮으면 정비 대상으로 삼는 프랑스 2022년 방식을 참고합니다.</li>
+    </ol>
+  </div>
+
+  <h3>상대의 걱정과 설계 보완</h3>
+  <div class="tblwrap"><table>
+    <thead><tr><th>걱정</th><th>누가</th><th>설계 보완</th></tr></thead>
+    <tbody>
+      <tr><td>영세기업은 업종 협약 임금을 감당할 수 없다</td><td>중소 사용자</td><td>50인 미만 사업장용 조항 의무화(프랑스 L2261-23-1), 규모별 구간·단계 적용, 확장 전 의견 제출 기회(ILO 제91호 권고의 조건), 경제적 영향 평가 뒤 확장 거부 가능(L2261-25). 공공조달·세제 지원과 연결</td></tr>
+      <tr><td>교섭 수준을 법으로 강제하면 자율교섭 침해</td><td>사용자·일부 법학계</td><td>교섭을 강제하지 않고 <b>체결된 협약을 넓히는</b> 방식 중심. ILO 결사의 자유 위원회도 교섭 수준 강제와 초기업 교섭 봉쇄를 모두 경계합니다</td></tr>
+      <tr><td>기업별로 더 좋은 협약이 깎인다</td><td>대기업 노조</td><td>업종 협약은 <b>직급별 최저임금·직무분류·안전 같은 바닥</b>만 잠그고, 그 위는 기업 협약이 정합니다. 프랑스 2017년 구조(정해진 사항만 산별 우선)와 같은 방식이며, 바닥 위를 기업이 더 낫게 정하는 것은 막지 않습니다</td></tr>
+      <tr><td>협약이 저절로 적용되면 노조에 가입할 이유가 없다</td><td>노동조합</td><td>프랑스의 실제 약점("조합원 없는 노동조합주의"). 협약의 <b>해석·이행 감시·분쟁 대리</b>를 노조가 맡는 구조와 조합원 서비스로 가입 유인을 따로 설계</td></tr>
+      <tr><td>국가에 기대는 교섭이 된다</td><td>노사 모두</td><td>프랑스 교섭력이 국가의 확장·최저임금 제도에 기댄다는 비판이 있습니다. 1단계의 자율 실적을 먼저 쌓는 이유입니다</td></tr>
+      <tr><td>가입하지 않은 기업·노동자에게 협약을 적용하는 것은 영업의 자유(헌법 제15조)·시장경제(제119조)와 단결하지 않을 자유를 침해한다</td><td>사용자·법학계</td><td>제36조가 이미 같은 구조로 존재합니다. 확장 대상을 <b>최저선 사항</b>으로 좁히고, 사용자단체 반대권·의견 청취·영향 평가를 두어 비례성을 갖추는 설계로 답합니다</td></tr>
+      <tr><td>사용자끼리 임금을 맞추면 담합이다</td><td>사용자·경쟁당국</td><td>노동조합과 체결한 <b>단체협약</b>으로 정하는 임금은 노동법의 영역입니다. 다만 협약 밖에서 사용자끼리 임금 정보를 교환하는 일은 공정거래법 제40조 논란이 있으므로 피합니다</td></tr>
+    </tbody>
+  </table></div>
+  <div class="risk"><b>이 전략이 틀릴 수 있는 곳</b> — ① 프랑스는 업종이 700개로 쪼개졌고, 2016년 시작한 통폐합이 지금도 진행 중입니다. 업종 경계를 처음부터 넓게 잡지 않으면 같은 문제를 겪습니다. ② 확장은 <b>이미 체결된 좋은 협약</b>이 있어야 의미가 있습니다. 1단계 실적 없이 2단계 법 개정만 먼저 하면 넓힐 협약이 없습니다. ③ 한국 적용률의 최신 공식 수치가 없습니다. 목표를 재려면 노동부에 적용률 통계 작성부터 요구해야 합니다.</div>
+</div>
+
+<div class="card" id="issues">
+  <h2>여덟 쟁점의 대안 전략</h2>
+  <p><a href="./ilo.html">현장과 ILO 기준</a>에서 나눈 여덟 쟁점마다 <b>목표 · 지금 할 수 있는 것 · 제도 대안 · 상대의 걱정과 보완 · 지표</b>를 적었습니다.</p>
+  <div class="toc">
+    <a href="#s1">① 노동시간<span>특례를 막거나, 조건을 건다</span></a>
+    <a href="#s2">② 기간제<span>연장과 교환할 보호장치</span></a>
+    <a href="#s3">③ 사회적 대화<span>합의 방식을 먼저 합의</span></a>
+    <a href="#s4">④ 초기업 교섭<span>위 로드맵</span></a>
+    <a href="#s5">⑤ 산업안전<span>원·하청 한 테이블</span></a>
+    <a href="#s6">⑥ 작업중지권<span>협약과 감독관부터</span></a>
+    <a href="#s7">⑦ 이주노동자<span>변경 사유와 협약 적용</span></a>
+    <a href="#s8">⑧ 플랫폼<span>분류와 무관한 보호부터</span></a>
+  </div>
+</div>
+
+<div class="card" id="s1">
+  <h2>① 노동시간 — 메가특구 주 52시간 특례</h2>
+  <div class="tblwrap"><table class="iss"><tbody>
+    <tr><td>목표</td><td>상한을 허무는 선례를 막는다. 막지 못하면 <b>건강권 장치 없는 특례</b>만은 막는다.</td></tr>
+    <tr><td>지금</td><td>먼저 <b>현행법으로 되는 것</b>을 확인합니다 — 근로기준법 제52조는 연구개발 업무의 선택적 근로시간제 정산기간을 이미 <b>3개월</b>로 허용하고, 1개월을 넘기면 <b>하루 11시간 연속 휴식</b>을 의무로 둡니다(3개월 넘는 탄력근로도 제51조의2로 같음). 그 위에 초안의 "사회적 합의를 거친다"는 방향을 <b>절차 조문</b>으로 바꾸도록 요구합니다 — 사업장별 노동자대표 서면 동의, 적용 대상의 <b>직무·소득 기준</b> 명시, 노동시간 기록 의무, <b>일몰과 효과 평가</b> 조항.</td></tr>
+    <tr><td>제도 대안</td><td>특례를 줄 거면 <b>보호 묶음</b>과 함께 — 현행 11시간 연속 휴식을 특례에도 그대로, 일정 기간 평균 총량 상한(EU 노동시간 지침은 연장 포함 평균 주 48시간·하루 11시간 연속 휴식), 과로 건강검진. 이와 <b>별개의 선택지</b>로, 특구에서 주 4.5일제 시범을 함께 해 보자는 제안도 할 수 있습니다.</td></tr>
+    <tr><td>상대의 걱정</td><td>연구개발은 마감에 일이 몰린다 → 정당한 걱정입니다. 현행 3개월 정산(선택근로)·6개월 단위(탄력근로)로 흡수되지 않는 경우가 <b>구체적으로 어떤 직무·기간인지</b>를 사용자 측이 자료로 내면, 그 범위에 맞춘 특례를 논의할 수 있습니다.</td></tr>
+    <tr><td>지표</td><td>특례 적용 사업장의 실제 노동시간과 과로 관련 산재 신청 건수를 공개하게 합니다.</td></tr>
+  </tbody></table></div>
+</div>
+
+<div class="card" id="s2">
+  <h2>② 기간제 — 사용기간 2년 → 4년</h2>
+  <div class="tblwrap"><table class="iss"><tbody>
+    <tr><td>목표</td><td>'4년 직전 교체'가 되풀이되지 않게 한다.</td></tr>
+    <tr><td>지금</td><td>현행 기간제법 제4조의 예외(사업 완료 기간, 전문 지식·기술 등)로 이미 되는 일인지부터 따집니다. 되는 일이라면 연장의 명분이 약해집니다.</td></tr>
+    <tr><td>제도 대안</td><td>연장한다면 <b>교환 조건</b>을 붙입니다 — 갱신 횟수 제한, 2년 뒤 정규직 전환 우선권, 계약 만료 수당(프랑스는 기간제 계약 종료 시 총임금의 10% 수당), 같은 업무에 기간제를 잇달아 쓰는 것 금지, 특구 한정·일몰.</td></tr>
+    <tr><td>상대의 걱정</td><td>프로젝트형 인력이 필요하고, 2년 뒤 무기계약으로 바뀌면 해고가 어려워진다 → 현행 '사업 완료에 필요한 기간' 예외로 되는 경우를 먼저 가르고, 그래도 연장이 필요한 직무를 <b>목록으로</b> 좁히자고 제안합니다. 계약 만료 수당은 사용자가 비용을 지는 대신 기간을 얻는 교환입니다.</td></tr>
+    <tr><td>지표</td><td>특구 기간제의 전환율과 계약 종료 시점 분포(2년·4년 직전 몰림 여부)를 공개하게 합니다.</td></tr>
+  </tbody></table></div>
+</div>
+
+<div class="card" id="s3">
+  <h2>③ 사회적 대화 — 참여의 결과가 기록으로 남도록</h2>
+  <div class="tblwrap"><table class="iss"><tbody>
+    <tr><td>목표</td><td>참여하되, 결과가 어느 한쪽의 명분으로만 쓰이지 않게 한다.</td></tr>
+    <tr><td>지금</td><td>의제마다 <b>결정 방식을 먼저 합의</b>합니다(합의 불성립 시 어떻게 기록할지까지). 합의가 안 되면 <b>각자의 최종안을 나란히 공개</b>하는 규칙을 요구합니다 — 누가 무엇을 거부했는지가 기록으로 남습니다.</td></tr>
+    <tr><td>제도 대안</td><td>경사노위법 제7조(각 주체 절반 이상 출석해야 의결)에 더해 <b>노동 조건을 낮추는 의제</b>에는 노사 각 대표의 동의를 요건으로. 업종별위원회에 산별 대표 참여 보장. 지역 사회적 대화(제20조) 활용.</td></tr>
+    <tr><td>상대의 걱정</td><td>합의제는 한쪽이 모든 것을 막는다 → 전면 합의제가 아니라 <b>노동 조건 후퇴 의제에만</b> 적용하자고 범위를 좁힙니다.</td></tr>
+    <tr><td>지표</td><td>의결 사항의 이행 점검 결과를 정기 공개(제19조 성실이행 의무의 실제).</td></tr>
+  </tbody></table></div>
+</div>
+
+<div class="card" id="s4">
+  <h2>④ 초기업 교섭 — 산별협약</h2>
+  <p>위 <a href="#roadmap">로드맵 세 단계</a>가 이 쟁점의 대안입니다. 핵심 순서는 <b>실적 → 걸림돌 제거 → 제도화</b>이며, 가장 먼저 할 일은 업종 공동 기준표 공개와 제36조 실제 신청입니다.</p>
+</div>
+
+<div class="card" id="s5">
+  <h2>⑤ 산업안전 — 중대재해와 위험의 외주화</h2>
+  <div class="tblwrap"><table class="iss"><tbody>
+    <tr><td>목표</td><td>하청 사망 비율(전체 44~48%, 50인 이상 사업장 70.6%)을 낮춘다.</td></tr>
+    <tr><td>지금</td><td>산안법 제64조의 원·하청 안전보건 협의체에 <b>하청 노동자 대표</b>가 들어가도록 단체협약으로 요구합니다. 원청교섭(개정 노조법)의 첫 의제로 안전을 올리는 것이 사용자도 거절하기 어렵습니다.</td></tr>
+    <tr><td>제도 대안</td><td>업종 협약에 <b>'2인 1조가 필요한 작업 목록'</b>을 업종별로 넣습니다(일률 의무보다 설득력이 큼). 사망 통계를 <b>하청·기간제·특수고용을 모두 포함해</b> 업종·규모별로 공개하게 해 숫자 다툼을 끝냅니다. 처벌불원 감경이 합의 압박이 되지 않도록 <b>유족 지원 기금</b>을 둡니다.</td></tr>
+    <tr><td>상대의 걱정</td><td>① 처벌만 늘린다고 사고가 줄지 않는다 → 동의합니다. 그래서 형량보다 <b>협의체·작업 목록·통계</b> 같은 예방 장치를 앞에 둡니다. ② 하청 대표를 협의체에 앉히면 개정 노조법·중대재해처벌법상 원청의 <b>"실질적 지배"를 인정하는 증거</b>가 될까 걱정한다 → 원청의 핵심 우려입니다. 안전 협의 참여 자체를 사용자성의 근거로 삼지 않는다는 문구를 협약에 넣거나 정부의 교섭 대상 세부 지침에 명시하도록 함께 요구하면, 원청이 협의체를 피할 이유가 줄어듭니다.</td></tr>
+    <tr><td>지표</td><td>하청 사망 비율, 협의체에 하청 대표가 참여하는 원청 사업장 수.</td></tr>
+  </tbody></table></div>
+</div>
+
+<div class="card" id="s6">
+  <h2>⑥ 작업중지권 — 개인에서 노동조합으로</h2>
+  <div class="tblwrap"><table class="iss"><tbody>
+    <tr><td>목표</td><td>작업중지가 개인의 용기가 아니라 <b>제도</b>로 작동하게 한다.</td></tr>
+    <tr><td>지금</td><td>출발점은 산안법 제52조 — 급박한 위험이 있으면 노동자가 작업을 멈추고 대피할 수 있고, 합리적 이유가 있으면 불리한 처우가 금지됩니다. 그 위에 ① <b>단체협약으로 먼저</b> — 금속노조 2025년 중앙교섭에서 작업중지권 조항을 새로 넣었다고 보도됐습니다. 이 문안을 다른 업종으로. ② 2026년 8월 1일 시행된 개정 산안법 제23조로 <b>근로자대표가 추천하면 명예산업안전감독관 위촉이 의무</b>가 되고 근로감독 때 참여합니다 — 사업장마다 노조가 추천해 자리를 채웁니다.</td></tr>
+    <tr><td>제도 대안</td><td>노조가 선임한 안전대표가 급박한 위험 시 작업을 멈추고, 감독관이 곧바로 판단하는 <b>스웨덴식 안전대표</b> 제도를 입법 제안합니다.</td></tr>
+    <tr><td>상대의 걱정</td><td>쟁의 수단으로 쓰인다 → 멈춘 즉시 <b>감독관 판단 절차</b>를 두고, 요건(급박한 위험·합리적 이유)을 조문에 명확히 합니다. 요건을 갖춘 중지에는 임금·손실 책임을 묻지 않도록.</td></tr>
+    <tr><td>지표</td><td>협약에 작업중지 조항이 있는 사업장 수, 노조 추천 명예산업안전감독관 수.</td></tr>
+  </tbody></table></div>
+</div>
+
+<div class="card" id="s7">
+  <h2>⑦ 이주노동자 — 위험의 이주화</h2>
+  <div class="tblwrap"><table class="iss"><tbody>
+    <tr><td>목표</td><td>위험과 폭력에서 벗어날 길을 이주노동자에게도 실제로 연다.</td></tr>
+    <tr><td>지금</td><td>업종 협약에 <b>국적과 무관한 동일 적용</b> 조항과 <b>모국어 안전교육</b>을 넣습니다. 폭력·위험 신고를 이유로 한 체류상 불이익이 없도록 지역 노동청과 절차를 만듭니다.</td></tr>
+    <tr><td>제도 대안</td><td>폭행·성희롱·괴롭힘은 이미 고용노동부 고시의 사업장 변경 사유에 있습니다. 이를 <b>법률(외국인고용법 제25조)로 올리고</b>, <b>안전 위험</b>을 사유에 더하며, <b>처리 기한</b>과 노동자의 <b>입증 부담 완화</b>를 둡니다. 한국이 비준한 제111호의 이행 문제로 제기합니다. 제190호(폭력과 괴롭힘) 비준을 요구합니다.</td></tr>
+    <tr><td>상대의 걱정</td><td>변경이 쉬우면 인력이 빠져나간다 → 제한 대신 <b>숙련 인센티브와 장기 체류 경로</b>(숙련기능인력 비자 전환)로 사람을 붙잡는 방식을 제안합니다. 안전한 사업장이 사람을 지킵니다.</td></tr>
+    <tr><td>지표</td><td>이주노동자 사고사망 비중, 폭력 사유 사업장 변경 처리 기간.</td></tr>
+  </tbody></table></div>
+</div>
+
+<div class="card" id="s8">
+  <h2>⑧ 플랫폼 · 특수고용 — 노동자 추정</h2>
+  <div class="tblwrap"><table class="iss"><tbody>
+    <tr><td>목표</td><td>"노동자인지 다투는 동안의 보호 공백"을 없앤다.</td></tr>
+    <tr><td>지금</td><td>분류와 <b>무관하게</b> 받을 수 있는 보호부터 채웁니다 — 산재보험의 노무제공자 특례, 급박한 위험 시 대피, 알고리즘 결정에 대한 설명 요구. 플랫폼 업종 협약에 <b>배차·평점·계정 정지 기준의 사전 공개와 이의 절차</b>를 넣습니다.</td></tr>
+    <tr><td>제도 대안</td><td>① ILO 제193호 비준 요구(국제 발효 전에도 비준 가능) — 분류와 무관한 안전·대피권·알고리즘 설명이 핵심. ② 노동자 추정은 ILO가 아니라 <b>EU 플랫폼 지침</b>을 근거로 — 통제를 나타내는 사실이 있으면 추정하고 반증은 플랫폼이.</td></tr>
+    <tr><td>상대의 걱정</td><td>유연한 일자리가 줄고, 반증에 드는 비용과 분쟁이 늘어난다 → 추정은 <b>반증이 가능</b>하도록 설계하고, 반증에 쓸 수 있는 기준(일감 거절의 자유, 복수 플랫폼 이용, 보수 결정권 등)을 법에 미리 적어 비용과 분쟁을 줄입니다. 알고리즘 투명성은 분류와 상관없이 플랫폼에 대한 신뢰를 높입니다.</td></tr>
+    <tr><td>지표</td><td>계정 정지 이의 처리 건수·기간, 플랫폼 종사자 산재 적용 수.</td></tr>
+  </tbody></table></div>
+</div>
+
+<div class="card">
+  <h2>설득의 원칙</h2>
+  <ul>
+    <li><b>숫자는 부풀리지 않는다.</b> 과장한 숫자는 교섭장에서 가장 먼저 반박당하고, 그 뒤의 모든 말이 의심받습니다. <a href="./ilo.html#facts">숫자 대조</a>처럼 공식 자료로 맞춰 둡니다.</li>
+    <li><b>상대의 이득을 먼저 말한다.</b> 업종 협약은 공정 경쟁·교섭 비용·인력 유지라는 사용자의 이득이 있습니다.</li>
+    <li><b>물러설 수 있는 것과 없는 것을 미리 나눈다.</b> 건강권(휴식·총량), 안전, 차별 금지는 물러설 수 없는 선으로. 적용 시기·구간·방식은 조정할 수 있는 영역으로.</li>
+    <li><b>기록을 남긴다.</b> 제36조 신청, 사회적 대화의 최종안, 협약 이행 점검 — 다음 단계의 근거가 됩니다.</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2>한계와 출처</h2>
+  <ul>
+    <li>이 페이지는 방향을 제시하는 전략안입니다. 측정기·가이드처럼 어느 쪽도 대변하지 않는 데이터 페이지와 성격이 다릅니다.</li>
+    <li>한국 단체협약 적용률의 최신 공식 수치, 제36조 결정의 전체 건수, 사용자단체의 초기업 교섭에 대한 공식 입장은 확인하지 못했습니다.</li>
+    <li>프랑스 산별 우선 13개 사항의 전체 목록과 현재 업종 수는 1차 자료로 다시 확인해야 합니다.</li>
+    <li>단계의 순서는 설계상의 제안이며 시기 예측이 아닙니다. 정부 로드맵(2026년 12월 예정)이 나오면 대조해 고치겠습니다.</li>
+    <li>금융 34개·보건의료 71개·금속 68개 같은 참여 규모는 보도 기준이며, 교섭 연도마다 달라집니다.</li>
+  </ul>
+  <div class="note">
+    · 한국 — <a href="https://www.moel.go.kr/news/enews/report/enewsView.do?news_seq=18690" target="_blank" rel="noopener noreferrer">고용노동부「2024년 노동조합 조직현황」</a> · <a href="https://www.fnnews.com/news/201903191136217491" target="_blank" rel="noopener noreferrer">단체협약 적용률 보도(2017 기준)</a> · <a href="https://www.moel.go.kr/policy/policydata/view.do?bbs_seq=20251200725" target="_blank" rel="noopener noreferrer">고용노동부 2026년 업무보고</a> · <a href="https://www.lawtimes.co.kr/news/articleView.html?idxno=225837" target="_blank" rel="noopener noreferrer">2026년 하반기 업무추진방향(법률신문)</a> · <a href="https://www.shinkim.com/kor/media/newsletter/2500" target="_blank" rel="noopener noreferrer">헌재 창구단일화 합헌(2024.6.27)</a><br>
+    · 산별교섭 — <a href="https://www.labortoday.co.kr/news/articleView.html?idxno=230810" target="_blank" rel="noopener noreferrer">금융(매일노동뉴스)</a> · <a href="http://www.khanews.com/news/articleView.html?idxno=235443" target="_blank" rel="noopener noreferrer">보건의료(병원신문)</a> · <a href="https://www.ilabor.org/news/articleView.html?idxno=11956" target="_blank" rel="noopener noreferrer">금속(금속노동자)</a> · <a href="https://www.labortoday.co.kr/news/articleView.html?idxno=227125" target="_blank" rel="noopener noreferrer">사용자단체 교섭 불참 문제(매일노동뉴스)</a><br>
+    · 프랑스 — <a href="https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000042654539" target="_blank" rel="noopener noreferrer">L2261-15 확장</a> · <a href="https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000042654536" target="_blank" rel="noopener noreferrer">L2261-17 확대</a> · <a href="https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000022926962" target="_blank" rel="noopener noreferrer">L2232-6 산별 협약 유효 요건</a> · <a href="https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000019347122" target="_blank" rel="noopener noreferrer">2008년 대표성 법률</a> · <a href="https://www.senat.fr/rap/r20-722/r20-72210.html" target="_blank" rel="noopener noreferrer">상원 보고서(업종 정비)</a> · <a href="https://www.aefinfo.fr/depeche/703454-39-branches-professionnelles-affichent-toujours-des-minima-inferieurs-au-smic-au-17-novembre-2023-ministere-du-travail" target="_blank" rel="noopener noreferrer">SMIC 미달 업종 39개(2023.11)</a> · <a href="https://www.ccomptes.fr/fr/publications/lassociation-de-gestion-du-fonds-paritaire-national-agfpn" target="_blank" rel="noopener noreferrer">AGFPN(감사원)</a> · <a href="https://www.tresor.economie.gouv.fr/Articles/82e954b7-f19e-41d6-b6f7-cb0e54d8921c/files/e14d10ea-7bcd-4b93-8929-27d50c0ebc58" target="_blank" rel="noopener noreferrer">적용률(국고국)</a> · <a href="https://www.etui.org/covid-social-impact/france/industrial-relations-in-france-background-summary" target="_blank" rel="noopener noreferrer">국가 의존 비판(ETUI)</a><br>
+    · 국내 조문 — 노동조합법 제2·29조의2·30·35·36·81조, 근로기준법 제51조의2·52조, 산업안전보건법 제23·52·64조, 공정거래법 제40조, 기간제법 제4조, 경제사회노동위원회법 제7·19·20조, 외국인고용법 제25조 (국가법령정보센터, 2026-09-26 조회)
+  </div>
+</div>
+</div>
+<script src="./sidenav.js" defer></script>
+</body>
+</html>
