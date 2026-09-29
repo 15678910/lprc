@@ -1,0 +1,58 @@
+name: Site health
+
+# 사이트 건강 검진 — 배포된 단체교섭.kr 을 바깥에서 방문자처럼 열어 본다(health_check.py).
+# 자동 수집이 '성공'이어도 조용히 건너뛴 단계가 있을 수 있다(2026-09-28 법령 점검이 그랬다).
+# 데이터가 며칠째 그대로이거나, 페이지가 안 열리거나, 인증서가 곧 만료되거나, robots 설정이 풀리면
+# 이슈를 열고(이미 열려 있으면 댓글), 다음 검진에서 정상이면 스스로 닫는다.
+#
+# 시각: 매일 KST 13:30. 데이터 갱신(KST 10:00 예약)이 GitHub 사정으로 몇 시간 늦게 도는 날이 있어
+#       데이터 신선도 기준을 3일로 넉넉히 잡았다.
+on:
+  schedule:
+    - cron: '30 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+
+      - name: Check site
+        id: check
+        env:
+          PYTHONIOENCODING: utf-8
+          HEALTH_REPORT: /tmp/health.md
+        run: python health_check.py
+
+      - name: Open or update issue
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          RUN="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          gh label create health --color fbca04 --description "사이트 건강 검진" 2>/dev/null || true
+          BODY=$(printf '%s\n\n실행 기록: %s\n' "$(cat /tmp/health.md 2>/dev/null)" "$RUN")
+          N=$(gh issue list --label health --state open --json number -q '.[0].number')
+          if [ -n "$N" ]; then
+            gh issue comment "$N" --body "$BODY"
+          else
+            gh issue create --title "🩺 사이트 건강 검진에서 문제 발견" --label health --body "$BODY"
+          fi
+
+      - name: Close issue when healthy
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          N=$(gh issue list --label health --state open --json number -q '.[0].number')
+          if [ -n "$N" ]; then
+            gh issue close "$N" --comment "다시 정상입니다 — $(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M') KST"
+          fi

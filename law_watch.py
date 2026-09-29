@@ -11,13 +11,14 @@
   워크플로의 다른 수집을 막지 않는다.
 """
 import json
+import time
 import sys
 import urllib.parse
 import urllib.request
 from datetime import datetime, timezone, timedelta
 
 OUT = "docs/law_watch.json"
-TIMEOUT = 15
+TIMEOUT = 30
 
 # labor.html 작성 시점(2026-09-06)의 기준 — 여기 값과 다르면 '개정됨'이다.
 # 본문을 새 법령에 맞춰 고친 뒤에는 이 기준도 같이 올려야 경고가 꺼진다.
@@ -28,12 +29,25 @@ BASELINE = [
 ]
 
 
-def fetch_current(name):
-    """법령명 정확 일치 + 현행인 항목의 (공포번호, 시행일자)를 돌려준다."""
+def fetch_current(name, tries=4):
+    """법령명 정확 일치 + 현행인 항목의 (공포번호, 시행일자)를 돌려준다.
+
+    GitHub Actions(미국 서버)에서 law.go.kr 이 가끔 시간 초과를 낸다(2026-09-28 실측 — 그날 점검이
+    조용히 건너뛰어졌다). 20·40·60초 간격으로 다시 묻고, 그래도 안 되면 예외를 올린다.
+    """
     url = ("http://www.law.go.kr/DRF/lawSearch.do?OC=test&target=law&type=JSON"
            "&display=20&query=" + urllib.parse.quote(name))
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-    data = json.loads(urllib.request.urlopen(req, timeout=TIMEOUT).read())
+    for i in range(tries):
+        try:
+            data = json.loads(urllib.request.urlopen(req, timeout=TIMEOUT).read())
+            break
+        except Exception as e:
+            if i == tries - 1:
+                raise
+            wait = 20 * (i + 1)
+            print(f"  {name}: {e} — {wait}초 뒤 다시 ({i + 2}/{tries})")
+            time.sleep(wait)
     laws = data.get("LawSearch", {}).get("law", [])
     if isinstance(laws, dict):
         laws = [laws]

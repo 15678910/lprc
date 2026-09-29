@@ -14,6 +14,14 @@
 | 푸시가 "could not read Username" 로 실패하면 | `git -c credential.helper= -c "credential.helper=!gh auth git-credential" push` (설정 변경 없음) | — |
 | **다른 저장소** | 시민법정(hybrid-jury-system) 함수 **Node.js 20 → 22 를 2026-10-30 전에**(그 저장소 SESSION_HANDOFF.md), 그 저장소 GitHub 시크릿 `TELEGRAM_BOT_TOKEN` 갱신(선택), fundamentalrights 의 `.claude/HANDOFF-시민사회기본법.md` 미커밋 | 각 저장소 |
 
+## 2026-09-29 — 에이전트 운영 고도화 (붙여 준 'AI OS V2' 문서에서 쓸 만한 것만)
+
+- **지식 메모리**: 루트 `CLAUDE.md` 신설 — 원칙·되돌리면 안 되는 사용자 결정·수정 금지 영역·자주 하는 실수(세션 전수 진단 수치)·작업 템플릿·배포 체크리스트.
+- **세션 전수 진단**: `.claude/tools/session_audit.py` → `.claude/SESSION_AUDIT.md`(로컬 전용·gitignore — 사용자 메시지 예시 포함).
+- **무중단 파이프라인**: `data.yml` 실패 시 `data-fail` 이슈 자동 생성, `health.yml`(매일 KST 13:30) + `health_check.py` — 페이지·데이터 신선도·인증서·robots·sitemap,
+  문제면 `health` 이슈, 정상이면 자동 종료. 발견: 2026-09-28 law_watch 가 law.go.kr 시간 초과로 **조용히 건너뜀** → 재시도(20·40·60초)·TIMEOUT 30초·단계 8분.
+- 문서의 '7월 7일까지'·'3배 향상' 은 확인할 수 없는 전제라 따르지 않았다(작업 시점 2026-09-29, 이미 지난 날짜).
+
 ## 2026-09-24 ~ 09-26 한 일 (요약 — 상세는 각 절)
 
 | 커밋 | 무엇 |
@@ -26,7 +34,7 @@
 **도메인(2026-09-29)**: `단체교섭.kr`(퓨니코드 `xn--9d0b29hf1nhhl.kr`, 가비아 등록·DNS). GitHub Pages cname 을 API 로 설정 → GitHub 가 `docs/CNAME` 을 커밋.
 옛 github.io/lprc 주소는 자동 이동. **사이트 안 링크는 상대 경로라 도메인과 무관.** 절대 주소는 telegram_send.py(모아보기 링크)·news_watch.py(UA, ASCII 라 퓨니코드)만.
 `docs/CNAME` 을 지우거나 바꾸지 말 것(지우면 도메인 연결이 풀림). **도메인 소유 인증 완료**(계정 설정 github.com/settings/pages, Verified) — 가비아의 TXT 레코드 `_github-pages-challenge-15678910` 는 **지우지 말 것**(재확인 시 인증 풀림). **검색 노출 켬(2026-09-29, 사용자 결정)**: 9페이지에서 robots/googlebot noindex 제거, 페이지마다 description·canonical(퓨니코드 주소)·Open Graph 태그,
-`docs/sitemap.xml`(9 URL), `docs/robots.txt` 는 검색엔진 허용 + LLM **학습용** 수집기(GPTBot·ClaudeBot·Google-Extended·CCBot 등)만 계속 거부.
+`docs/sitemap.xml`(9 URL), `docs/robots.txt` 는 **기본 전부 거부 + 검색엔진(Yeti·Googlebot·Bingbot·Daumoa)·링크 미리보기 봇만 허용**(2026-09-29 사용자 요청 "크롤링 못하게" — 검색 노출은 유지하는 해석).
 about '검색에 나옵니다' 절·홈 푸터·README 문구 갱신. **새 페이지를 더하면 sitemap.xml 과 메타 블록(description~og:url)도 함께.**
 네이버 서치어드바이저·구글 서치콘솔 등록은 사용자 계정 필요 — 소유확인 코드를 받으면 index.html `<head>` 에 meta 로 넣거나 가비아 TXT 로.
 

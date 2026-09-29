@@ -15,3 +15,6 @@ venv/
 # OS
 Thumbs.db
 .DS_Store
+
+# 세션 진단 보고서 — 사용자 메시지 예시가 들어 있어 로컬 전용
+.claude/SESSION_AUDIT.md

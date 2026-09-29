@@ -1,37 +1,52 @@
 # 모두를 위한 단체교섭 — https://단체교섭.kr
 #
-# 2026-09-29 부터 검색 노출을 켰습니다. 네이버·구글 등 검색엔진은 모든 페이지를 수집할 수 있습니다.
-# 다만 대형 언어모델 '학습용' 수집기는 계속 거부합니다(검색 노출과는 무관 — Google-Extended 를 막아도 구글 검색에는 나옵니다).
-# robots.txt 는 '요청'이지 '차단'이 아니라서 규칙을 지키는 수집기만 따릅니다.
+# 기본은 '모든 수집 거부'입니다. 아래에 이름을 적은 수집기만 허용합니다.
+#   · 검색엔진(네이버 Yeti · 구글 Googlebot · 빙 Bingbot · 다음 Daumoa) — 검색에 나오기 위해
+#   · 링크 미리보기(카카오톡 · 텔레그램 · 페이스북 · X · 슬랙) — 공유한 링크의 제목·설명을 띄우기 위해
+# 그 밖의 수집기 — 언어모델 학습용(GPTBot · ClaudeBot · CCBot 등), SEO 분석·데이터 수집 봇 — 은 모두 거부합니다.
+# Google-Extended 는 구글의 'AI 학습 허용' 표시라서 Googlebot 을 허용해도 따로 거부합니다(구글 검색 노출에는 영향 없음).
+#
+# ⚠️ robots.txt 는 '요청'이지 '차단'이 아닙니다. 규칙을 지키는 수집기만 따르며, 무시하는 수집기는 막지 못합니다.
+#    이 사이트는 GitHub Pages 라 서버에서 접속을 걸러낼 수 없습니다. 정말로 감춰야 할 자료는 애초에 올리지 않습니다.
 
-User-agent: *
+# ── 허용: 검색엔진 ─────────────────────────────
+User-agent: Yeti
 Allow: /
 
-User-agent: GPTBot
-Disallow: /
+User-agent: Googlebot
+Allow: /
 
-User-agent: ClaudeBot
-Disallow: /
+User-agent: Bingbot
+Allow: /
 
-User-agent: anthropic-ai
-Disallow: /
+User-agent: Daumoa
+Allow: /
 
+# ── 허용: 링크 미리보기 ─────────────────────────
+User-agent: kakaotalk-scrap
+Allow: /
+
+User-agent: TelegramBot
+Allow: /
+
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: Slackbot
+Allow: /
+
+# ── 거부: AI 학습 표시 ─────────────────────────
 User-agent: Google-Extended
 Disallow: /
 
-User-agent: CCBot
+User-agent: Applebot-Extended
 Disallow: /
 
-User-agent: PerplexityBot
-Disallow: /
-
-User-agent: Bytespider
-Disallow: /
-
-User-agent: Amazonbot
-Disallow: /
-
-User-agent: meta-externalagent
+# ── 거부: 그 밖의 모든 수집기 ──────────────────
+User-agent: *
 Disallow: /
 
 Sitemap: https://xn--9d0b29hf1nhhl.kr/sitemap.xml

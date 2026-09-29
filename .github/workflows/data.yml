@@ -41,6 +41,7 @@ concurrency:
 
 permissions:
   contents: write
+  issues: write     # 실패하면 이슈를 연다(아래 마지막 단계)
 
 jobs:
   update:
@@ -148,7 +149,7 @@ jobs:
       # 키 불필요, 몇 초면 끝난다. 개정이 감지되면 labor.html 이 화면에 경고를 띄운다.
       # 본문을 새 법령에 맞춰 고친 뒤에는 law_watch.py 의 BASELINE 도 같이 올릴 것.
       - name: Check law revisions
-        timeout-minutes: 5
+        timeout-minutes: 8    # law.go.kr 시간 초과 대비 재시도(20·40·60초)가 들어 있다
         env:
           PYTHONIOENCODING: utf-8
         run: python law_watch.py || echo "law_watch had errors, continuing..."
@@ -195,3 +196,21 @@ jobs:
           done
           echo "3회 모두 실패 — 다음 예약 실행에서 다시 시도된다."
           exit 1
+
+      # 무중단 — 어느 단계든 실패하면 이슈를 열어 알린다(GitHub 알림 메일·앱으로 온다).
+      # 같은 라벨의 열린 이슈가 있으면 새로 열지 않고 댓글만 단다.
+      - name: Open issue on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          RUN="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          NOW="$(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M') KST"
+          gh label create data-fail --color d73a4a --description "자동 데이터 갱신 실패" 2>/dev/null || true
+          N=$(gh issue list --label data-fail --state open --json number -q '.[0].number')
+          if [ -n "$N" ]; then
+            gh issue comment "$N" --body "또 실패했습니다 — $NOW · $RUN"
+          else
+            BODY=$(printf '자동 데이터 갱신(Update data)이 실패했습니다 — %s\n\n- 실행 기록: %s\n- 기록을 열어 빨간 X 단계를 확인하세요.\n- 고친 뒤 이 이슈를 닫으면 됩니다. 다음 실패 때 새로 열립니다.\n' "$NOW" "$RUN")
+            gh issue create --title "⚠️ 자동 데이터 갱신 실패" --label data-fail --body "$BODY"
+          fi
