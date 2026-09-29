@@ -42,7 +42,7 @@ lprc/
 │    guide.html            소개 · 이용 방법
 │    future.html           AI 시대의 노동
 │    about.html            이용 안내 · 출처 · 면책
-│    robots.txt            검색엔진·LLM 학습 수집기 거부
+│    robots.txt            검색엔진 허용 · LLM 학습 수집기 거부
 │    money_macro.json      ← money_macro_monitor.py 생성
 │    wage_negotiation.json ← wage_negotiation.py 생성 (목록)
 │    co/NN.json            ← 〃 업종별 상세 (회사를 고른 뒤에 받는다)
@@ -104,13 +104,15 @@ python public_servant.py          # 키 불필요 (인사혁신처·지표누리
 
 ---
 
-## 검색 비노출
+## 검색 노출
 
-`robots.txt` 로 전체 경로를 막고 모든 페이지에 `noindex, nofollow` 를 넣었습니다.
-GPTBot·ClaudeBot·Google-Extended·CCBot 등 언어모델 학습 수집기도 명시적으로 거부합니다.
+주소는 **https://단체교섭.kr** 입니다(퓨니코드 `xn--9d0b29hf1nhhl.kr`, 2026-09-29 연결).
+같은 날부터 검색 노출을 켰습니다 — `noindex` 를 지우고, `robots.txt` 로 검색엔진 수집을 허용하며,
+`docs/sitemap.xml` 과 페이지마다 description·canonical·Open Graph 태그를 둡니다.
+GPTBot·ClaudeBot·Google-Extended·CCBot 등 언어모델 **학습용** 수집기는 계속 거부합니다(검색 노출과 무관).
 
-다만 `robots.txt` 는 **요청이지 차단이 아닙니다.** 규칙을 지키는 수집기만 따릅니다.
-링크를 아는 사람은 볼 수 있는 공개 페이지라는 점은 그대로입니다.
+`robots.txt` 는 **요청이지 차단이 아닙니다.** 규칙을 지키는 수집기만 따릅니다.
+새 페이지를 추가하면 `sitemap.xml` 에도 한 줄 넣으세요.
 
 ---
 
