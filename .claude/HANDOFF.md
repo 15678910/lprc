@@ -14,7 +14,7 @@
 | 푸시가 "could not read Username" 로 실패하면 | `git -c credential.helper= -c "credential.helper=!gh auth git-credential" push` (설정 변경 없음) | — |
 | **다른 저장소** | 시민법정(hybrid-jury-system) 함수 **Node.js 20 → 22 를 2026-10-30 전에**(그 저장소 SESSION_HANDOFF.md), 그 저장소 GitHub 시크릿 `TELEGRAM_BOT_TOKEN` 갱신(선택), fundamentalrights 의 `.claude/HANDOFF-시민사회기본법.md` 미커밋 | 각 저장소 |
 
-## 2026-09-29 — 방문 통계 준칙 변경 (Cloudflare 웹 분석) — **토큰 대기**
+## 2026-09-29 — 방문 통계 준칙 변경 (Cloudflare 웹 분석) — **켜짐**(토큰 a4964428…, Cloudflare 계정의 Web Analytics 에서 사이트 `xn--9d0b29hf1nhhl.kr`)
 
 - 사용자 결정: "이 사이트의 역할, 영향 분석 등이 다음 마케팅에 도움이 되는 데이터이니 준칙을 바꿔 유지". 기존 약속(about '분석 도구를 넣지 않았다')을 바꾼다.
 - 준비 완료: `docs/site.js` 의 `CF_BEACON_TOKEN`(비어 있으면 아무것도 안 불러옴) + `.claude/tools/enable_analytics.py <토큰>` — 토큰·about 개인정보 절(모으는 것/모으지 않는 것 표·목적·

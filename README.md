@@ -113,6 +113,13 @@ python public_servant.py          # 키 불필요 (인사혁신처·지표누리
 `robots.txt` 는 **요청이지 차단이 아닙니다.** 규칙을 지키는 수집기만 따르고, GitHub Pages 라 서버 차단은 할 수 없습니다.
 새 페이지를 추가하면 `sitemap.xml` 과 `health_check.py` 에도 한 줄 넣으세요(체크리스트는 `CLAUDE.md`).
 
+
+## 방문 통계
+
+2026-09-29부터 Cloudflare 웹 분석으로 방문 통계를 모읍니다(쿠키 없음, 개인 식별 없음, 입력값은 전송하지 않음).
+사이트의 역할·영향을 알아 다음 개선에 쓰기 위한 사용자 결정입니다. 토큰은 `docs/site.js` 의 `CF_BEACON_TOKEN`,
+켜고 끄기는 `.claude/tools/enable_analytics.py`.
+
 ---
 
 ## 라이선스
