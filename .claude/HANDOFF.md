@@ -1,32 +1,44 @@
 # 인수인계 — lprc
 
-갱신 2026-09-26. 이 파일만 읽고 이어갈 수 있게 적는다.
+갱신 2026-09-29. 이 파일만 읽고 이어갈 수 있게 적는다. 규칙은 루트 `CLAUDE.md`(짧은 규칙집)에 있다 — 먼저 그것부터.
 **전부 배포까지 끝났다.** 작업 트리에는 미추적 PDF 12개만 남아 있다(법령·매뉴얼·자료집·조례·대안 원문·교원노조법 — 전부 **커밋 금지**).
+사이트 주소 **https://단체교섭.kr**(`xn--9d0b29hf1nhhl.kr`). 네이버 서치어드바이저·구글 서치콘솔 등록·사이트맵 제출 완료, Cloudflare 웹 분석 켜짐.
 
-## 먼저 볼 것 — 다음 할 일 (2026-09-26 기준)
+## 먼저 볼 것 — 다음 할 일 (2026-09-29 기준)
 
 | 언제 | 할 일 | 어디 |
 |---|---|---|
-| 메가특구특별법이 **발의되면**(9월 말~10월 예상) | 의안정보시스템 원문·제안이유로 `ilo.html` 의 #bill 표와 ①② 쟁점, `strategy.html` ①② 를 조문과 대조·갱신 | 아래 '현장과 ILO 기준' 절 |
-| 고용노동부 **초기업교섭 로드맵(2026년 12월 예정)** 이 나오면 | `strategy.html` 로드맵·2단계와 대조·갱신 | 아래 '전략과 대안' 절 |
+| 메가특구특별법이 **발의되면**(9월 말~10월 예상) | 의안정보시스템 원문·제안이유로 `ilo.html` 의 #bill 표와 ①② 쟁점, `strategy.html` ①② 를 조문과 대조·갱신 | '현장과 ILO 기준' 절 |
+| 고용노동부 **초기업교섭 로드맵(2026년 12월 예정)** 이 나오면 | `strategy.html` 로드맵·2단계와 대조·갱신 | '전략과 대안' 절 |
 | 한국 **단체협약 적용률** 최신 공식치가 나오면 | strategy '왜 프랑스인가'의 2017년 12% 교체 | 〃 |
-| 새 페이지를 더할 때 | nav 9곳 + 홈 카드 + `guide.html` 사이트 구성 표(#map)·질문 표 함께 수정 | 아래 '소개 업그레이드' 절 |
+| **사용자 결정 대기** | 활성화 제안 두 가지 — ① 공유 미리보기 이미지(og:image, 페이지별) ② 텔레그램 주간 브리핑(월요일). 사용자가 "진행할까요?"에 아직 답하지 않음 | — |
+| 매일 자동 | `health.yml`(KST 13:30) 이 `health` 이슈를 열면 그 내용대로 고친다. `data.yml` 실패는 `data-fail` 이슈 | `CLAUDE.md` 자동화 표 |
+| 새 페이지를 더할 때 | `CLAUDE.md` '작업 템플릿' — 머리띠 `.topbar`(9곳)·site.js 검색 `PAGES`·홈 카드·guide #map·sitemap·메타 블록·health_check PAGES | `CLAUDE.md` |
+| 공용 파일(site.css·site.js·sidenav.js)을 고치면 | 모든 html 의 `?v=` 판 번호를 올린다(캐시) | `CLAUDE.md` 배포 체크리스트 0번 |
 | 푸시가 "could not read Username" 로 실패하면 | `git -c credential.helper= -c "credential.helper=!gh auth git-credential" push` (설정 변경 없음) | — |
-| **다른 저장소** | 시민법정(hybrid-jury-system) 함수 **Node.js 20 → 22 를 2026-10-30 전에**(그 저장소 SESSION_HANDOFF.md), 그 저장소 GitHub 시크릿 `TELEGRAM_BOT_TOKEN` 갱신(선택), fundamentalrights 의 `.claude/HANDOFF-시민사회기본법.md` 미커밋 | 각 저장소 |
+| **다른 저장소** | 시민법정(hybrid-jury-system) 함수 **Node.js 20 → 22 를 2026-10-30 전에**(그 저장소 SESSION_HANDOFF.md) · 그 저장소 GitHub 시크릿 `TELEGRAM_BOT_TOKEN` 갱신(선택) · fundamentalrights `.claude/HANDOFF-시민사회기본법.md` 미커밋 · **easylaw(모두의 법)** 아래 절 참고 | 각 저장소 |
+
+## 2026-09-29 — easylaw(모두의 법) 로컬 실행 · 공개하지 않음
+
+- 사용자가 노동당 대표에게 보낼 소개 문자(이 사이트 + easylaw + 학교운영위원회·주민자치회 홍보)를 요청 → 초안 작성(대화에만). easylaw 공개 주소가 없어 '준비 중' 문구로 대체 권고.
+- "easylaw 서버를 열어주세요" → **로컬에서만** 띄움: lprc `.claude/launch.json` 의 `easylaw`(Vite, 5173, `../easylaw` 를 루트로). Firebase 호스팅은 미배포(`easylaw-e839b.web.app` 404).
+- **인터넷 공개는 하지 않았다** — easylaw `docs/HANDOFF.md` '배포 전 남은 것': ① 변호사 법률의견서(법무사법 '업으로' 쟁점, **배포 자체의 선행 조건**) ② 상표 확인
+  ③ 18개 언어 중 16개 원어민 검수 ④ Firebase 결제·App Check 콘솔 작업(사용자만 가능). 공개 여부는 사용자 결정. easylaw 코드는 건드리지 않았다.
 
 ## 2026-09-29 — 방문 통계 준칙 변경 (Cloudflare 웹 분석) — **켜짐**(토큰 a4964428…, Cloudflare 계정의 Web Analytics 에서 사이트 `xn--9d0b29hf1nhhl.kr`)
 
 - 사용자 결정: "이 사이트의 역할, 영향 분석 등이 다음 마케팅에 도움이 되는 데이터이니 준칙을 바꿔 유지". 기존 약속(about '분석 도구를 넣지 않았다')을 바꾼다.
 - 준비 완료: `docs/site.js` 의 `CF_BEACON_TOKEN`(비어 있으면 아무것도 안 불러옴) + `.claude/tools/enable_analytics.py <토큰>` — 토큰·about 개인정보 절(모으는 것/모으지 않는 것 표·목적·
   Cloudflare 방침 링크)·홈 카드 문구·README·판 번호를 한 번에, 멱등. 복사본에서 가짜 토큰으로 시험 완료.
-- **남은 일**: 사용자가 dash.cloudflare.com → Web Analytics → 사이트 추가(`xn--9d0b29hf1nhhl.kr`, JS 스니펫 방식)로 받은 토큰(32자리 16진수, 공개 값)을 주면
-  도구 실행 → 커밋·푸시 → 배포본에서 beacon.min.js 로드 확인 → Cloudflare 대시보드에 방문이 잡히는지 확인.
+- **완료(2026-09-29)**: 사용자가 받은 토큰으로 도구 실행 → 배포 → 배포본에서 beacon.min.js 로드와 `cloudflareinsights.com/cdn-cgi/rum` 204 확인,
+  대시보드에 첫 방문 1건 확인. 통계는 dash.cloudflare.com → Analytics → Web analytics → `xn--9d0b29hf1nhhl.kr`(URL·Referer 표가 마케팅용).
 - 이 결정으로 '입력값은 서버로 가지 않는다' 약속은 **그대로** 유지된다(비콘은 페이지 방문만 센다).
 
 ## 2026-09-29 — 상단 머리띠 메뉴 · 맨 위로 버튼
 
-- 제목 아래 두 줄로 흩어지던 알약 메뉴(`.nav`)를 없애고, 모든 페이지 맨 위에 **고정 머리띠**(`.topbar`, sticky)를 둠 — 브랜드(홈) + 여덟 카테고리, 1080px 미만이면 ☰.
-- 공용 `docs/site.css`(머리띠·↑ 버튼·`scroll-padding-top` 68px로 목차 이동 목적지 가림 방지) · `docs/site.js`(☰ 열고 닫기·Esc·바깥 클릭, ↑ 버튼은 500px 내려가면 표시).
+- 제목 아래 두 줄로 흩어지던 알약 메뉴(`.nav`)를 없애고, 모든 페이지 맨 위에 **고정 머리띠**(`.topbar`, sticky)를 둠 — 브랜드(홈) + 카테고리, 1080px 미만이면 ☰.
+  최종 구성: 소개(▾ 출처 · 면책) · 측정기 · 원청교섭 가이드(▾ 전략과 대안) · 노동뉴스 · 현장과 ILO 기준 · AI 시대의 노동 · 사이트 검색. 맨 위로 문구는 왼쪽 목차·오른쪽 아래 모두 '↑ TOP'.
+- 공용 `docs/site.css`(머리띠·↑ 버튼·`[id]{scroll-margin-top:66px}` 로 목차 이동 목적지 가림 방지 — scroll-padding 과 같이 쓰면 두 배가 됨) · `docs/site.js`(☰ 열고 닫기·Esc·바깥 클릭, ↑ 버튼은 500px 내려가면 표시).
   메뉴 링크는 각 HTML 에 정적으로 있어 JS 없이도 동작. 각 페이지 `<style>` 의 옛 `.nav` 규칙은 쓰이지 않는 채로 남아 있음(무해).
 - 챗봇은 만들지 않음 — 사용자에게 판단 근거와 대안(사이트 검색)을 제시.
 - **이어서(같은 날)**: 사용자 요청으로 메뉴 재편 — 소개 ▾ 출처 · 면책, 원청교섭 가이드 ▾ 전략과 대안(하위 메뉴: 넓은 화면은 마우스 올리기·▾ 클릭, 좁은 화면은 들여쓴 목록).
