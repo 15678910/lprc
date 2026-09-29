@@ -28,11 +28,17 @@ OUT = "docs/news.json"
 KEEP_DAYS = 60
 HDR = {"User-Agent": "Mozilla/5.0 (lprc news; +https://xn--9d0b29hf1nhhl.kr/)"}
 
+# kind — 출처의 성격. 화면에 그대로 적는다(어느 쪽 매체인지 독자가 알고 읽도록).
 SOURCES = [
-    {"id": "labortoday", "name": "매일노동뉴스", "url": "https://www.labortoday.co.kr",
+    {"id": "labortoday", "name": "매일노동뉴스", "url": "https://www.labortoday.co.kr", "kind": "노동 전문 일간지",
      "rss": "https://www.labortoday.co.kr/rss/allArticle.xml", "labor_only": False},
-    {"id": "lawtimes", "name": "법률신문", "url": "https://www.lawtimes.co.kr",
+    {"id": "lawtimes", "name": "법률신문", "url": "https://www.lawtimes.co.kr", "kind": "법조 전문지",
      "rss": "https://cdn.lawtimes.co.kr/rss/gn_rss_allArticle.xml", "labor_only": True},
+    {"id": "worknworld", "name": "노동과세계", "url": "https://worknworld.kctu.org", "kind": "민주노총 기관지",
+     "rss": "https://worknworld.kctu.org/rss/allArticle.xml", "labor_only": False},
+    # 그누보드 게시판 RSS — '노동' 게시판(issue_3)만. 링크의 & 가 두 번 변환돼(&amp;amp;) 온다 → parse_rss 가 푼다.
+    {"id": "workersnews", "name": "노동자신문", "url": "http://www.workersnews.co.kr", "kind": "노동 매체",
+     "rss": "http://www.workersnews.co.kr/bbs/rss.php?bo_table=issue_3", "labor_only": False},
 ]
 
 # 법률신문처럼 법조 전반을 다루는 출처에서 노동 기사만 고르는 낱말
@@ -66,18 +72,37 @@ def strip(s):
     return re.sub(r"\s+", " ", s).strip()
 
 
+def parse_date(pub):
+    """RSS 날짜 — 표준(RFC 822), ISO 8601(그누보드 dc:date), '2026-09-29 12:15:04'(시간대 없음 → 한국 시각)."""
+    pub = (pub or "").strip()
+    if not pub:
+        return None
+    try:
+        return parsedate_to_datetime(pub)
+    except Exception:
+        pass
+    try:
+        d = datetime.fromisoformat(pub.replace("Z", "+00:00"))
+        return d if d.tzinfo else d.replace(tzinfo=timezone(timedelta(hours=9)))
+    except ValueError:
+        pass
+    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(pub, fmt).replace(tzinfo=timezone(timedelta(hours=9)))
+        except ValueError:
+            continue
+    return None
+
+
 def parse_rss(raw):
     root = ET.fromstring(raw)
     out = []
     for it in root.iter("item"):
         title = strip(it.findtext("title"))
-        link = (it.findtext("link") or "").strip()
+        link = html.unescape((it.findtext("link") or "").strip())   # &amp;wr_id= 같은 이중 변환 풀기
         desc = strip(it.findtext("description"))
         pub = it.findtext("pubDate") or it.findtext("{http://purl.org/dc/elements/1.1/}date") or ""
-        try:
-            dt = parsedate_to_datetime(pub)
-        except Exception:
-            dt = None
+        dt = parse_date(pub)
         if title and link:
             out.append((title, link, desc, dt))
     return out
@@ -128,12 +153,12 @@ def main():
     out = {
         "generated_at": now.isoformat(timespec="seconds"),
         "keep_days": KEEP_DAYS,
-        "sources": [{"id": s["id"], "name": s["name"], "url": s["url"], "rss": s["rss"], "labor_only": s["labor_only"]} for s in SOURCES],
+        "sources": [{"id": s["id"], "name": s["name"], "url": s["url"], "kind": s.get("kind", ""), "rss": s["rss"], "labor_only": s["labor_only"]} for s in SOURCES],
         "categories": [c[0] for c in CATS] + ["기타"],
         "rules": {c[0]: c[1] for c in CATS},
         "labor_words": LABOR_WORDS,
         "telegram": "https://t.me/labornews_lprc",   # 채널 주소. 비어 있으면 화면에 구독 안내를 띄우지 않는다
-        "note": "제목·링크·출처·날짜만 싣습니다. 본문은 각 언론사 페이지에서 읽으세요. 갈래는 낱말 규칙으로 나눈 것이라 틀릴 수 있습니다.",
+        "note": "제목·링크·출처·날짜만 싣습니다. 본문은 각 언론사 페이지에서 읽으세요. 갈래는 낱말 규칙으로 나눈 것이라 틀릴 수 있습니다. 출처마다 성격(노동조합 기관지·전문지 등)이 다르니 괄호 안 표기를 함께 보세요.",
         "diag": diag,
         "items": kept,
     }

@@ -24,7 +24,7 @@ NEWS = "docs/news.json"
 SENT = "docs/news_sent.json"
 MAX_ITEMS = 25
 MAX_CHARS = 3900
-SRC_NAME = {"labortoday": "매일노동뉴스", "lawtimes": "법률신문"}
+SRC_NAME = {"labortoday": "매일노동뉴스", "lawtimes": "법률신문", "worknworld": "노동과세계", "workersnews": "노동자신문"}
 
 
 def esc(s):

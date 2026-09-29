@@ -18,6 +18,15 @@
 | 푸시가 "could not read Username" 로 실패하면 | `git -c credential.helper= -c "credential.helper=!gh auth git-credential" push` (설정 변경 없음) | — |
 | **다른 저장소** | 시민법정(hybrid-jury-system) 함수 **Node.js 20 → 22 를 2026-10-30 전에**(그 저장소 SESSION_HANDOFF.md) · 그 저장소 GitHub 시크릿 `TELEGRAM_BOT_TOKEN` 갱신(선택) · fundamentalrights `.claude/HANDOFF-시민사회기본법.md` 미커밋 · **easylaw(모두의 법)** 아래 절 참고 | 각 저장소 |
 
+## 2026-09-29 — 노동뉴스 출처 추가: 노동과세계 · 노동자신문
+
+- 사용자 요청. `news_watch.py` SOURCES 에 `worknworld`(노동과세계, https://worknworld.kctu.org/rss/allArticle.xml, **민주노총 기관지**)와
+  `workersnews`(노동자신문, 그누보드 '노동' 게시판 RSS `/bbs/rss.php?bo_table=issue_3`) 추가. 출처마다 `kind`(성격)를 두어 화면·about 에 괄호로 표기
+  — 기관지와 전문지를 독자가 구분하도록(중립 원칙).
+- 함정: 노동과세계 pubDate 가 `2026-09-29 12:15:04`(시간대 없음), 노동자신문은 `dc:date` ISO 형식 → `parse_date()` 로 세 형식 처리(시간대 없으면 KST).
+  노동자신문 링크는 `&amp;amp;` 이중 변환 → `html.unescape`. 노동자신문은 게재가 드물다(60일 안 1건).
+- 새 출처의 기존 60일치(66건)가 텔레그램에 몰리지 않도록 **추가 시점의 모든 링크를 `news_sent.json` 에 '보낸 것'으로 넣었다**. 이후 새 기사만 발송.
+
 ## 2026-09-29 — easylaw(모두의 법) 로컬 실행 · 공개하지 않음
 
 - 사용자가 노동당 대표에게 보낼 소개 문자(이 사이트 + easylaw + 학교운영위원회·주민자치회 홍보)를 요청 → 초안 작성(대화에만). easylaw 공개 주소가 없어 '준비 중' 문구로 대체 권고.
