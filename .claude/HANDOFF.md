@@ -14,6 +14,15 @@
 | 푸시가 "could not read Username" 로 실패하면 | `git -c credential.helper= -c "credential.helper=!gh auth git-credential" push` (설정 변경 없음) | — |
 | **다른 저장소** | 시민법정(hybrid-jury-system) 함수 **Node.js 20 → 22 를 2026-10-30 전에**(그 저장소 SESSION_HANDOFF.md), 그 저장소 GitHub 시크릿 `TELEGRAM_BOT_TOKEN` 갱신(선택), fundamentalrights 의 `.claude/HANDOFF-시민사회기본법.md` 미커밋 | 각 저장소 |
 
+## 2026-09-29 — 방문 통계 준칙 변경 (Cloudflare 웹 분석) — **토큰 대기**
+
+- 사용자 결정: "이 사이트의 역할, 영향 분석 등이 다음 마케팅에 도움이 되는 데이터이니 준칙을 바꿔 유지". 기존 약속(about '분석 도구를 넣지 않았다')을 바꾼다.
+- 준비 완료: `docs/site.js` 의 `CF_BEACON_TOKEN`(비어 있으면 아무것도 안 불러옴) + `.claude/tools/enable_analytics.py <토큰>` — 토큰·about 개인정보 절(모으는 것/모으지 않는 것 표·목적·
+  Cloudflare 방침 링크)·홈 카드 문구·README·판 번호를 한 번에, 멱등. 복사본에서 가짜 토큰으로 시험 완료.
+- **남은 일**: 사용자가 dash.cloudflare.com → Web Analytics → 사이트 추가(`xn--9d0b29hf1nhhl.kr`, JS 스니펫 방식)로 받은 토큰(32자리 16진수, 공개 값)을 주면
+  도구 실행 → 커밋·푸시 → 배포본에서 beacon.min.js 로드 확인 → Cloudflare 대시보드에 방문이 잡히는지 확인.
+- 이 결정으로 '입력값은 서버로 가지 않는다' 약속은 **그대로** 유지된다(비콘은 페이지 방문만 센다).
+
 ## 2026-09-29 — 상단 머리띠 메뉴 · 맨 위로 버튼
 
 - 제목 아래 두 줄로 흩어지던 알약 메뉴(`.nav`)를 없애고, 모든 페이지 맨 위에 **고정 머리띠**(`.topbar`, sticky)를 둠 — 브랜드(홈) + 여덟 카테고리, 1080px 미만이면 ☰.

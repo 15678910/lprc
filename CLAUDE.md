@@ -21,6 +21,7 @@ https://단체교섭.kr (퓨니코드 `xn--9d0b29hf1nhhl.kr`) · GitHub Pages(`m
 | 전략 공개 | `strategy.html` 은 목표가 있는 전략안이지만 **공개**(같은 설계도를 보면 교섭이 짧아진다). 상대의 걱정·설계 보완을 같은 줄에 |
 | 수집 정책 | robots.txt **기본 전부 거부** + 검색엔진(Yeti·Googlebot·Bingbot·Daumoa)·링크 미리보기 봇만 허용. noindex 는 없음 |
 | 머리띠 메뉴 | 모든 페이지 맨 위 고정 머리띠(`.topbar`): 브랜드(홈) · 소개(▾ 출처 · 면책) · 측정기 · 원청교섭 가이드(▾ 전략과 대안) · 노동뉴스 · 현장과 ILO 기준 · AI 시대의 노동 · **사이트 검색**. 좁으면 ☰. 스타일·동작은 `docs/site.css`·`docs/site.js`, 오른쪽 아래 ↑ 맨 위로 |
+| 방문 통계 | **2026-09-29 준칙 변경(사용자 결정)**: "분석 도구 없음" → **Cloudflare 웹 분석 사용**(쿠키 없음·개인 식별 없음·입력값 전송 없음). 목적은 사이트의 역할·영향 파악과 다음 알림·개선. 켜기·약속 문구 변경은 반드시 `.claude/tools/enable_analytics.py <토큰>` 한 번으로 함께(문구만 먼저 바꾸면 사실과 다름) |
 | 조합원 전용 | 요구안·수용선·실태 원자료는 `../lprc-members`(git 아님). 공개 저장소에 넣지 않는다 |
 
 ## 수정 금지 영역
@@ -77,3 +78,4 @@ https://단체교섭.kr (퓨니코드 `xn--9d0b29hf1nhhl.kr`) · GitHub Pages(`m
 
 - `python .claude/tools/session_audit.py` — 세션 기록 전수 진단 → `.claude/SESSION_AUDIT.md`(로컬 전용, gitignore). 실수 표를 갱신할 때.
 - `python health_check.py` — 배포된 사이트 점검(페이지·데이터 신선도·인증서·robots·sitemap).
+- `python .claude/tools/enable_analytics.py <토큰>` — Cloudflare 웹 분석 켜기(토큰·출처 면책 약속 문구·홈 카드·README·판 번호를 한 번에).

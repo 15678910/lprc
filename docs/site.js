@@ -157,6 +157,19 @@
     box.addEventListener('click', function(e){ e.stopPropagation(); });
   }
 
+  /* ── 방문 통계 (Cloudflare 웹 분석) ─────────
+     2026-09-29 사용자 결정: 사이트의 역할·영향을 알아 다음 알림·개선에 쓰기 위해 방문 통계를 둔다.
+     쿠키 없음, 개인 식별·추적 없음, 입력값은 여전히 서버로 가지 않는다.
+     토큰은 비밀이 아니다(페이지 소스에 그대로 보이는 공개 값). 비어 있으면 아무것도 불러오지 않는다.
+     켜고 끄는 일은 .claude/tools/enable_analytics.py 로 — 출처·면책 페이지의 약속 문구와 함께 바뀐다. */
+  var CF_BEACON_TOKEN = '';
+  if (CF_BEACON_TOKEN) {
+    var cf = document.createElement('script');
+    cf.defer = true; cf.src = 'https://static.cloudflareinsights.com/beacon.min.js';
+    cf.setAttribute('data-cf-beacon', JSON.stringify({token: CF_BEACON_TOKEN}));
+    document.body.appendChild(cf);
+  }
+
   /* ── 맨 위로 ─────────────────────────── */
   var top = document.createElement('button');
   top.id = 'toTop'; top.type = 'button'; top.title = '맨 위로'; top.setAttribute('aria-label', '맨 위로');
