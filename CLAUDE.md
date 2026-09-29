@@ -26,6 +26,7 @@ https://단체교섭.kr (퓨니코드 `xn--9d0b29hf1nhhl.kr`) · GitHub Pages(`m
 ## 수정 금지 영역
 
 - `docs/CNAME` — 지우면 도메인 연결이 풀린다.
+- `docs/naver9dcac302ef4dfbef41ea050978e951ed.html` 과 `index.html` 의 `naver-site-verification` meta — 네이버 서치어드바이저 소유확인. 지우면 인증이 풀린다.
 - 저장소 루트의 **PDF**(법령·자료집 원문) — 커밋 금지.
 - 가비아 DNS 의 A 4줄·CNAME(www)·TXT(`_github-pages-challenge-15678910`) — 지우면 연결·소유 인증이 풀린다.
 - `law_watch.py` 의 `BASELINE` — labor.html 본문을 새 법령에 맞춰 고칠 때만 함께 올린다.
