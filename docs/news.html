@@ -54,22 +54,26 @@
   .muted{color:var(--mut)}
   @media print{body{background:#fff;color:#000}.card{background:#fff;border-color:#bbb}.nav,.chips{display:none}a{color:#000}}
 </style>
+<link rel="stylesheet" href="./site.css">
 </head>
 <body>
+<div class="topbar noprint" id="topbar" role="banner"><div class="tb-in">
+  <a class="brand" href="./"><i>⚖</i>모두를 위한 단체교섭</a>
+  <button class="burger" type="button" aria-label="메뉴 열기" aria-expanded="false" aria-controls="sitemenu">☰</button>
+  <nav class="menu" id="sitemenu" aria-label="사이트 메뉴">
+    <a href="./guide.html">소개</a>
+    <a href="./measure.html">측정기</a>
+    <a href="./labor.html">원청교섭 가이드</a>
+    <a href="./news.html" class="on" aria-current="page">노동뉴스</a>
+    <a href="./ilo.html">현장과 ILO 기준</a>
+    <a href="./strategy.html">전략과 대안</a>
+    <a href="./future.html">AI 시대의 노동</a>
+    <a href="./about.html">출처 · 면책</a>
+  </nav>
+</div></div>
 <div class="wrap">
 <header>
   <h1>노동뉴스</h1>
-  <nav class="nav">
-    <a href="./">🏠 모두를 위한 단체교섭</a>
-    <a href="./guide.html">📖 소개</a>
-    <a href="./measure.html">🧮 측정기</a>
-    <a href="./labor.html">⚖️ 원청교섭 가이드</a>
-    <a href="./news.html" class="on">📰 노동뉴스</a>
-    <a href="./ilo.html">🌐 현장과 ILO 기준</a>
-    <a href="./strategy.html">🧭 전략과 대안</a>
-    <a href="./future.html">🤖 AI 시대의 노동</a>
-    <a href="./about.html">📋 출처 · 면책</a>
-  </nav>
   <div class="sub">국내 노동 기사를 매일 모아 <b>갈등·쟁의 / 사건·사고 / 노동법·정책 / 판례·법리 / 재판·심판 진행 / 교섭·임금</b>으로 나눕니다.
     여기에는 <b>제목과 링크만</b> 있습니다 — 본문은 각 언론사 페이지에서 읽으세요.</div>
 </header>
@@ -142,5 +146,6 @@
 })();
 </script>
 <script src="./sidenav.js" defer></script>
+<script src="./site.js" defer></script>
 </body>
 </html>

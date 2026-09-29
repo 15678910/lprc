@@ -62,22 +62,26 @@
   @media print{body{background:#fff;color:#000;font-size:14.5px}.card,.big>div,.toc a{background:#fff;border-color:#bbb}
     .nav{display:none}a{color:#000}}
 </style>
+<link rel="stylesheet" href="./site.css">
 </head>
 <body>
+<div class="topbar noprint" id="topbar" role="banner"><div class="tb-in">
+  <a class="brand" href="./"><i>⚖</i>모두를 위한 단체교섭</a>
+  <button class="burger" type="button" aria-label="메뉴 열기" aria-expanded="false" aria-controls="sitemenu">☰</button>
+  <nav class="menu" id="sitemenu" aria-label="사이트 메뉴">
+    <a href="./guide.html">소개</a>
+    <a href="./measure.html">측정기</a>
+    <a href="./labor.html">원청교섭 가이드</a>
+    <a href="./news.html">노동뉴스</a>
+    <a href="./ilo.html">현장과 ILO 기준</a>
+    <a href="./strategy.html" class="on" aria-current="page">전략과 대안</a>
+    <a href="./future.html">AI 시대의 노동</a>
+    <a href="./about.html">출처 · 면책</a>
+  </nav>
+</div></div>
 <div class="wrap">
 <header>
   <h1>전략과 대안</h1>
-  <nav class="nav">
-    <a href="./">🏠 모두를 위한 단체교섭</a>
-    <a href="./guide.html">📖 소개</a>
-    <a href="./measure.html">🧮 측정기</a>
-    <a href="./labor.html">⚖️ 원청교섭 가이드</a>
-    <a href="./news.html">📰 노동뉴스</a>
-    <a href="./ilo.html">🌐 현장과 ILO 기준</a>
-    <a href="./strategy.html" class="on">🧭 전략과 대안</a>
-    <a href="./future.html">🤖 AI 시대의 노동</a>
-    <a href="./about.html">📋 출처 · 면책</a>
-  </nav>
   <div class="sub">이 페이지는 <b>목표가 있는 전략안</b>입니다 — 프랑스처럼 조합원이든 아니든 업종의 모든 노동자에게 단체협약이 닿는 구조를 한국에 만드는 것,
     그리고 <a href="./ilo.html">현장과 ILO 기준</a>의 여덟 쟁점마다 대안을 찾는 것.
     전략을 숨기지 않고 공개하는 이유는 하나입니다. <b>노사가 같은 설계도와 같은 숫자를 보고 앉으면 설득이 빨라지고 교섭이 짧아집니다.</b>
@@ -322,5 +326,6 @@
 </div>
 </div>
 <script src="./sidenav.js" defer></script>
+<script src="./site.js" defer></script>
 </body>
 </html>

@@ -1,0 +1,47 @@
+/* 사이트 공용 — 상단 머리띠(카테고리 메뉴)와 '맨 위로' 버튼.
+   아홉 페이지가 모두 이 파일을 읽는다. 메뉴 항목은 각 페이지 HTML 의 .topbar 안에 있다(JS 없이도 보이게).
+   메뉴를 바꾸면 아홉 페이지의 .topbar 를 함께 고칠 것(CLAUDE.md '새 페이지를 더할 때'). */
+
+/* 고정 머리띠가 목차 이동 목적지를 가리지 않게 */
+html{scroll-padding-top:68px}
+[id]{scroll-margin-top:68px}
+
+.topbar{position:sticky;top:0;z-index:60;background:rgba(11,16,23,.92);
+  -webkit-backdrop-filter:saturate(140%) blur(8px);backdrop-filter:saturate(140%) blur(8px);
+  border-bottom:1px solid var(--line,#20293a)}
+.topbar .tb-in{max-width:1160px;margin:0 auto;padding:0 16px;height:56px;
+  display:flex;align-items:center;gap:14px}
+.topbar .brand{color:var(--tx,#e6edf3);text-decoration:none;font-weight:700;font-size:1.02rem;
+  white-space:nowrap;display:flex;align-items:center;gap:8px;flex:0 0 auto}
+.topbar .brand i{font-style:normal;display:inline-grid;place-items:center;width:26px;height:26px;
+  border-radius:7px;background:rgba(88,166,255,.16);color:var(--acc,#58a6ff);font-size:.9rem}
+.topbar .menu{display:flex;align-items:center;gap:2px;margin-left:auto;overflow-x:auto;scrollbar-width:none}
+.topbar .menu::-webkit-scrollbar{display:none}
+.topbar .menu a{color:var(--mut,#8b98a9);text-decoration:none;font-size:.93rem;white-space:nowrap;
+  padding:7px 10px;border-radius:8px;line-height:1.2}
+.topbar .menu a:hover{color:var(--tx,#e6edf3);background:rgba(88,166,255,.10)}
+.topbar .menu a.on{color:var(--tx,#e6edf3);background:rgba(88,166,255,.16);font-weight:600;
+  box-shadow:inset 0 -2px 0 var(--acc,#58a6ff)}
+.topbar .burger{display:none;margin-left:auto;background:transparent;color:var(--tx,#e6edf3);
+  border:1px solid var(--line,#20293a);border-radius:8px;width:40px;height:36px;font-size:1.15rem;cursor:pointer}
+
+/* 좁은 화면 — ☰ 로 접는다 */
+@media (max-width:1079px){
+  .topbar .burger{display:block}
+  .topbar .menu{display:none;position:absolute;left:0;right:0;top:56px;flex-direction:column;align-items:stretch;
+    gap:0;padding:6px 12px 12px;background:#0d1219;border-bottom:1px solid var(--line,#20293a);
+    box-shadow:0 12px 24px rgba(0,0,0,.35);max-height:calc(100vh - 56px);overflow-y:auto}
+  .topbar.open .menu{display:flex}
+  .topbar .menu a{padding:12px 10px;font-size:1rem;border-bottom:1px solid rgba(32,41,58,.6);border-radius:0}
+  .topbar .menu a.on{box-shadow:inset 3px 0 0 var(--acc,#58a6ff)}
+}
+
+/* 맨 위로 */
+#toTop{position:fixed;right:18px;bottom:20px;z-index:70;width:46px;height:46px;border-radius:50%;
+  border:1px solid var(--line,#20293a);background:#131a24;color:var(--tx,#e6edf3);font-size:1.25rem;
+  cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.35);opacity:0;transform:translateY(10px);
+  pointer-events:none;transition:opacity .2s,transform .2s}
+#toTop.show{opacity:1;transform:none;pointer-events:auto}
+#toTop:hover{border-color:var(--acc,#58a6ff);color:var(--acc,#58a6ff)}
+
+@media print{.topbar,#toTop{display:none!important}}

@@ -14,6 +14,13 @@
 | 푸시가 "could not read Username" 로 실패하면 | `git -c credential.helper= -c "credential.helper=!gh auth git-credential" push` (설정 변경 없음) | — |
 | **다른 저장소** | 시민법정(hybrid-jury-system) 함수 **Node.js 20 → 22 를 2026-10-30 전에**(그 저장소 SESSION_HANDOFF.md), 그 저장소 GitHub 시크릿 `TELEGRAM_BOT_TOKEN` 갱신(선택), fundamentalrights 의 `.claude/HANDOFF-시민사회기본법.md` 미커밋 | 각 저장소 |
 
+## 2026-09-29 — 상단 머리띠 메뉴 · 맨 위로 버튼
+
+- 제목 아래 두 줄로 흩어지던 알약 메뉴(`.nav`)를 없애고, 모든 페이지 맨 위에 **고정 머리띠**(`.topbar`, sticky)를 둠 — 브랜드(홈) + 여덟 카테고리, 1080px 미만이면 ☰.
+- 공용 `docs/site.css`(머리띠·↑ 버튼·`scroll-padding-top` 68px로 목차 이동 목적지 가림 방지) · `docs/site.js`(☰ 열고 닫기·Esc·바깥 클릭, ↑ 버튼은 500px 내려가면 표시).
+  메뉴 링크는 각 HTML 에 정적으로 있어 JS 없이도 동작. 각 페이지 `<style>` 의 옛 `.nav` 규칙은 쓰이지 않는 채로 남아 있음(무해).
+- 챗봇은 만들지 않음 — 사용자에게 판단 근거와 대안(사이트 검색)을 제시.
+
 ## 2026-09-29 — 에이전트 운영 고도화 (붙여 준 'AI OS V2' 문서에서 쓸 만한 것만)
 
 - **지식 메모리**: 루트 `CLAUDE.md` 신설 — 원칙·되돌리면 안 되는 사용자 결정·수정 금지 영역·자주 하는 실수(세션 전수 진단 수치)·작업 템플릿·배포 체크리스트.

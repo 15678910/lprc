@@ -20,7 +20,7 @@ https://단체교섭.kr (퓨니코드 `xn--9d0b29hf1nhhl.kr`) · GitHub Pages(`m
 | 인물 중심 금지 | 특정 인물·단체를 앞세운 문구·경고 상자 금지. '현장의 문제 / 제시된 대안 / 현장에서 제기된 수치' 로 쓴다 |
 | 전략 공개 | `strategy.html` 은 목표가 있는 전략안이지만 **공개**(같은 설계도를 보면 교섭이 짧아진다). 상대의 걱정·설계 보완을 같은 줄에 |
 | 수집 정책 | robots.txt **기본 전부 거부** + 검색엔진(Yeti·Googlebot·Bingbot·Daumoa)·링크 미리보기 봇만 허용. noindex 는 없음 |
-| nav | 9칸 순서 고정: 🏠 · 📖 소개 · 🧮 측정기 · ⚖️ 원청교섭 가이드 · 📰 노동뉴스 · 🌐 현장과 ILO 기준 · 🧭 전략과 대안 · 🤖 AI 시대의 노동 · 📋 출처 · 면책 |
+| 머리띠 메뉴 | 모든 페이지 맨 위 고정 머리띠(`.topbar`): 왼쪽 브랜드(홈) + 소개 · 측정기 · 원청교섭 가이드 · 노동뉴스 · 현장과 ILO 기준 · 전략과 대안 · AI 시대의 노동 · 출처 · 면책. 좁으면 ☰. 스타일·동작은 `docs/site.css`·`docs/site.js` 한 곳, 오른쪽 아래 ↑ 맨 위로 버튼 |
 | 조합원 전용 | 요구안·수용선·실태 원자료는 `../lprc-members`(git 아님). 공개 저장소에 넣지 않는다 |
 
 ## 수정 금지 영역
@@ -49,7 +49,7 @@ https://단체교섭.kr (퓨니코드 `xn--9d0b29hf1nhhl.kr`) · GitHub Pages(`m
 
 ## 작업 템플릿
 
-**새 페이지를 더할 때** — ① nav 9곳(모든 html) ② 홈 카드(`index.html`) ③ `guide.html` 사이트 구성 표(#map)·질문 표 ④ `docs/sitemap.xml` 한 줄 ⑤ `<head>` 메타 블록(description·canonical·og) ⑥ `health_check.py` 의 PAGES ⑦ `about.html` 출처 표(데이터가 있으면) ⑧ `sidenav.js` 로드.
+**새 페이지를 더할 때** — ① 모든 html 의 `.topbar` 메뉴에 한 줄(새 페이지는 `site.css` 링크·`site.js` 스크립트 포함, 자기 항목에 `class="on"`) ② 홈 카드(`index.html`) ③ `guide.html` 사이트 구성 표(#map)·질문 표 ④ `docs/sitemap.xml` 한 줄 ⑤ `<head>` 메타 블록(description·canonical·og) ⑥ `health_check.py` 의 PAGES ⑦ `about.html` 출처 표(데이터가 있으면) ⑧ `sidenav.js` 로드.
 
 **새 수집기를 더할 때** — 표준 라이브러리, 실패 시 기존 파일 보존, 산출물에 `generated_at`, `data.yml` 단계 추가(`|| echo` 로 전체를 멈추지 않게), `health_check.py` 의 FRESH 에 등록, `about.html` 출처 표.
 
