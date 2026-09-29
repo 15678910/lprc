@@ -36,7 +36,7 @@
 `docs/CNAME` 을 지우거나 바꾸지 말 것(지우면 도메인 연결이 풀림). **도메인 소유 인증 완료**(계정 설정 github.com/settings/pages, Verified) — 가비아의 TXT 레코드 `_github-pages-challenge-15678910` 는 **지우지 말 것**(재확인 시 인증 풀림). **검색 노출 켬(2026-09-29, 사용자 결정)**: 9페이지에서 robots/googlebot noindex 제거, 페이지마다 description·canonical(퓨니코드 주소)·Open Graph 태그,
 `docs/sitemap.xml`(9 URL), `docs/robots.txt` 는 **기본 전부 거부 + 검색엔진(Yeti·Googlebot·Bingbot·Daumoa)·링크 미리보기 봇만 허용**(2026-09-29 사용자 요청 "크롤링 못하게" — 검색 노출은 유지하는 해석).
 about '검색에 나옵니다' 절·홈 푸터·README 문구 갱신. **새 페이지를 더하면 sitemap.xml 과 메타 블록(description~og:url)도 함께.**
-네이버 서치어드바이저·구글 서치콘솔 등록은 사용자 계정 필요 — 소유확인 코드를 받으면 index.html `<head>` 에 meta 로 넣거나 가비아 TXT 로.
+**네이버 서치어드바이저 완료(2026-09-29)**: https://단체교섭.kr 소유확인(파일 `docs/naver9dcac…html` + index meta), 사이트맵 제출 15:06. http:// 항목도 확인됨(지워도 무방). **구글 서치콘솔은 미완** — 도메인 속성 `xn--9d0b29hf1nhhl.kr` 추가 → 가비아 TXT(@, google-site-verification=…) → 확인 → 사이트맵 `sitemap.xml` 제출.
 
 nav 는 이제 9칸: 🏠 · 📖 소개 · 🧮 측정기 · ⚖️ 원청교섭 가이드 · 📰 노동뉴스 · 🌐 현장과 ILO 기준 · 🧭 전략과 대안 · 🤖 AI 시대의 노동 · 📋 출처 · 면책.
 
