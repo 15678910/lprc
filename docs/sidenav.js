@@ -20,6 +20,11 @@
   function build(){
     var cards = Array.prototype.slice.call(document.querySelectorAll('.card'))
       .filter(function(c){ return c.querySelector(':scope > h2'); });
+    // 절 번호는 목차가 없어도 붙인다 — 사이트 검색(site.js)이 같은 규칙으로 '#sec3' 같은 주소를 만든다.
+    cards.forEach(function(c, i){ if (!c.id) c.id = 'sec' + i; });
+    // 번호가 방금 붙었으므로, 검색 결과처럼 '#sec3' 로 들어온 경우 브라우저가 스스로 못 찾는다 — 직접 이동.
+    var target = location.hash && document.getElementById(decodeURIComponent(location.hash.slice(1)));
+    if (target) setTimeout(function(){ target.scrollIntoView({block: 'start'}); }, 60);
     if (cards.length < 3) return;                       // 목차가 필요할 만큼 길지 않다
     var nav = document.createElement('nav');
     nav.className = 'sidenav noprint'; nav.id = 'snav'; nav.setAttribute('aria-label', '화면 목차');

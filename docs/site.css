@@ -1,39 +1,85 @@
-/* 사이트 공용 — 상단 머리띠(카테고리 메뉴)와 '맨 위로' 버튼.
+/* 사이트 공용 — 상단 머리띠(카테고리·하위 메뉴·검색)와 '맨 위로' 버튼.
    아홉 페이지가 모두 이 파일을 읽는다. 메뉴 항목은 각 페이지 HTML 의 .topbar 안에 있다(JS 없이도 보이게).
    메뉴를 바꾸면 아홉 페이지의 .topbar 를 함께 고칠 것(CLAUDE.md '새 페이지를 더할 때'). */
 
 /* 고정 머리띠가 목차 이동 목적지를 가리지 않게 */
-html{scroll-padding-top:68px}
-[id]{scroll-margin-top:68px}
+
+[id]{scroll-margin-top:66px}
 
 .topbar{position:sticky;top:0;z-index:60;background:rgba(11,16,23,.92);
   -webkit-backdrop-filter:saturate(140%) blur(8px);backdrop-filter:saturate(140%) blur(8px);
   border-bottom:1px solid var(--line,#20293a)}
-.topbar .tb-in{max-width:1160px;margin:0 auto;padding:0 16px;height:56px;
-  display:flex;align-items:center;gap:14px}
+.topbar .tb-in{max-width:1180px;margin:0 auto;padding:0 16px;height:56px;
+  display:flex;align-items:center;gap:12px}
 .topbar .brand{color:var(--tx,#e6edf3);text-decoration:none;font-weight:700;font-size:1.02rem;
   white-space:nowrap;display:flex;align-items:center;gap:8px;flex:0 0 auto}
 .topbar .brand i{font-style:normal;display:inline-grid;place-items:center;width:26px;height:26px;
   border-radius:7px;background:rgba(88,166,255,.16);color:var(--acc,#58a6ff);font-size:.9rem}
-.topbar .menu{display:flex;align-items:center;gap:2px;margin-left:auto;overflow-x:auto;scrollbar-width:none}
-.topbar .menu::-webkit-scrollbar{display:none}
+.topbar .menu{display:flex;align-items:center;gap:2px;margin-left:auto}
 .topbar .menu a{color:var(--mut,#8b98a9);text-decoration:none;font-size:.93rem;white-space:nowrap;
-  padding:7px 10px;border-radius:8px;line-height:1.2}
+  padding:7px 10px;border-radius:8px;line-height:1.2;display:block}
 .topbar .menu a:hover{color:var(--tx,#e6edf3);background:rgba(88,166,255,.10)}
 .topbar .menu a.on{color:var(--tx,#e6edf3);background:rgba(88,166,255,.16);font-weight:600;
   box-shadow:inset 0 -2px 0 var(--acc,#58a6ff)}
+
+/* 하위 메뉴 — 넓은 화면: 마우스를 올리거나 ▾ 를 누르면 펼침 */
+.topbar .grp{position:relative;display:flex;align-items:center}
+.topbar .grp > a{padding-right:4px}
+.topbar .caret{background:transparent;border:0;color:var(--mut,#8b98a9);cursor:pointer;
+  font-size:.75rem;padding:7px 6px 7px 2px;border-radius:6px;line-height:1}
+.topbar .caret:hover{color:var(--tx,#e6edf3)}
+.topbar .grp .sub{display:none;position:absolute;top:100%;left:0;min-width:170px;padding:6px;margin-top:4px;
+  background:#0d1219;border:1px solid var(--line,#20293a);border-radius:10px;box-shadow:0 10px 24px rgba(0,0,0,.4)}
+.topbar .grp .sub::before{content:"";position:absolute;left:0;right:0;top:-8px;height:8px}
+.topbar .grp:hover .sub,.topbar .grp:focus-within .sub,.topbar .grp.open .sub{display:block}
+.topbar .grp .sub a{padding:9px 10px}
+.topbar .grp .sub a.on{box-shadow:inset 3px 0 0 var(--acc,#58a6ff)}
+
+/* 검색 */
+.topbar .search{position:relative;flex:0 0 auto}
+.topbar .search input{width:150px;background:#0d1219;color:var(--tx,#e6edf3);border:1px solid var(--line,#20293a);
+  border-radius:18px;padding:7px 12px 7px 30px;font:inherit;font-size:.9rem;transition:width .2s,border-color .2s;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238b98a9' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-4-4'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:11px center}
+.topbar .search input:focus{outline:none;border-color:var(--acc,#58a6ff);width:230px}
+.topbar .search .results{position:absolute;right:0;top:calc(100% + 8px);width:420px;max-width:calc(100vw - 24px);
+  max-height:70vh;overflow-y:auto;background:#0d1219;border:1px solid var(--line,#20293a);border-radius:12px;
+  box-shadow:0 14px 30px rgba(0,0,0,.45);padding:6px}
+.topbar .search .results a{display:block;text-decoration:none;color:var(--tx,#e6edf3);padding:9px 10px;border-radius:8px;
+  border-bottom:1px solid rgba(32,41,58,.6);font-size:.9rem;line-height:1.45}
+.topbar .search .results a:last-child{border-bottom:0}
+/* 결과 링크는 메뉴 링크 규칙(한 줄 유지·큰 여백)을 물려받지 않는다 */
+.topbar .menu .search .results a{white-space:normal;word-break:keep-all;overflow-wrap:anywhere;
+  padding:9px 10px;font-size:.9rem;border-radius:8px;box-shadow:none}
+.topbar .search .results a:hover,.topbar .search .results a.sel{background:rgba(88,166,255,.12)}
+.topbar .search .results .pg{display:block;color:var(--acc,#58a6ff);font-size:.78rem;margin-bottom:2px}
+.topbar .search .results b{display:block;font-weight:600}
+.topbar .search .results .sn{display:block;color:var(--mut,#8b98a9);font-size:.84rem;margin-top:2px}
+.topbar .search .results mark{background:rgba(210,153,34,.35);color:inherit;border-radius:3px;padding:0 1px}
+.topbar .search .results .none{color:var(--mut,#8b98a9);padding:12px;font-size:.9rem}
+
 .topbar .burger{display:none;margin-left:auto;background:transparent;color:var(--tx,#e6edf3);
   border:1px solid var(--line,#20293a);border-radius:8px;width:40px;height:36px;font-size:1.15rem;cursor:pointer}
 
-/* 좁은 화면 — ☰ 로 접는다 */
+/* 좁은 화면 — ☰ 로 접는다. 검색칸은 펼친 메뉴 맨 위에 */
 @media (max-width:1079px){
   .topbar .burger{display:block}
   .topbar .menu{display:none;position:absolute;left:0;right:0;top:56px;flex-direction:column;align-items:stretch;
-    gap:0;padding:6px 12px 12px;background:#0d1219;border-bottom:1px solid var(--line,#20293a);
+    gap:0;padding:8px 12px 12px;background:#0d1219;border-bottom:1px solid var(--line,#20293a);
     box-shadow:0 12px 24px rgba(0,0,0,.35);max-height:calc(100vh - 56px);overflow-y:auto}
   .topbar.open .menu{display:flex}
   .topbar .menu a{padding:12px 10px;font-size:1rem;border-bottom:1px solid rgba(32,41,58,.6);border-radius:0}
   .topbar .menu a.on{box-shadow:inset 3px 0 0 var(--acc,#58a6ff)}
+  .topbar .grp{display:block}
+  .topbar .grp > a{padding-right:10px}
+  .topbar .caret{display:none}
+  .topbar .grp .sub{display:block;position:static;margin:0;padding:0 0 0 18px;border:0;box-shadow:none;background:transparent;min-width:0}
+  .topbar .grp .sub::before{display:none}
+  .topbar .grp .sub a{font-size:.95rem}
+  .topbar .grp .sub a::before{content:"└ ";color:var(--mut,#8b98a9)}
+  .topbar .search{order:-1;margin:0 0 8px}
+  .topbar .search input,.topbar .search input:focus{width:100%;font-size:1rem;padding:10px 12px 10px 32px}
+  .topbar .search .results{position:static;width:auto;max-width:none;margin-top:8px;max-height:50vh}
 }
 
 /* 맨 위로 */
