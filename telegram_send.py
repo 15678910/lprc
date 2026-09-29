@@ -92,7 +92,7 @@ def main():
         if len(cur) + len(line) > MAX_CHARS:
             msgs.append(cur); cur = ""
         cur += line
-    cur += "\n제목·링크만 보냅니다. 본문은 각 언론사에서. 모아보기: https://15678910.github.io/lprc/news.html"
+    cur += "\n제목·링크만 보냅니다. 본문은 각 언론사에서. 모아보기: <a href=\"https://xn--9d0b29hf1nhhl.kr/news.html\">단체교섭.kr/news.html</a>"
     msgs.append(cur)
 
     ok = True

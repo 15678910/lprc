@@ -26,7 +26,7 @@ from email.utils import parsedate_to_datetime
 
 OUT = "docs/news.json"
 KEEP_DAYS = 60
-HDR = {"User-Agent": "Mozilla/5.0 (lprc news; +https://15678910.github.io/lprc/)"}
+HDR = {"User-Agent": "Mozilla/5.0 (lprc news; +https://xn--9d0b29hf1nhhl.kr/)"}
 
 SOURCES = [
     {"id": "labortoday", "name": "매일노동뉴스", "url": "https://www.labortoday.co.kr",
