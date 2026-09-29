@@ -24,6 +24,18 @@
         "../lprc-members"
       ],
       "port": 8742
+    },
+    {
+      "name": "easylaw",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "../easylaw/node_modules/vite/bin/vite.js",
+        "../easylaw",
+        "--port",
+        "5173",
+        "--strictPort"
+      ],
+      "port": 5173
     }
   ]
 }
