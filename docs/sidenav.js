@@ -44,7 +44,7 @@
       nav.appendChild(a); return a;
     });
     var top = document.createElement('a'); top.className = 'top'; top.href = '#';
-    top.textContent = '↑ 맨 위로';
+    top.textContent = '↑ TOP'; top.title = '맨 위로';
     top.addEventListener('click', function(e){ e.preventDefault(); window.scrollTo({top: 0, behavior: 'smooth'}); });
     nav.appendChild(top);
     document.body.insertBefore(nav, document.body.firstChild);

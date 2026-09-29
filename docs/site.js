@@ -160,7 +160,7 @@
   /* ── 맨 위로 ─────────────────────────── */
   var top = document.createElement('button');
   top.id = 'toTop'; top.type = 'button'; top.title = '맨 위로'; top.setAttribute('aria-label', '맨 위로');
-  top.textContent = '↑';
+  top.innerHTML = '<span>↑</span><small>TOP</small>';
   top.addEventListener('click', function(){ window.scrollTo({top: 0, behavior: 'smooth'}); });
   document.body.appendChild(top);
   var onScroll = function(){ top.classList.toggle('show', window.scrollY > 500); };
