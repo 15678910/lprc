@@ -25,7 +25,7 @@
 
 **도메인(2026-09-29)**: `단체교섭.kr`(퓨니코드 `xn--9d0b29hf1nhhl.kr`, 가비아 등록·DNS). GitHub Pages cname 을 API 로 설정 → GitHub 가 `docs/CNAME` 을 커밋.
 옛 github.io/lprc 주소는 자동 이동. **사이트 안 링크는 상대 경로라 도메인과 무관.** 절대 주소는 telegram_send.py(모아보기 링크)·news_watch.py(UA, ASCII 라 퓨니코드)만.
-`docs/CNAME` 을 지우거나 바꾸지 말 것(지우면 도메인 연결이 풀림). 모든 페이지에 noindex 가 있어 검색 노출은 안 됨 — 풀지 여부는 사용자 결정 대기.
+`docs/CNAME` 을 지우거나 바꾸지 말 것(지우면 도메인 연결이 풀림). **도메인 소유 인증 완료**(계정 설정 github.com/settings/pages, Verified) — 가비아의 TXT 레코드 `_github-pages-challenge-15678910` 는 **지우지 말 것**(재확인 시 인증 풀림). 모든 페이지에 noindex 가 있어 검색 노출은 안 됨 — 풀지 여부는 사용자 결정 대기.
 
 nav 는 이제 9칸: 🏠 · 📖 소개 · 🧮 측정기 · ⚖️ 원청교섭 가이드 · 📰 노동뉴스 · 🌐 현장과 ILO 기준 · 🧭 전략과 대안 · 🤖 AI 시대의 노동 · 📋 출처 · 면책.
 
