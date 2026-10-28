@@ -1465,6 +1465,74 @@ function pathCard(c){
     if(r>=goal)break;
   }
 
+  /* 민감도 — 위 역산식을 입력 하나씩만 흔들어 다시 돌린다. 새 자료는 쓰지 않는다.
+     "어느 칸을 움직이면 연수가 크게 바뀌나"를 보여, 교섭에서 무엇을 먼저 다툴지 고르는 근거로 쓴다.
+     반환값: 0 = 이미 달성, null = 영원히(인상률 차이가 0 이하라 분모가 0 이하). */
+  const yrsAt=(pay,base,g,a,b)=>{const r0=pay/base*100,gr=(1+a/100)/(1+b/100);
+    return g<=r0?0:gr>1?Math.log(g/r0)/Math.log(gr):null;};
+  const rd1=v=>Math.round(v*10)/10||0;     // ||0 — -0 이 '-0' 으로 찍히지 않게
+  const yNow=yrsAt(T.pay,T.base,goal,rTgt,rBase);
+  const SENS=[
+    {k:'tgt',n:`${T.label.split('(')[0]} 인상률`,d:'±0.5%p',f:s=>yrsAt(T.pay,T.base,goal,rTgt+s*0.5,rBase)},
+    {k:'base',n:`${T.giverLabel} 인상률`,d:'±0.5%p',f:s=>yrsAt(T.pay,T.base,goal,rTgt,rBase+s*0.5)},
+    {k:'goal',n:'해소 목표 비율',d:'±5%p',f:s=>yrsAt(T.pay,T.base,Math.min(100,goal+s*5),rTgt,rBase)},
+    // 아래 둘은 교섭으로 바꾸는 값이 아니라 공시 평균의 오차 — 숫자를 얼마나 믿을 수 있는지 보는 줄
+    {k:'pay',n:'대상 1인평균 (출발점)',d:'±5%',data:true,f:s=>yrsAt(T.pay*(1+s*0.05),T.base,goal,rTgt,rBase)},
+    {k:'bpay',n:`${T.baseLabel} (기준)`,d:'±5%',data:true,f:s=>yrsAt(T.pay,T.base*(1+s*0.05),goal,rTgt,rBase)},
+  ].map(v=>{const lo=v.f(-1),hi=v.f(1);
+    // 한쪽이라도 '영원히'면 폭은 무한대(맨 위로). 둘 다 영원히면 이 범위 안에서는 움직이지 않는다(폭 0).
+    const w=(lo==null&&hi==null)?0:(lo==null||hi==null)?Infinity:Math.abs(hi-lo);
+    return {...v,lo,hi,w};}).sort((p,q)=>q.w-p.w);
+  const sMax=Math.max(1,...SENS.flatMap(v=>[v.lo,v.hi]).concat(yNow).filter(v=>v!=null))*1.08;
+  const sPct=v=>v==null?100:Math.min(100,v/sMax*100);
+  const yLab=v=>v==null?'영원히':v===0?'달성':fmt(v,1)+'년';
+  const sBar=v=>{
+    const both=v.lo==null&&v.hi==null,fin=[v.lo,v.hi].filter(x=>x!=null);
+    const L=both?0:sPct(Math.min(...fin)),R=(v.lo==null||v.hi==null)?100:sPct(Math.max(...fin));
+    return `<div style="position:relative;height:12px;background:#0d1219;border:1px solid var(--line);border-radius:6px;margin:4px 0 12px">
+      <div style="position:absolute;top:0;bottom:0;left:${L}%;width:${Math.max(R-L,0.8)}%;border-radius:5px;
+        background:${R===100&&(v.lo==null||v.hi==null)?'var(--red)':v.data?'var(--mut)':'var(--acc)'};opacity:${both?.35:.75}"></div>
+      ${yNow!=null?`<div style="position:absolute;top:-3px;bottom:-3px;left:${sPct(yNow)}%;width:2px;background:var(--tx)"></div>`:''}</div>`;};
+  const wOf=k=>SENS.find(v=>v.k===k).w;
+  const wT=wOf('tgt'),wG=wOf('goal');
+  const sMsg=wT===Infinity?`<b>대상 인상률 0.5%p 차이로 '도달'과 '영원히'가 갈립니다.</b> 지금 설정은 그 경계에 가깝습니다.`
+    :wG===Infinity?`<b>목표 5%p 차이로 '도달'과 '영원히'가 갈립니다.</b>`
+    :(wT>0||wG>0)?`<b>${wT>=wG?'대상 인상률 0.5%p가 목표 5%p보다':'목표 5%p가 대상 인상률 0.5%p보다'} 연수를 더 크게 바꿉니다</b>
+      (${fmt(Math.max(wT,wG),1)}년 vs ${fmt(Math.min(wT,wG),1)}년).`
+    :`<b>이 범위 안에서는 어느 입력도 '영원히'를 바꾸지 못합니다</b> — 대상 인상률이 ${esc(T.giverLabel)}보다 높아지는 것이 먼저입니다.`;
+  const sensBlock=goal<=ratioNow?'':`
+    <div class="lab" style="margin:22px 0 6px;font-weight:600;color:var(--tx)">🎯 어느 입력이 연수를 가장 크게 바꾸나 — 민감도 순위</div>
+    <div class="hint" style="margin-bottom:10px">입력을 <b>하나씩만</b> 흔들어 위 역산을 다시 돌렸습니다. 막대가 길수록 그 입력이 연수를 크게 움직입니다.
+      흰 세로선은 지금 설정(${yLab(yNow)}), 빨간 막대는 한쪽 끝이 '영원히'인 경우입니다.</div>
+    ${SENS.map(v=>`<div class="row" style="justify-content:space-between;gap:4px 12px;align-items:baseline">
+      <div class="lab"><b style="color:var(--tx)">${esc(v.n)}</b> ${v.d}${v.data?' <span style="color:var(--mut)">(자료 오차)</span>':''}</div>
+      <div class="lab mono">−쪽 ${yLab(v.lo)} · +쪽 ${yLab(v.hi)} · 폭 <b class="${v.w===Infinity?'neg':''}">${v.w===Infinity?'∞':fmt(v.w,1)+'년'}</b></div></div>
+      ${sBar(v)}`).join('')}
+    <div class="note">📖 ${sMsg} 같은 0.5%p라도 <b>인상률 차이가 작을수록</b> 효과가 커집니다 — 식의 분모가 인상률 차이라서입니다.<br>
+      · 회색 두 줄(출발점·기준)은 교섭으로 바꾸는 값이 아니라 <b>공시 평균의 오차</b>입니다. 평균이 5% 틀리면 연수가 이만큼 흔들리니, 숫자를 쓸 때 이 폭을 함께 보세요.<br>
+      ⚖️ 어느 쪽을 요구하거나 양보하라는 권고가 아닙니다. 각 입력의 무게만 보여줍니다.</div>`;
+
+  // 격자표 — 같은 식을 두 입력(대상 인상률 × 해소 목표)에 동시에 돌린다. 입력칸을 다시 돌리지 않고 조합을 한눈에 읽기 위함.
+  const gRates=[-1,-0.5,0,0.5,1].map(d=>({d,v:rd1(rTgt+d)})).filter(x=>x.v>=0);
+  const gGoals=[-10,-5,0,5,10].map(d=>({d,v:goal+d})).filter(x=>x.v>0&&x.v<=100);
+  const gCell=y=>y==null?['neg','영원히']:y===0?['','이미 달성']:[y<=5?'pos':y>10?'warn':'',fmt(y,1)+'년'];
+  const gridBlock=`
+    <div class="lab" style="margin:22px 0 6px;font-weight:600;color:var(--tx)">🧮 인상률 × 목표 — 조합별 도달 연수</div>
+    <div class="hint" style="margin-bottom:8px">${esc(T.giverLabel)} 인상률은 ${fmt(rBase,1)}%로 고정했습니다.
+      파란 칸이 지금 설정 · <span class="pos">초록</span> 5년 이내 · <span class="warn">노랑</span> 10년 초과 · <span class="neg">빨강</span> 영원히.</div>
+    <div style="overflow-x:auto"><table><thead><tr>
+      <th>${esc(T.label.split('(')[0])} 인상률 ↓ · 목표 →</th>
+      ${gGoals.map(g=>`<th${g.d===0?' style="color:var(--acc)"':''}>${fmt(g.v,0)}%</th>`).join('')}
+    </tr></thead><tbody>${gRates.map(r=>`<tr>
+      <td class="mono"${r.d===0?' style="color:var(--acc)"':''}><b>${fmt(r.v,1)}%</b> <span class="lab">(차이 ${fmt(rd1(r.v-rBase),1)}%p)</span></td>
+      ${gGoals.map(g=>{const [c,t]=gCell(yrsAt(T.pay,T.base,g.v,r.v,rBase)),cur=r.d===0&&g.d===0;
+        const st=(t==='이미 달성'?'color:var(--mut);':'')+(cur?'background:rgba(88,166,255,.10)':'');
+        return `<td class="mono ${c}"${st?` style="${st}"`:''}>${cur?`<b>${t}</b>`:t}</td>`;}).join('')}</tr>`).join('')}
+    </tbody></table></div>
+    <div class="note">📖 행을 따라 내려가면 인상률을, 열을 따라가면 목표를 바꿨을 때입니다.
+      같은 연수가 여러 칸에 나오면 <b>서로 바꿔 쓸 수 있는 조합</b>입니다 — 목표를 낮추는 대신 인상률을 지키는 식으로.<br>
+      ⚠️ 모든 칸이 '현재 조건이 매년 유지될 때'의 값입니다. ⚖️ 어느 칸도 권하지 않습니다.</div>`;
+
   const opPct=v=>(v!=null&&mOp)?fmt(v/mOp*100,2)+'%':'—';
   // 100억 미만은 소수 한 자리까지 — 반올림하면 12.4억이 12억이 되어 협상 숫자가 뭉개진다.
   const eok=v=>v==null?'—':(Math.abs(v)<1e10?fmt(v/1e8,1):won(v/1e8))+'억';
@@ -1659,6 +1727,7 @@ function pathCard(c){
       한 해에 약 ${fmt((growth-1)*ratioNow,2)}%p씩만 줄어듭니다. 복리로 쌓이지만 출발점이 낮을수록 오래 걸립니다.<br>
       ⚠️ 물가·실적에 따라 인상률은 매년 달라지므로 이 연수는 <b>현재 조건이 유지될 때</b>의 값입니다.
       협약에 쓸 때는 연수가 아니라 <b>'${esc(T.baseLabel)}의 ○○%'라는 목표 비율과 기한</b>을 함께 명시하세요.</div>`}
+    ${sensBlock}${gridBlock}
 
     <div class="lab" style="margin:22px 0 6px;font-weight:600;color:var(--tx)">💰 재원을 어디서 — 경로별 비교</div>
     <div style="overflow-x:auto"><table><thead><tr>
