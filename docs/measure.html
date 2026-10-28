@@ -523,7 +523,10 @@ function coResults(q,k){
         onclick="pick('${k}','${esc(x.code)}')">${esc(x.name)}
         <span class="lab">· ${np?esc(x.sgg)+' · '+won(x.n)+'명 · '+esc(x.ind):esc(x.code)+' · '+esc(String(x.year))+'년'}</span></button>`).join('')}</div>`;
 }
-window.setCoF=(k,v)=>{S.coManual=S.coManual||{};S.coManual[k]=Math.max(0,parseFloat(v)||0);save();render()};
+/* 빈칸은 0 이 아니라 '안 넣음'으로 둔다 — 칸에 0 을 박아 두면 오른쪽 정렬이라 커서가 0 앞에 서고
+   '123' 이 '1023' 으로 들어간다. 계산은 어차피 비면 0 으로 읽는다(M.x||0). */
+window.setCoF=(k,v)=>{S.coManual=S.coManual||{};
+  if(v===''){delete S.coManual[k]}else S.coManual[k]=Math.max(0,parseFloat(v)||0);save();render()};
 function coCard(c){
   const sel=S.co||'';
   const M=S.coManual||{};
@@ -546,16 +549,16 @@ function coCard(c){
     return{r,add,opAfter:op-add,opmAfter:(op-add)/rev*100,drop:add/rev*100};
   }):[];
   const mi=(k,lab,ph)=>`<div style="flex:1;min-width:130px"><div class="lab">${lab}</div>
-    <input type="number" step="1" min="0" value="${M[k]||0}" oninput="setCoF('${k}',this.value)" style="width:100%" placeholder="${ph||''}"></div>`;
+    <input type="number" step="1" min="0" value="${M[k]!=null?M[k]:''}" oninput="setCoF('${k}',this.value)" style="width:100%" placeholder="${ph||''}"></div>`;
   return `<div class="card">
     <h2>④ 회사별 지불능력 — 사측 근거</h2>
     <div class="hint">임금협상에서 노동측은 <b>생계비(물가)</b>를, 사측은 <b>지불능력(재무)</b>을 근거로 듭니다.
       위 ②③이 앞의 절반이라면 여기가 뒤의 절반입니다. 상장사는 DART 사업보고서에서 자동으로 채워집니다.</div>
     ${coPicker('co')}
     ${sel==='manual'?`<div class="row" style="margin-bottom:12px">
-      ${mi('headcount','직원 수 (명)')}${mi('avg_pay','1인평균 연봉 (원)')}
-      ${mi('revenue','연 매출액 (원)')}${mi('op','연 영업이익 (원)')}
-      ${mi('prod','1인당 매출 증가율 (%)')}${mi('opG','영업이익 증가율 (%)')}
+      ${mi('headcount','직원 수 (명)','0')}${mi('avg_pay','1인평균 연봉 (원)','0')}
+      ${mi('revenue','연 매출액 (원)','0')}${mi('op','연 영업이익 (원)','0')}
+      ${mi('prod','1인당 매출 증가율 (%)','0')}${mi('opG','영업이익 증가율 (%)','0')}
       </div><div class="lab" style="margin-bottom:10px">사업보고서·감사보고서의 '직원 등의 현황'과 손익계산서에서 옮겨 적으세요.</div>
       <div class="srcbox"><dl style="margin:0">
         <dt>비상장사·중소기업은 어디서 보나</dt>
@@ -1878,7 +1881,7 @@ function formulaTable(c,D_,picked){
         <div class="big mono ${sc(S.wage-lo)}" style="font-size:1.2rem">${fmt(S.wage)}%</div>
         <div class="lab">최저 산식(①~⑥ 중 ${fmt(lo)}%) 대비 ${fmt(S.wage-lo)}%p</div></div>
       <div class="box"><div class="lab">타결 사례 입력 (%) — 비교용</div>
-        <input type="number" step="0.1" value="${S.caseRate??0}" oninput="setF('caseRate',this.value)" style="width:80px">
+        <input type="number" step="0.1" value="${S.caseRate||''}" placeholder="0" oninput="setF('caseRate',this.value)" style="width:80px">
         <div class="lab" style="margin-top:4px">뉴스·공시에서 확인한 실제 타결률을 넣어 위 산식들과 대조하세요.</div></div>
     </div>
     <div class="note">📖 <b>③ 생산성 연동</b>이 국제적으로 가장 널리 인용되는 기준입니다 —
@@ -2793,7 +2796,11 @@ function sideNav(){
 $('app').addEventListener('input',e=>{
   const t=e.target;
   // 문자열이 아니라 수로 비교 — '2.0' 도 '2' 와 같다고 봐야 '2.05' 를 칠 수 있다
-  if(t.type==='number'&&t.value!==''&&parseFloat(t.value)===parseFloat(t.getAttribute('value')))e.stopPropagation();
+  if(t.type!=='number')return;
+  const was=t.getAttribute('value');
+  if(t.value!==''&&parseFloat(t.value)===parseFloat(was))e.stopPropagation();
+  /* 빈칸(자리표시 0)에 '0' 이나 '.' 부터 치는 중이면 값은 그대로 0 이다. 다시 그리면 친 글자가 지워진다. */
+  else if(was===''&&t.placeholder==='0'&&(t.validity.badInput||parseFloat(t.value)===0))e.stopPropagation();
 },true);
 
 /* render() 직전에 기억해 둔 입력칸으로 포커스와 커서를 되돌린다. */
@@ -2839,8 +2846,8 @@ function render(){
   const rows=c.items.map(i=>{
     const share=c.tw>0?(c.amtMode?(S.amounts[i.key]||0):(S.weights[i.key]||0))/c.tw*100:0;
     const inp=c.amtMode
-      ? `<input class="amt" type="number" step="1000" min="0" value="${S.amounts[i.key]||0}" oninput="setA('${esc(i.key)}',this.value)">`
-      : `<input type="number" step="1" min="0" value="${S.weights[i.key]||0}" oninput="setW('${esc(i.key)}',this.value)">`;
+      ? `<input class="amt" type="number" step="1000" min="0" value="${S.amounts[i.key]||''}" placeholder="0" oninput="setA('${esc(i.key)}',this.value)">`
+      : `<input type="number" step="1" min="0" value="${S.weights[i.key]||''}" placeholder="0" oninput="setW('${esc(i.key)}',this.value)">`;
     return `<tr>
       <td>${esc(i.name)}</td>
       <td class="mono ${sc(i.yoy_pct)}">${i.yoy_pct>=0?'+':''}${fmt(i.yoy_pct)}%</td>
