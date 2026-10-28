@@ -2787,6 +2787,15 @@ function sideNav(){
   psWatch();
 }
 
+/* 숫자 칸에 '2.' 까지 치면 브라우저는 값을 '2' 로만 넘긴다. 그대로 다시 그리면 점이 사라져
+   '2.5' 가 '25' 가 된다. 값이 화면에 그려 둔 값과 같으면 다시 그리지 않는다 — 캡처 단계에서
+   멈추면 칸에 달린 oninput 까지 가지 않고, 칸에는 친 글자가 그대로 남는다. */
+$('app').addEventListener('input',e=>{
+  const t=e.target;
+  // 문자열이 아니라 수로 비교 — '2.0' 도 '2' 와 같다고 봐야 '2.05' 를 칠 수 있다
+  if(t.type==='number'&&t.value!==''&&parseFloat(t.value)===parseFloat(t.getAttribute('value')))e.stopPropagation();
+},true);
+
 /* render() 직전에 기억해 둔 입력칸으로 포커스와 커서를 되돌린다. */
 function restoreFocus(k){
   if(!k)return;
@@ -2794,7 +2803,11 @@ function restoreFocus(k){
   for(let i=k.p.length-1;i>=0&&n;i--)n=n.children[k.p[i]];
   if(!n||n.tagName!=='INPUT')return;
   n.focus();
-  if(k.s!=null){try{n.setSelectionRange(k.s,k.e)}catch(_){}}
+  if(k.s!=null){try{n.setSelectionRange(k.s,k.e)}catch(_){}return}
+  /* number 칸은 커서 위치를 읽을 수도 놓을 수도 없다. 새로 그린 칸에 focus() 만 하면
+     커서가 맨 앞에 서서 '123' 이 '321' 로 들어간다. 잠깐 text 로 바꿔 끝에 놓고 되돌린다. */
+  if(n.type==='number'){const L=n.value.length;
+    try{n.type='text';n.setSelectionRange(L,L)}catch(_){}finally{n.type='number'}}
 }
 
 /* ⑩ 목록은 66KB 다. 공공기관 노동자만 쓰는 카드인데 모두가 받으면 첫 로드가 절반 늘어난다.

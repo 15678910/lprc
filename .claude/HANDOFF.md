@@ -18,6 +18,13 @@
 | 푸시가 "could not read Username" 로 실패하면 | `git -c credential.helper= -c "credential.helper=!gh auth git-credential" push` (설정 변경 없음) | — |
 | **다른 저장소** | 시민법정(hybrid-jury-system) 함수 **Node.js 20 → 22 를 2026-10-30 전에**(그 저장소 SESSION_HANDOFF.md) · 그 저장소 GitHub 시크릿 `TELEGRAM_BOT_TOKEN` 갱신(선택) · fundamentalrights `.claude/HANDOFF-시민사회기본법.md` 미커밋 · **easylaw(모두의 법)** 아래 절 참고 | 각 저장소 |
 
+## 2026-10-29 — 측정기 숫자 칸: 거꾸로 입력·소수점 사라짐 고침
+
+- **증상(사용자 신고)**: ④ 직원 수·⑤ 연봉 칸에 '123' 을 치면 '321' 로 들어감. 확인해 보니 '2.5' 도 '25' 가 됨.
+- **원인**: `render()` 가 입력마다 `#app` 을 통째로 다시 그린 뒤 `restoreFocus()` 로 칸에 focus 만 돌려줌. `type="number"` 는 커서 위치를 읽을 수도 놓을 수도 없어 커서가 맨 앞에 섬. 또 '2.' 까지 치면 브라우저가 값을 '2' 로만 넘겨, 다시 그리면 점이 사라짐.
+- **고침**: ① `restoreFocus` 에서 number 칸은 잠깐 `type='text'` 로 바꿔 커서를 끝에 놓고 되돌림. ② `#app` 에 캡처 단계 `input` 리스너 — 값(수로 비교)이 화면에 그려 둔 값과 같으면 다시 그리지 않음.
+- **검증**: 로컬에서 한 글자씩 입력 — 4567→4567, 1200→1200, 2.05→2.05(S.gap.rateBase 도 2.05).
+
 ## 2026-10-29 — 측정기 ⑥ 경로 탭: 민감도 순위 · 인상률×목표 격자표
 
 - **무엇**: `measure.html` `pathCard()` 의 "⏳ 몇 년이 걸리나" 다음에 두 블록. 🎯 입력 5개(대상·기준 인상률 ±0.5%p, 목표 ±5%p, 대상·기준 1인평균 ±5%)를 하나씩 흔든 연수 변화폭 순위(막대), 🧮 대상 인상률(±1%p) × 목표(±10%p) 조합별 도달 연수.
