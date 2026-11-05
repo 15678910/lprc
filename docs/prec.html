@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>판례 찾기 — 모두를 위한 단체교섭</title>
+<meta name="description" content="일터에서 겪은 상황을 적으면 비슷한 쟁점의 공개 판례를 찾아 보여 줍니다. 입력한 내용은 브라우저 밖으로 나가지 않습니다. 출처: 법제처 국가법령정보센터.">
+<link rel="canonical" href="https://xn--9d0b29hf1nhhl.kr/prec.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="모두를 위한 단체교섭">
+<meta property="og:locale" content="ko_KR">
+<meta property="og:title" content="판례 찾기 — 모두를 위한 단체교섭">
+<meta property="og:description" content="일터에서 겪은 상황을 적으면 비슷한 쟁점의 공개 판례를 찾아 보여 줍니다. 입력한 내용은 브라우저 밖으로 나가지 않습니다.">
+<meta property="og:url" content="https://xn--9d0b29hf1nhhl.kr/prec.html">
+<style>
+  :root{--bg:#0b1017;--card:#131a24;--line:#20293a;--tx:#e6edf3;--mut:#8b98a9;
+        --grn:#3fb950;--red:#f85149;--amb:#d29922;--acc:#58a6ff;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--tx);
+       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Malgun Gothic",sans-serif;
+       font-size:17px;line-height:1.68;word-break:keep-all;overflow-wrap:break-word}
+  .wrap{max-width:1000px;margin:0 auto;padding:24px 16px 70px}
+  header{border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:22px}
+  h1{font-size:1.62rem;margin:0 0 6px}
+  .sub{color:var(--mut);font-size:1rem}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:16px}
+  .card h2{font-size:1.24rem;margin:0 0 10px}
+  a{color:var(--acc)}
+  .note{color:var(--mut);font-size:.94rem;line-height:1.72}
+  .warn{background:rgba(210,153,34,.09);border:1px solid rgba(210,153,34,.4);
+        border-radius:8px;padding:10px 13px;margin:12px 0;font-size:.97rem}
+  .warn b{color:var(--amb)}
+  textarea{width:100%;min-height:110px;padding:12px;background:#0d1219;color:var(--tx);
+        border:1px solid var(--line);border-radius:8px;font:inherit;resize:vertical}
+  textarea:focus{outline:2px solid var(--acc);border-color:var(--acc)}
+  .row{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:8px}
+  .btn{display:inline-block;background:#0d1219;color:var(--tx);border:1px solid var(--line);border-radius:8px;
+       padding:7px 14px;font:inherit;font-size:.95rem;cursor:pointer;text-decoration:none}
+  .btn:hover{border-color:var(--acc)}
+  .btn.go{background:rgba(88,166,255,.16);border-color:var(--acc);font-weight:600}
+  .btn:disabled{opacity:.5;cursor:wait}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:4px 0}
+  .lbl{color:var(--mut);font-size:.95rem}
+  .chip{display:inline-flex;gap:6px;align-items:center;background:#0d1219;border:1px solid var(--line);
+        border-radius:20px;padding:4px 12px;font:inherit;font-size:.93rem;color:var(--tx);max-width:100%}
+  button.chip{cursor:pointer}
+  .chip:hover{border-color:var(--acc)}
+  .chip .x{background:none;border:0;color:var(--mut);font-size:1.1rem;line-height:1;cursor:pointer;padding:0 2px}
+  .addb{color:var(--acc);border-style:dashed}
+  .pick{margin:10px 0}
+  .meta{color:var(--mut);font-size:.94rem;margin:12px 0 6px}
+  .flt{display:flex;gap:18px;flex-wrap:wrap;margin:6px 0 12px;font-size:.97rem}
+  .flt label{cursor:pointer}
+  .rec{border-top:1px solid var(--line);padding:14px 0}
+  .rt{font-weight:600;overflow-wrap:anywhere}
+  .rm{color:var(--grn);font-size:.92rem;margin:3px 0}
+  .rb{color:#c4ced9;font-size:.96rem;margin:6px 0;overflow-wrap:anywhere}
+  .ra{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .rfull{background:#0d1219;border:1px solid var(--line);border-radius:8px;padding:10px 13px;margin-top:10px;
+         font-size:.95rem;white-space:pre-wrap;overflow-wrap:anywhere}
+  .rk{color:var(--mut);font-size:.9rem;margin:4px 0}
+  .empty{color:var(--mut)}
+  .err{border:1px solid rgba(248,81,73,.5);background:rgba(248,81,73,.08);border-radius:8px;padding:10px 13px;margin-top:12px}
+</style>
+<link rel="stylesheet" href="./site.css?v=a202609291630">
+</head>
+<body>
+<div class="topbar noprint" id="topbar" role="banner"><div class="tb-in">
+  <a class="brand" href="./"><i>⚖</i>모두를 위한 단체교섭</a>
+  <button class="burger" type="button" aria-label="메뉴 열기" aria-expanded="false" aria-controls="sitemenu">☰</button>
+  <nav class="menu" id="sitemenu" aria-label="사이트 메뉴">
+    <div class="grp"><a href="./guide.html">소개</a><button class="caret" type="button" aria-label="소개 하위 메뉴" aria-expanded="false">▾</button><div class="sub"><a href="./about.html">출처 · 면책</a></div></div>
+    <a href="./measure.html">측정기</a>
+    <div class="grp"><a href="./labor.html" class="on">원청교섭 가이드</a><button class="caret" type="button" aria-label="원청교섭 가이드 하위 메뉴" aria-expanded="false">▾</button><div class="sub"><a href="./strategy.html">전략과 대안</a><a href="./prec.html" class="on" aria-current="page">판례 찾기</a></div></div>
+    <a href="./news.html">노동뉴스</a>
+    <a href="./ilo.html">현장과 ILO 기준</a>
+    <a href="./future.html">AI 시대의 노동</a>
+    <form class="search" role="search" onsubmit="return false"><input type="search" placeholder="사이트 검색" aria-label="사이트 검색" autocomplete="off"><div class="results" hidden></div></form>
+  </nav>
+</div></div><!-- /topbar -->
+<div class="wrap">
+<header>
+  <h1>판례 찾기</h1>
+  <div class="sub">일터에서 겪은 상황을 적으면, 비슷한 쟁점을 다룬 공개 판례를 찾아 보여 줍니다. 결론을 예측하거나 유불리를 판단하지 않습니다.</div>
+</header>
+
+<form class="card" id="f" action="#" onsubmit="return false">
+  <h2><label for="q">어떤 상황인가요?</label></h2>
+  <textarea id="q" maxlength="5000" placeholder="예: 수습 두 달째인데 내일부터 나오지 말라고 했습니다" autocomplete="off" spellcheck="false"></textarea>
+  <div class="row">
+    <span class="note">입력한 내용은 이 브라우저 밖으로 나가지 않습니다. 저장하지도 않습니다.</span>
+    <button class="btn go" id="go" type="submit">판례 찾기</button>
+  </div>
+  <div class="err" id="err" role="alert" hidden>자료를 불러오지 못했습니다. 입력한 내용은 그대로 있습니다. <button class="btn" id="retry" type="button">다시 시도</button></div>
+</form>
+
+<div id="out" hidden>
+  <div class="card">
+    <div class="chips" id="chips"></div>
+    <div class="chips pick" id="pick" hidden></div>
+    <div class="meta" id="meta"></div>
+    <div class="flt">
+      <label><input type="checkbox" id="fc"> 대법원만</label>
+      <label><input type="checkbox" id="fy"> 최근 10년</label>
+    </div>
+    <div class="meta" id="count" aria-live="polite"></div>
+    <div id="list"></div>
+    <div class="row"><button class="btn" id="more" type="button" hidden>20건 더 보기</button></div>
+  </div>
+</div>
+
+<div class="warn"><b>⚠ 읽기 전에</b><br>
+  비슷한 판례이지 이 사건의 결론이 아닙니다. 공개된 판례만 있고, 뒤집힌 판례인지는 확인하지 않습니다. 실제 판단은 공인노무사·변호사에게 물어 주세요.
+</div>
+
+<div class="note">
+  <p>쟁점은 입력에서 띄어쓰기를 없애고 글자로만 맞춰 찾으므로, 엉뚱한 쟁점이 잡힐 수 있습니다. 그럴 때는 쟁점 칩의 ×로 빼거나 + 로 더해 고칠 수 있습니다.
+     결과는 쟁점 일치, 입력 낱말 일치, 대법원, 최신 순으로 늘어놓았을 뿐 점수나 승소 가능성을 뜻하지 않습니다.</p>
+  <p>출처: 법제처 국가법령정보센터(공유서비스). 요지는 판례 원문의 앞부분이며, 산재·노동위원회 결정은 아직 담지 못했습니다. 원문은 [원문 보기]로 확인하세요.</p>
+</div>
+</div>
+<script src="./prec-search.js?v=a202611051"></script>
+<script src="./prec-ui.js?v=a202611051"></script>
+<script src="./sidenav.js?v=a202609291630" defer></script>
+<script src="./site.js?v=a202609291630" defer></script>
+</body>
+</html>
