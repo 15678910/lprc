@@ -36,7 +36,7 @@
   }
 
   /* ── 검색 ─────────────────────────────── */
-  var PAGES = [['guide.html','소개'],['labor.html','원청교섭 가이드'],['strategy.html','전략과 대안'],
+  var PAGES = [['guide.html','소개'],['labor.html','원청교섭 가이드'],['strategy.html','전략과 대안'],['prec.html','판례 찾기'],
                ['ilo.html','현장과 ILO 기준'],['news.html','노동뉴스'],['future.html','AI 시대의 노동'],['about.html','출처 · 면책']];
   var input = bar && bar.querySelector('.search input');
   var box = bar && bar.querySelector('.search .results');

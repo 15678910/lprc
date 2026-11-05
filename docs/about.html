@@ -56,7 +56,7 @@
     .note,th{color:#444} a{color:#000}
   }
 </style>
-<link rel="stylesheet" href="./site.css?v=a202609291630">
+<link rel="stylesheet" href="./site.css?v=a202611052">
 </head>
 <body>
 <div class="topbar noprint" id="topbar" role="banner"><div class="tb-in">
@@ -65,7 +65,7 @@
   <nav class="menu" id="sitemenu" aria-label="사이트 메뉴">
     <div class="grp"><a href="./guide.html" class="on">소개</a><button class="caret" type="button" aria-label="소개 하위 메뉴" aria-expanded="false">▾</button><div class="sub"><a href="./about.html" class="on" aria-current="page">출처 · 면책</a></div></div>
     <a href="./measure.html">측정기</a>
-    <div class="grp"><a href="./labor.html">원청교섭 가이드</a><button class="caret" type="button" aria-label="원청교섭 가이드 하위 메뉴" aria-expanded="false">▾</button><div class="sub"><a href="./strategy.html">전략과 대안</a></div></div>
+    <div class="grp"><a href="./labor.html">원청교섭 가이드</a><button class="caret" type="button" aria-label="원청교섭 가이드 하위 메뉴" aria-expanded="false">▾</button><div class="sub"><a href="./strategy.html">전략과 대안</a><a href="./prec.html">판례 찾기</a></div></div>
     <a href="./news.html">노동뉴스</a>
     <a href="./ilo.html">현장과 ILO 기준</a>
     <a href="./future.html">AI 시대의 노동</a>
@@ -125,6 +125,7 @@
       <tr><td>월 소비액·구독료·대출이자</td><td>브라우저 localStorage</td><td class="ok">전송 안 함</td></tr>
       <tr><td>카드 이용내역 CSV</td><td><b>저장하지 않음</b> — 브라우저 메모리에서 분류 후 집계 금액만 남김</td><td class="ok">전송 안 함</td></tr>
       <tr><td>회사·임금 입력값</td><td>브라우저 localStorage</td><td class="ok">전송 안 함</td></tr>
+      <tr><td>판례 찾기에 입력한 상황</td><td><b>저장하지 않음</b></td><td class="ok">전송 안 함</td></tr>
     </tbody>
   </table>
   <p style="margin-top:10px">모든 계산은 <b>브라우저 안에서</b> 이뤄집니다.
@@ -182,6 +183,7 @@
       <tr><td><a class="ext" href="https://kosis.kr/statHtml/statHtml.do?orgId=301&amp;tblId=DT_501Y006" target="_blank" rel="noopener noreferrer"><b>한국은행</b> 기업경영분석(KOSIS)</a></td><td>④⑬ 업종·규모별 매출액영업이익률(평균·분위)·부가가치율·노동소득분배율 → 인건비÷매출액 추정. 회사 숫자가 없을 때의 기준선</td><td>KOSIS 키</td></tr>
       <tr><td><a class="ext" href="https://www.labortoday.co.kr" target="_blank" rel="noopener noreferrer"><b>매일노동뉴스</b></a> · <a class="ext" href="https://www.lawtimes.co.kr" target="_blank" rel="noopener noreferrer"><b>법률신문</b></a> · <a class="ext" href="https://worknworld.kctu.org" target="_blank" rel="noopener noreferrer"><b>노동과세계</b></a>(민주노총 기관지) · <a class="ext" href="http://www.workersnews.co.kr" target="_blank" rel="noopener noreferrer"><b>노동자신문</b></a> RSS</td><td>📰 노동뉴스 — 기사 제목·링크·날짜만(본문·사진 없음). 법률신문은 노동 관련어가 있는 기사만. 갈래는 낱말 규칙</td><td>불필요</td></tr>
       <tr><td><a class="ext" href="https://normlex.ilo.org" target="_blank" rel="noopener noreferrer"><b>ILO NORMLEX</b></a> · 국가법령정보센터</td><td>🌐 현장과 ILO 기준 — 협약·권고 원문과 한국 비준 현황, 관련 국내 조문. 페이지 작성 시점(2026-09-26) 기준, 자동 갱신 안 함</td><td>불필요</td></tr>
+      <tr><td><a class="ext" href="https://www.law.go.kr" target="_blank" rel="noopener noreferrer"><b>법제처 국가법령정보센터</b></a></td><td>🔎 판례 찾기 — 노동 관련 판례의 사건 정보와 판결 내용. 수록 건수와 기준일은 판례 찾기 화면에 표시</td><td>필요</td></tr>
     </tbody>
   </table>
   <div class="note">
@@ -245,6 +247,7 @@
       <tr><td>거시 통계(물가·통화량·임금)</td><td>하루 1회</td><td>원 통계가 월간·분기라 실제 변화는 드묾</td></tr>
       <tr><td>기업 공시(재무·직원현황)</td><td>하루 1회 조회</td><td>원 자료는 <b>연 1회</b> 사업보고서</td></tr>
       <tr><td>일부 국내 지표</td><td>부정기</td><td>아래 주의 참조</td></tr>
+      <tr><td>판례(판례 찾기)</td><td>주 1회</td><td>수록 건수와 기준일은 판례 찾기 화면에 표시</td></tr>
     </tbody>
   </table>
   <div class="warn-box" style="margin-top:12px">
@@ -336,7 +339,7 @@
 </div>
 
 </div>
-<script src="./sidenav.js?v=a202609291630" defer></script>
-<script src="./site.js?v=a202609291630" defer></script>
+<script src="./sidenav.js?v=a202611052" defer></script>
+<script src="./site.js?v=a202611052" defer></script>
 </body>
 </html>

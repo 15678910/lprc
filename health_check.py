@@ -25,7 +25,7 @@ from datetime import datetime, timedelta, timezone
 HOST = "xn--9d0b29hf1nhhl.kr"          # 단체교섭.kr
 BASE = f"https://{HOST}/"
 PAGES = ["", "guide.html", "measure.html", "labor.html", "news.html", "ilo.html",
-         "strategy.html", "future.html", "about.html"]
+         "strategy.html", "prec.html", "future.html", "about.html"]
 # (파일, 시각 필드, 허용 일수) — 매일 도는 수집은 하루 빠져도 경보가 울리지 않게 3일
 FRESH = [("news.json", "generated_at", 3), ("law_watch.json", "checked_at", 3),
          ("money_macro.json", "generated_at", 3), ("public_sector.json", "generated", 8),
