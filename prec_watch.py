@@ -302,7 +302,7 @@ def main(argv=None):
                    if str(i) in details and details[str(i)].get("tv") != tv]
         print("전체 %d건, 상세 조회 대상 %d건, 본문 표지 다시 확인 대상 %d건" % (len(items), len(todo), len(recheck)),
               flush=True)
-        failed, done, recheck_failed = set(), 0, 0
+        failed, done, recheck_failed, no_body = set(), 0, 0, 0
         recheck_set = set(recheck)
         queue = todo + recheck
         for pid in queue:
@@ -314,7 +314,11 @@ def main(argv=None):
                 nd = {k: d.get(k, "") for k in ("판시사항", "판결요지", "참조조문")}
                 nd["tags"] = body_tags(" ".join(str(d.get(k) or "") for k in ("판례내용", "판시사항", "판결요지")),
                                        phrases)
-                nd["tv"] = tv
+                if str(d.get("판례내용") or "").strip():
+                    nd["tv"] = tv
+                else:  # 본문이 없으면 확인을 마친 것이 아니다 — tv 를 비워 다음 실행에서 다시 확인한다
+                    nd["tv"] = ""
+                    no_body += 1
                 details[str(pid)] = nd
             except law_api.LawAuthError:
                 raise
@@ -332,7 +336,8 @@ def main(argv=None):
                 print("중간 저장 %d/%d" % (done, len(queue)), flush=True)
         failed |= {i for i in items if str(i) not in details}
         n = save(out, oc, items, laws_of, details, failed, old_total, not a.limit, force_meta=True)
-        print("저장 %d건 (상세 실패·미조회 %d건, 다시 확인 실패 %d건)" % (n, len(failed), recheck_failed), flush=True)
+        print("저장 %d건 (상세 실패·미조회 %d건, 다시 확인 실패 %d건, 본문 없음 %d건)" % (n, len(failed), recheck_failed, no_body),
+              flush=True)
         return 0
     except RuntimeError as e:  # LawAuthError 포함
         print("중단: " + law_api.redact(str(e)), file=sys.stderr)

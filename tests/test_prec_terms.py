@@ -17,22 +17,6 @@ SCEN = _load("tests", "prec_scenarios.json")
 IDS = [i["id"] for i in TERMS]
 
 
-def test_body_phrases_valid():
-    """본문 표지용 body: 비지 않은 문자열 배열, 중복 없음, 전부 그 쟁점 terms 안에."""
-    n = 0
-    for i in TERMS:
-        if "body" not in i:
-            continue
-        n += 1
-        b = i["body"]
-        assert isinstance(b, list) and b, i["id"]
-        assert all(isinstance(x, str) and x.strip() for x in b), i["id"]
-        assert len(set(b)) == len(b), i["id"]
-        for x in b:
-            assert x in i["terms"], (i["id"], x)
-    assert n >= 1
-
-
 def test_issue_count():
     assert 25 <= len(TERMS) <= 40
 

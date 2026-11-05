@@ -150,3 +150,32 @@ def test_missing_terms_json_exits_1(tmp_path, monkeypatch):
     monkeypatch.setattr(prec_watch, "fetch_json", _fake(calls))
     assert prec_watch.main([]) == 1
     assert calls == [] and not out.exists()
+
+
+def test_new_case_without_body_keeps_empty_tv_and_is_retried(tmp_path, monkeypatch, capsys):
+    out = _setup(tmp_path, monkeypatch)
+    monkeypatch.setattr(prec_watch, "fetch_json", _fake([], body=""))
+    assert prec_watch.main([]) == 0
+    d = _read_d(out)
+    assert d["tv"] == "" and d["issue"] == "쟁점" and d["tags"] == []
+    assert "본문 없음 1건" in capsys.readouterr().out
+    calls = []
+    monkeypatch.setattr(prec_watch, "fetch_json", _fake(calls, body="직장 내 괴롭힘"))
+    assert prec_watch.main([]) == 0
+    assert len(calls) == 1
+    assert _read_d(out)["tv"] != "" and _read_d(out)["tags"] == ["직장 내 괴롭힘"]
+
+
+def test_recheck_without_body_keeps_empty_tv_and_is_retried(tmp_path, monkeypatch, capsys):
+    out = _setup(tmp_path, monkeypatch)
+    monkeypatch.setattr(prec_watch, "fetch_json", _fake([]))
+    assert prec_watch.main([]) == 0
+    monkeypatch.setattr(prec_watch, "TERMS", _terms(tmp_path, ("직장 내 괴롭힘", "그리고")))
+    capsys.readouterr()
+    monkeypatch.setattr(prec_watch, "fetch_json", _fake([], body=""))
+    assert prec_watch.main([]) == 0
+    assert _read_d(out)["tv"] == "" and "본문 없음 1건" in capsys.readouterr().out
+    calls = []
+    monkeypatch.setattr(prec_watch, "fetch_json", _fake(calls))
+    assert prec_watch.main([]) == 0
+    assert len(calls) == 1
