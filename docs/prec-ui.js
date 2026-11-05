@@ -3,6 +3,10 @@
   'use strict';
   var PAGE = 20;
   var NO_GIST = '요지가 없는 판례입니다. 원문을 보세요.';
+  var LOADING_MSG = '판례 자료를 불러오는 중입니다(처음 한 번만).';
+  var EMPTY_MSG = '맞는 판례를 찾지 못했습니다. 여기서 못 찾아도 판례가 없다는 뜻은 아닙니다. 담은 범위는 아래 출처 설명에 있습니다. 쟁점을 더하거나 다른 낱말로 다시 적어 보세요.';
+  var TIMEOUT_MS = 60000;
+  var MAX_INPUT = 5000;
 
   // ---- 순수 로직(DOM 없이 시험 가능) ----
   function shardName(id) {
@@ -32,16 +36,27 @@
   function titleLine(r) {
     return [r.court, r.no].filter(Boolean).join(' ') + ' · ' + (r.date || '') + ' · ' + (r.name || '');
   }
-  // 일치한 낱말 + 그 쟁점의 관련 조문(중복 제거). 최대 max 개.
+  // 일치한 낱말(중복 제거, 최대 max 개). 조문은 lawsLine 으로 따로 보인다.
   function matchedLine(matched, issues, max) {
     var out = [], seen = {};
-    function add(x) { if (x && !seen[x]) { seen[x] = 1; out.push(x); } }
-    (matched || []).forEach(add);
+    (matched || []).forEach(function (x) { if (x && !seen[x]) { seen[x] = 1; out.push(x); } });
+    return out.slice(0, max || 6);
+  }
+  // 일치한 쟁점의 관련 조문(중복 제거, 최대 max 개). 그 판례가 든 조문이 아니라 쟁점 기준이다.
+  function lawsLine(matched, issues, max) {
+    var out = [], seen = {};
     (issues || []).forEach(function (is) {
       var hit = (is.terms || []).some(function (t) { return (matched || []).indexOf(t) !== -1; });
-      if (hit) (is.laws || []).forEach(add);
+      if (hit) (is.laws || []).forEach(function (x) { if (x && !seen[x]) { seen[x] = 1; out.push(x); } });
     });
-    return out.slice(0, max || 6);
+    return out.slice(0, max || 4);
+  }
+  function limitHit(len, max) { return len >= max; }
+  // 제한 시간이 지나면 요청을 끊는 신호. AbortController 가 없으면 제한 없이 동작한다.
+  function makeTimeout(ms, AC, setT, clearT) {
+    var ac = AC ? new AC() : null;
+    var id = setT(function () { if (ac) ac.abort(); }, ms);
+    return { signal: ac ? ac.signal : undefined, done: function () { clearT(id); } };
   }
   // 요지에는 없고 판결문 본문에서만 확인된 표현. 없으면 빈 문자열.
   function taggedLine(tagged) {
@@ -51,7 +66,8 @@
   function sinceYearFor(now) { return now.getFullYear() - 10; }
 
   var logic = { shardName: shardName, lawUrl: lawUrl, pickGist: pickGist, preview: preview,
-                titleLine: titleLine, matchedLine: matchedLine, taggedLine: taggedLine,
+                titleLine: titleLine, matchedLine: matchedLine, lawsLine: lawsLine, taggedLine: taggedLine,
+                limitHit: limitHit, makeTimeout: makeTimeout, LOADING_MSG: LOADING_MSG, EMPTY_MSG: EMPTY_MSG, TIMEOUT_MS: TIMEOUT_MS, MAX_INPUT: MAX_INPUT,
                 sinceYearFor: sinceYearFor, NO_GIST: NO_GIST };
   if (typeof module !== 'undefined' && module.exports) { module.exports = logic; return; }
   if (typeof document === 'undefined') return;
@@ -67,8 +83,10 @@
   var data = null, loading = null, shards = {};
   var st = { text: '', selected: [], shown: PAGE, adding: false, searched: false };
 
-  function fetchJson(url) {
-    return fetch(url, { credentials: 'omit', referrerPolicy: 'no-referrer' }).then(function (r) {
+  function fetchJson(url, signal) {
+    var opt = { credentials: 'omit', referrerPolicy: 'no-referrer' };
+    if (signal) opt.signal = signal;
+    return fetch(url, opt).then(function (r) {
       if (!r.ok) throw new Error(String(r.status));
       return r.json();
     });
@@ -76,11 +94,13 @@
   function load() {
     if (data) return Promise.resolve(data);
     if (!loading) {
-      loading = Promise.all([fetchJson('./prec/meta.json'), fetchJson('./prec/index.json'), fetchJson('./prec/terms.json')])
+      var t = makeTimeout(TIMEOUT_MS, typeof AbortController === 'undefined' ? undefined : AbortController, setTimeout, clearTimeout);
+      loading = Promise.all([fetchJson('./prec/meta.json', t.signal), fetchJson('./prec/index.json', t.signal), fetchJson('./prec/terms.json', t.signal)])
         .then(function (a) {
+          t.done();
           data = { meta: a[0], records: Array.isArray(a[1]) ? a[1] : (a[1].records || []), issues: a[2].issues || [] };
           return data;
-        }, function (e) { loading = null; throw e; });
+        }, function (e) { t.done(); loading = null; throw e; });  // 끊긴 요청도 loading 을 비워 다시 시도할 수 있게
     }
     return loading;
   }
@@ -92,6 +112,7 @@
   }
 
   function showError(on) { $('err').hidden = !on; }
+  function setStatus(msg) { $('status').textContent = msg || ''; }
 
   function search() {
     var text = $('q').value;
@@ -99,12 +120,16 @@
     st.shown = PAGE;
     $('go').disabled = true;
     showError(false);
+    if (!data) setStatus(LOADING_MSG);
     load().then(function (d) {
       st.selected = PrecSearch.detectIssues(text, d.issues);
       st.searched = true;
       st.adding = false;
       render();
-    }, function () { showError(true); }).then(function () { $('go').disabled = false; });
+    }).catch(function () { showError(true); }).then(function () {  // 성공·실패와 관계없이 마지막에 버튼을 푼다
+      $('go').disabled = false;
+      setStatus('');
+    });
   }
 
   function render() {
@@ -119,7 +144,7 @@
       issues: st.selected, text: st.text,
       courtOnly: $('fc').checked, sinceYear: $('fy').checked ? sinceYearFor(new Date()) : 0
     });
-    renderList(res);
+    renderList(res, 0);
   }
 
   function renderChips() {
@@ -159,15 +184,16 @@
     });
   }
 
-  function renderList(res) {
+  // from 이 0 이면 목록을 새로 그리고, 아니면 from 번째부터 새 카드만 덧붙인다(펼친 요지가 접히지 않게).
+  function renderList(res, from) {
     var list = $('list');
-    list.textContent = '';
+    if (!from) list.textContent = '';
     $('count').textContent = res.length ? ('찾은 판례 ' + res.length.toLocaleString('ko-KR') + '건 중 ' + Math.min(st.shown, res.length).toLocaleString('ko-KR') + '건 표시') : '';
-    if (!res.length) list.appendChild(el('p', 'empty', '맞는 판례를 찾지 못했습니다. 쟁점을 더하거나 다른 낱말로 다시 적어 보세요.'));
-    res.slice(0, st.shown).forEach(function (x) { list.appendChild(card(x)); });
+    if (!res.length) list.appendChild(el('p', 'empty', EMPTY_MSG));
+    res.slice(from || 0, st.shown).forEach(function (x) { list.appendChild(card(x)); });
     var more = $('more');
     more.hidden = res.length <= st.shown;
-    more.onclick = function () { st.shown += PAGE; renderList(res); };
+    more.onclick = function () { var f = st.shown; st.shown += PAGE; renderList(res, f); };
   }
 
   function card(x) {
@@ -176,6 +202,8 @@
     c.appendChild(el('div', 'rt', titleLine(r)));
     var ml = matchedLine(x.matched, st.selected, 6);
     if (ml.length) c.appendChild(el('div', 'rm', '일치: ' + ml.join(' · ')));
+    var ll = lawsLine(x.matched, st.selected, 4);
+    if (ll.length) c.appendChild(el('div', 'rm', '관련 조문(쟁점 기준): ' + ll.join(' · ')));
     var body = el('div', 'rb', preview(r, 140));
     c.appendChild(body);
     var tl = taggedLine(x.tagged);
@@ -221,6 +249,7 @@
   function init() {
     $('f').addEventListener('submit', function (e) { e.preventDefault(); search(); });
     $('retry').addEventListener('click', search);
+    $('q').addEventListener('input', function () { $('lim').hidden = !limitHit($('q').value.length, MAX_INPUT); });
     $('fc').addEventListener('change', function () { st.shown = PAGE; render(); });
     $('fy').addEventListener('change', function () { st.shown = PAGE; render(); });
   }
