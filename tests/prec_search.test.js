@@ -126,3 +126,27 @@ test('긴 본문에서도 빠르다', () => {
   matchPhrase('해고 '.repeat(100000) + '끝', '해고 통보');
   assert.ok(Date.now() - t0 < 1000);
 });
+
+test('낱말 하나만 입력해도 쟁점을 잡는다(허용 오차 없음)', () => {
+  const terms = JSON.parse(fs.readFileSync(path.join(__dirname, '../docs/prec/terms.json'), 'utf8')).issues;
+  const kw = JSON.parse(fs.readFileSync(path.join(__dirname, 'prec_keywords.json'), 'utf8'));
+  assert.ok(kw.length >= 50, `낱말 ${kw.length}건`);
+  const bad = [];
+  for (const k of kw) {
+    const got = ids(detectIssues(k.word, terms));
+    const miss = k.expect.filter((e) => !got.includes(e));
+    if (miss.length) bad.push(`${k.word} | 기대 ${k.expect} | 실제 ${got}`);
+  }
+  assert.equal(bad.length, 0, '쟁점을 못 잡은 낱말:\n' + bad.join('\n'));
+});
+
+test('exact: 입력 전체가 같을 때만 잡는다', () => {
+  const X = [{ id: 'transfer', name: 't', field: [], terms: [], exact: ['전보'] }, { id: 'probation', name: 'p', field: [], terms: [], exact: ['수습'] }, { id: 'noexact', name: 'n', field: ['해고'], terms: [] }];
+  const d = (t) => ids(detectIssues(t, X));
+  assert.deepEqual(d('전보'), ['transfer']);
+  assert.deepEqual(d('전보다'), []);
+  assert.deepEqual(d('수습?'), ['probation']);
+  assert.deepEqual(d('  수습 … '), ['probation']);
+  assert.deepEqual(d('수습하기'), []);
+  assert.deepEqual(d('해고'), ['noexact']);
+});

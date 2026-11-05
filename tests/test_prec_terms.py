@@ -59,3 +59,20 @@ def test_scenarios_use_known_ids():
         if "expect" not in s:
             bad.append((s["text"], "expect 키 없음"))
     assert not bad, bad
+
+
+def test_exact_lists():
+    for i in TERMS:
+        if "exact" in i:
+            ex = i["exact"]
+            assert isinstance(ex, list) and ex, i["id"]
+            assert all(isinstance(x, str) and x.strip() and x == x.strip() for x in ex), i["id"]
+            assert len(set(ex)) == len(ex), i["id"]
+
+
+def test_keywords_use_known_ids():
+    kw = _load("tests", "prec_keywords.json")
+    assert len(kw) >= 50
+    for k in kw:
+        assert k["word"].strip() and k["expect"], k
+        assert all(e in IDS for e in k["expect"]), k

@@ -41,12 +41,25 @@
     return matchPieces(norm(text), ps);
   }
 
+  // 입력 전체에서 앞뒤 공백과 끝의 문장부호(. , ! ? ~ …)를 뺀 모양. exact 비교용.
+  function exactForm(t) {
+    var a = 0, b = t.length;
+    while (a < b && isSpace(t.charCodeAt(a))) a++;
+    while (b > a && (isSpace(t.charCodeAt(b - 1)) || '.,!?~…'.indexOf(t.charAt(b - 1)) !== -1)) b--;
+    return t.substring(a, b);
+  }
+
   // 입력에서 쟁점을 잡는다: 쟁점의 일상어(field)·법률 용어(terms) 중 하나가 일치하면 그 쟁점.
   function detectIssues(text, issues) {
     var t = norm(String(text || '').slice(0, MAX_INPUT));
     var out = [];
     if (!t) return out;
+    var whole = exactForm(t);
     for (var i = 0; i < issues.length; i++) {
+      var ex = issues[i].exact || [];
+      var hit = false;
+      for (var e = 0; e < ex.length; e++) { if (whole && whole === norm(ex[e])) { hit = true; break; } }
+      if (hit) { out.push(issues[i]); continue; }
       var list = (issues[i].field || []).concat(issues[i].terms || []);
       for (var j = 0; j < list.length; j++) {
         var ps = pieces(norm(list[j]));

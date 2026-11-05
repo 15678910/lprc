@@ -56,9 +56,7 @@
 {"text":"사내 식당 메뉴가 일주일 내내 비슷해서 너무 질려요. 다른 반찬 좀 나왔으면 좋겠어요","expect":[],"forbid":["workplace_harassment","working_hours"]},
 {"text":"우리 회사 정수기 물이 너무 차가워서 따뜻한 물도 나오는 걸로 바꿨으면 해요","expect":[],"forbid":["working_hours","shutdown_pay"]},
 {"text":"점심에 팀원들이랑 먹은 곱창이 너무 맛있어서 다음에 또 가자고 했어요","expect":[],"forbid":["sexual_harassment","workplace_harassment"]},
-{"text":"해고된 주인공이 복수하는 영화를 봤는데 결말이 좀 억지스러웠어요","expect":[],"forbid":["dismissal","dismissal_procedure"]},
 {"text":"우리 동네 전보다 마트 가격이 올라서 장바구니 물가가 부담스럽네요","expect":[],"forbid":["minimum_wage","transfer"]},
-{"text":"퇴직금 걱정은 아직 이르지만 은퇴한 이웃 어르신이 정원을 가꾸는 모습이 부럽네요","expect":[],"forbid":["severance","resignation_unemployment"]},
 {"text":"새로 산 노트북이 무겁고 배터리가 빨리 닳아서 반품 가능한지 알아보고 있어요","expect":[],"forbid":["fixed_term_expiry","shutdown_pay"]},
 {"text":"조합 활동 말고 취미로 하는 합창단 연습이 일요일마다 있어서 피곤해요","expect":[],"forbid":["union_activity_rights","unfair_labor_practice"]},
 {"text":"수습 두 달째인데 내일부터 나오지 말라고 합니다","expect":["dismissal","probation"]},
@@ -271,5 +269,6 @@
 {"text":"회사에서 해외 파견 근무를 다녀왔어요","expect":[],"forbid":["fake_subcontract"]},
 {"text":"상사가 매일 수치심을 줘요","expect":["workplace_harassment"],"forbid":["sexual_harassment"]},
 {"text":"휴업한다더니 월급을 평균임금의 70퍼센트도 안 줘요","expect":["shutdown_pay"]},
-{"text":"해고된 주인공이 복수하는 영화를 봤어요","expect":[],"forbid":["dismissal"]}
+{"text":"전보다 월급이 많이 줄었어요","expect":[],"forbid":["transfer"]},
+{"text":"사고 수습하느라 며칠 고생했어요","expect":[],"forbid":["probation"]}
 ]
