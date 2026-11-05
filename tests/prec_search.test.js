@@ -176,3 +176,44 @@ test('exact: 입력 전체가 같을 때만 잡는다', () => {
   assert.deepEqual(d('수습하기'), []);
   assert.deepEqual(d('해고'), ['noexact']);
 });
+
+// ---- 최종 리뷰 수정: I1 정렬, I6 번호 검색 ----
+test('I1: 표지만 있는 판례가 낱말만 맞은 판례보다 앞선다(입력에 흔한 낱말이 있어도)', () => {
+  const W = { id: 21, no: 'w', name: '직장폐쇄 기간 중 임금', court: '서울고등법원', date: '1991.01.01', type: '판결', text: '직장폐쇄 기간 중 임금 지급 의무', laws: [] };
+  const out = rank([W, T1], { issues: [H], text: '직장 내 괴롭힘을 당했어요' });
+  assert.deepEqual(out.map((x) => x.record.id), [11, 21]);
+});
+test('I1: 요지 일치는 여전히 표지보다 앞선다(입력 낱말이 있어도)', () => {
+  const out = rank([T1, T2], { issues: [H], text: '직장 내 괴롭힘을 당했어요' });
+  assert.deepEqual(out.map((x) => x.record.id), [12, 11]);
+});
+const L = [
+  { id: 'dis', name: '해고', field: [], terms: ['부당해고'], laws: ['근로기준법 제23조'] },
+  { id: 'wage', name: '임금', field: [], terms: ['통상임금'], laws: ['근로기준법 제2조', '최저임금법 제5조'] },
+  { id: 'mat', name: '출산', field: [], terms: ['출산휴가'], laws: ['근로기준법 제76조의2', '남녀고용평등과 일ㆍ가정 양립 지원에 관한 법률 제23조의2'] },
+];
+const lid = (t) => detectIssues(t, L).map((x) => x.id);
+test('I6: 사건번호로 찾는다', () => {
+  const rec = { id: 31, no: '2023두54914', name: '부당해고구제', court: '대법원', date: '2024.01.01', text: '', laws: [] };
+  assert.equal(rank([rec], { issues: [], text: '2023두54914' }).length, 1);
+});
+test('I6: 법 이름과 조문이 함께 있으면 그 법의 그 조문', () => {
+  assert.deepEqual(lid('근로기준법 제23조 위반인가요'), ['dis']);
+  assert.deepEqual(lid('최저임금법 제23조'), []);
+  assert.deepEqual(lid('최저임금법 제5조'), ['wage']);
+  assert.deepEqual(lid('근로기준법 제5조'), []);
+});
+test('I6: 조문만 있으면 어떤 법이든 그 조문', () => {
+  assert.deepEqual(lid('제23조가 궁금합니다'), ['dis']);
+  assert.deepEqual(lid('제5조'), ['wage']);
+});
+test('I6: 제23조의2 는 제23조와 다르고, 제2조는 제23조에 걸리지 않는다', () => {
+  assert.deepEqual(lid('제23조의2'), ['mat']);
+  assert.deepEqual(lid('제2조'), ['wage']);
+  assert.deepEqual(lid('제76조의2'), ['mat']);
+  assert.deepEqual(lid('제76조'), []);
+});
+test('I6: 조문이 없는 일반 문장의 감지는 그대로', () => {
+  assert.deepEqual(lid('부당해고 당했어요'), ['dis']);
+  assert.deepEqual(lid('오늘 날씨'), []);
+});

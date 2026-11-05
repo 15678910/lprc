@@ -30,7 +30,7 @@ def _setup(tmp_path, monkeypatch, terms=None):
 
 
 def _fake(calls, fail=False, body="본문 중 직장  내\n괴롭힘 이 인정되었다. " + BODY_SECRET):
-    def fake(url, oc):
+    def fake(url):
         if "lawSearch" in url:
             if "page=1" in url:
                 return {"PrecSearch": {"totalCnt": "1", "prec": [dict(ITEM)]}}
@@ -134,10 +134,10 @@ def test_auth_failure_during_recheck_aborts(tmp_path, monkeypatch):
     monkeypatch.setattr(prec_watch, "TERMS", _terms(tmp_path, ("직장 내 괴롭힘", "그리고")))
     base = _fake([])
 
-    def fake(url, oc):
+    def fake(url):
         if "lawService" in url:
             raise law_api.LawAuthError("인증 실패")
-        return base(url, oc)
+        return base(url)
 
     monkeypatch.setattr(prec_watch, "fetch_json", fake)
     assert prec_watch.main([]) == 1
@@ -179,3 +179,45 @@ def test_recheck_without_body_keeps_empty_tv_and_is_retried(tmp_path, monkeypatc
     monkeypatch.setattr(prec_watch, "fetch_json", _fake(calls))
     assert prec_watch.main([]) == 0
     assert len(calls) == 1
+
+
+# ---- 최종 리뷰 수정 ----
+def test_limit_without_out_is_refused(tmp_path, monkeypatch):
+    out = _setup(tmp_path, monkeypatch)
+    calls = []
+    monkeypatch.setattr(prec_watch, "fetch_json", _fake(calls))
+    with pytest.raises(SystemExit) as e:
+        prec_watch.main(["--limit", "5"])
+    assert e.value.code != 0
+    assert calls == [] and not out.exists()
+
+
+def test_limit_with_out_is_allowed(tmp_path, monkeypatch):
+    _setup(tmp_path, monkeypatch)
+    monkeypatch.setattr(prec_watch, "fetch_json", _fake([]))
+    sample = tmp_path / "sample"
+    assert prec_watch.main(["--limit", "5", "--out", str(sample)]) == 0
+    assert (sample / "meta.json").exists()
+
+
+def test_meta_has_failure_counts(tmp_path, monkeypatch):
+    out = _setup(tmp_path, monkeypatch)
+    monkeypatch.setattr(prec_watch, "fetch_json", _fake([], fail=True))
+    assert prec_watch.main([]) == 0
+    m = json.loads((out / "meta.json").read_text(encoding="utf-8"))
+    assert m["failed"] == 1 and m["recheck_failed"] == 0
+    monkeypatch.setattr(prec_watch, "fetch_json", _fake([]))
+    assert prec_watch.main([]) == 0
+    monkeypatch.setattr(prec_watch, "TERMS", _terms(tmp_path, ("직장 내 괴롭힘", "그리고")))
+    monkeypatch.setattr(prec_watch, "fetch_json", _fake([], fail=True))
+    assert prec_watch.main([]) == 0
+    m = json.loads((out / "meta.json").read_text(encoding="utf-8"))
+    assert m["failed"] == 0 and m["recheck_failed"] == 1
+
+
+def test_thirteen_laws_with_labor_commission_and_no_duplicate_variant():
+    pw = prec_watch
+    assert len(pw.LAWS) == 13
+    assert "노동위원회법" in pw.LAWS and "근로복지기본법" in pw.LAWS
+    for names in pw.VARIANTS.values():
+        assert len(names) == len(set(names))

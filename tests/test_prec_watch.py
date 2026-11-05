@@ -86,7 +86,7 @@ def test_gist_in_index_zero_drops_gist_from_text(monkeypatch):
 
 def test_http_uses_verified_https_only():
     with pytest.raises(RuntimeError):
-        prec_watch.fetch_json("http://www.law.go.kr/x", "k")
+        prec_watch.fetch_json("http://www.law.go.kr/x")
 
 
 def test_fetch_auth_error_not_retried(monkeypatch):
@@ -99,7 +99,7 @@ def test_fetch_auth_error_not_retried(monkeypatch):
     monkeypatch.setattr(prec_watch, "_open", fake)
     monkeypatch.setattr(prec_watch.time, "sleep", lambda s: None)
     with pytest.raises(law_api.LawAuthError):
-        prec_watch.fetch_json("https://www.law.go.kr/DRF/lawSearch.do?OC=k", "k")
+        prec_watch.fetch_json("https://www.law.go.kr/DRF/lawSearch.do?OC=k")
     assert len(calls) == 1
 
 
@@ -108,7 +108,7 @@ def test_main_auth_failure_exits_1_and_preserves_files(tmp_path, monkeypatch, ca
     monkeypatch.setattr(prec_watch, "OUT", str(tmp_path))
     (tmp_path / "meta.json").write_text("OLD", encoding="utf-8")
 
-    def boom(url, oc):
+    def boom(url):
         raise law_api.LawAuthError("실패 OC=secret123")
 
     monkeypatch.setattr(prec_watch, "fetch_json", boom)
@@ -129,7 +129,7 @@ def test_main_end_to_end_with_fake_api(tmp_path, monkeypatch):
     monkeypatch.setattr(prec_watch, "LAWS", ["근로기준법"])
     monkeypatch.setattr(prec_watch, "VARIANTS", {"근로기준법": ["근로기준법"]})
 
-    def fake(url, oc):
+    def fake(url):
         if "lawSearch" in url:
             if "page=1" in url:
                 return {"PrecSearch": {"totalCnt": "1", "prec": [dict(ITEM)]}}
@@ -175,7 +175,7 @@ def test_main_refreshes_meta_even_without_new_cases(tmp_path, monkeypatch):
     monkeypatch.setattr(prec_watch, "OUT", str(tmp_path))
     monkeypatch.setattr(prec_watch, "VARIANTS", {"근로기준법": ["근로기준법"]})
 
-    def fake(url, oc):
+    def fake(url):
         if "lawSearch" in url:
             if "page=1" in url:
                 return {"PrecSearch": {"totalCnt": "1", "prec": [dict(ITEM)]}}

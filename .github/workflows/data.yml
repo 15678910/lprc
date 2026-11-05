@@ -174,11 +174,12 @@ jobs:
           PYTHONIOENCODING: utf-8
           LAW_OC: ${{ secrets.LAW_OC }}
         run: |
+          echo "PREC_RAN=1" >> "$GITHUB_ENV"
           rc=0; timeout 1620 python prec_watch.py || rc=$?
           if [ "$rc" -eq 124 ]; then
             echo "::warning::prec_watch 시간 초과, 저장된 만큼 다음 실행에서 이어 모음"
           elif [ "$rc" -ne 0 ]; then
-            echo "::error::prec_watch 실패"; echo "LAW_KEY_FAILED=1" >> "$GITHUB_ENV"
+            echo "::error::prec_watch 실패 — 위 로그의 오류 이유를 본다"; echo "PREC_FAILED=1" >> "$GITHUB_ENV"
           fi
 
       - name: Commit results
@@ -195,7 +196,10 @@ jobs:
           # 'docs/*.json' 글롭은 하위 폴더를 잡지 않으므로 디렉터리째 넣는다.
           # (그렇게 안 해서 docs/co 가 수동 커밋 이후 자동 갱신되지 않고 있었다.
           #  디렉터리로 넣으면 파일이 사라진 경우의 삭제도 함께 기록된다.)
-          GEN="docs/co docs/ps docs/np docs/prec"
+          GEN="docs/co docs/ps docs/np"
+          # docs/prec 는 판례 단계가 실제로 돈 실행에서만 넣는다. 돌지 않은 실행의 시작 사본으로
+          # 되돌리면, 실행 중에 push 된 사전·자료 커밋이 조용히 지워진다.
+          [ "$PREC_RAN" = "1" ] && GEN="$GEN docs/prec"
           # 폴더가 없을 때 함수가 0이 아닌 값을 돌려주면 bash -e 가 스텝을 끊는다.
           # 마지막에 return 0 을 박아 둔다.
           save() { rm -rf /tmp/collected; mkdir -p /tmp/collected
@@ -220,12 +224,20 @@ jobs:
             git fetch origin master
             git reset --hard origin/master
             restore
+            # 사전(terms.json)은 사람이 고치는 파일이라 병합 대신 원격을 따른다.
+            [ "$PREC_RAN" = "1" ] && { git checkout origin/master -- docs/prec/terms.json || true; }
           done
           echo "3회 모두 실패 — 다음 예약 실행에서 다시 시도된다."
           exit 1
 
       # law_watch·public_servant 가 법제처 키 문제로 실패했으면 여기서 실패시킨다.
       # 다른 수집 결과는 위에서 이미 커밋됐다. 이 단계가 failure() 이슈 단계를 부른다.
+      - name: Fail if cases collection failed
+        if: env.PREC_FAILED == '1'
+        run: |
+          echo "::error::판례 수집 실패 — 작업 로그의 오류 이유를 본다"
+          exit 1
+
       - name: Fail if law key failed
         if: env.LAW_KEY_FAILED == '1'
         run: |

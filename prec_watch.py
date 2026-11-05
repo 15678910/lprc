@@ -16,11 +16,9 @@ import gzip
 import json
 import os
 import re
-import ssl
 import sys
 import time
 import urllib.parse
-import urllib.request
 from datetime import datetime, timezone
 
 import law_api
@@ -38,7 +36,8 @@ MAX_GZ = 2_000_000
 SHRINK_MIN = 0.9        # 새 총수가 옛 총수의 90% 미만이면 쓰기 거부
 UA = {"User-Agent": "Mozilla/5.0 (lprc prec_watch; +https://xn--9d0b29hf1nhhl.kr)"}
 
-# 설계 측정표의 12개 법(산재보험법 제외)과 표기 변형. 변형별 건수는 로그로 남긴다.
+# 수집하는 13개 법: 설계 측정표의 12개 법(산재보험법 제외)에 근로복지기본법을 더했다
+# (첫 수집에서 이미 13건이 들어와 유지하기로 함). 법마다 표기 변형을 두고 변형별 건수는 로그로 남긴다.
 VARIANTS = {
     "근로기준법": ["근로기준법"],
     "노동조합 및 노동관계조정법": ["노동조합 및 노동관계조정법", "노동조합법", "노동쟁의조정법",
@@ -47,7 +46,7 @@ VARIANTS = {
     "최저임금법": ["최저임금법"],
     "근로자퇴직급여 보장법": ["근로자퇴직급여 보장법", "근로자퇴직급여보장법"],
     "남녀고용평등과 일ㆍ가정 양립 지원에 관한 법률": [
-        "남녀고용평등과 일ㆍ가정 양립 지원에 관한 법률", "남녀고용평등법", "남녀고용평등법"],
+        "남녀고용평등과 일ㆍ가정 양립 지원에 관한 법률", "남녀고용평등법"],
     "기간제 및 단시간근로자 보호 등에 관한 법률": [
         "기간제 및 단시간근로자 보호 등에 관한 법률", "기간제및단시간근로자보호등에관한법률"],
     "파견근로자 보호 등에 관한 법률": ["파견근로자 보호 등에 관한 법률", "파견근로자보호등에관한법률"],
@@ -55,6 +54,7 @@ VARIANTS = {
     "임금채권보장법": ["임금채권보장법"],
     "고용보험법": ["고용보험법"],
     "근로복지기본법": ["근로복지기본법"],
+    "노동위원회법": ["노동위원회법"],
 }
 LAWS = list(VARIANTS)
 
@@ -179,7 +179,7 @@ def _open(url):
     return law_api.open_law(url, dict(UA), TIMEOUT)
 
 
-def fetch_json(url, oc):
+def fetch_json(url):
     """https 전용·인증서 검증 켬. 인증 실패는 재시도 없이 LawAuthError."""
     if not url.startswith("https://"):
         raise RuntimeError("https 만 허용한다")
@@ -215,7 +215,7 @@ def list_law(name, oc, limit=None):
     """한 표기로 검색한 전체 목록(참조법령명 JO)."""
     out, page = [], 1
     while True:
-        data = fetch_json(_url("lawSearch.do", oc, JO=name, display=100, page=page), oc)
+        data = fetch_json(_url("lawSearch.do", oc, JO=name, display=100, page=page))
         items = _as_list((data.get("PrecSearch") or {}).get("prec"))
         out.extend(items)
         if len(items) < 100 or (limit and len(out) >= limit):
@@ -238,7 +238,8 @@ def load_existing(out):
     return details, total
 
 
-def save(out, oc, items, laws_of, details, failed, old_total, check_shrink=True, force_meta=False):
+def save(out, oc, items, laws_of, details, failed, old_total, check_shrink=True, force_meta=False,
+         recheck_failed=0):
     records = [to_record(items[i], details.get(str(i)), laws_of[i]) for i in sorted(items)]
     idx, shards = build_outputs(records, failed)
     by_law = {}
@@ -246,7 +247,8 @@ def save(out, oc, items, laws_of, details, failed, old_total, check_shrink=True,
         for lw in r["laws"]:
             by_law[lw] = by_law.get(lw, 0) + 1
     meta = {"generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "total": len(records), "by_law": by_law}
+            "total": len(records), "by_law": by_law,
+            "failed": len(failed), "recheck_failed": recheck_failed}
     files = {os.path.join(out, "index.json"): idx}
     for sh, obj in shards.items():
         files[os.path.join(out, "d", sh + ".json")] = obj
@@ -271,6 +273,8 @@ def main(argv=None):
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--out", default=None)
     a = ap.parse_args(argv)
+    if a.limit and not a.out:  # 몇십 건만 모은 색인으로 실제 docs/prec 를 덮어쓰지 않게 한다
+        ap.error("--limit 은 --out 과 함께만 쓴다(실제 docs/prec 를 덮어쓰지 않도록)")
     out = a.out or OUT
     try:
         oc = law_api.law_oc()
@@ -307,7 +311,7 @@ def main(argv=None):
         queue = todo + recheck
         for pid in queue:
             try:
-                data = fetch_json(_url("lawService.do", oc, ID=pid), oc)
+                data = fetch_json(_url("lawService.do", oc, ID=pid))
                 d = data.get("PrecService") or data
                 if not isinstance(d, dict) or not any(k in d for k in ("판시사항", "판결요지", "참조조문")):
                     raise RuntimeError("상세 응답 형식 이상")
@@ -332,10 +336,11 @@ def main(argv=None):
             done += 1
             if done % SAVE_EVERY == 0:
                 pending = failed | {i for i in todo if str(i) not in details}
-                save(out, oc, items, laws_of, details, pending, old_total, not a.limit)
+                save(out, oc, items, laws_of, details, pending, old_total, not a.limit, recheck_failed=recheck_failed)
                 print("중간 저장 %d/%d" % (done, len(queue)), flush=True)
         failed |= {i for i in items if str(i) not in details}
-        n = save(out, oc, items, laws_of, details, failed, old_total, not a.limit, force_meta=True)
+        n = save(out, oc, items, laws_of, details, failed, old_total, not a.limit, force_meta=True,
+                 recheck_failed=recheck_failed)
         print("저장 %d건 (상세 실패·미조회 %d건, 다시 확인 실패 %d건, 본문 없음 %d건)" % (n, len(failed), recheck_failed, no_body),
               flush=True)
         return 0

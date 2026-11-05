@@ -49,17 +49,48 @@
     return t.substring(a, b);
   }
 
+  // '근로기준법 제23조' → { law: '근로기준법', art: '23' }, '제76조의2' → art '76의2'. 표기가 다르면 null.
+  function parseLaw(s) {
+    var m = /^(.*?)\s*제\s*(\d+)\s*조(?:\s*의\s*(\d+))?\s*$/.exec(norm(s));
+    if (!m) return null;
+    return { law: m[1].replace(/\s+/g, ' ').trim(), art: m[2] + (m[3] ? '의' + m[3] : '') };
+  }
+  // 입력 속 조문 표기들: [{ art, before }]. before 는 그 조문 바로 앞의 글(법 이름 확인용).
+  function articlesIn(t) {
+    var re = /제\s*(\d+)\s*조(?:\s*의\s*(\d+))?/g, out = [], m;
+    while ((m = re.exec(t)) !== null) {
+      out.push({ art: m[1] + (m[2] ? '의' + m[2] : ''), before: t.slice(0, m.index).replace(/\s+$/, '').replace(/\s+/g, ' ') });
+    }
+    return out;
+  }
+  // 법 이름과 조문이 함께 있으면 그 법의 그 조문, 조문만 있으면 어떤 법이든 그 조문. 제23조의2 는 제23조와 다르다.
+  function lawHit(arts, laws) {
+    for (var i = 0; i < (laws || []).length; i++) {
+      var pl = parseLaw(laws[i]);
+      if (!pl) continue;
+      for (var k = 0; k < arts.length; k++) {
+        if (arts[k].art !== pl.art) continue;
+        var b = arts[k].before;
+        var named = b.length >= 2 && /[가-힣]법(률)?$|시행령$|시행규칙$/.test(b.slice(-8));
+        if (!named || b.slice(-pl.law.length) === pl.law) return true;
+      }
+    }
+    return false;
+  }
+
   // 입력에서 쟁점을 잡는다: 쟁점의 일상어(field)·법률 용어(terms) 중 하나가 일치하면 그 쟁점.
   function detectIssues(text, issues) {
     var t = norm(String(text || '').slice(0, MAX_INPUT));
     var out = [];
     if (!t) return out;
     var whole = exactForm(t);
+    var arts = articlesIn(t);
     for (var i = 0; i < issues.length; i++) {
       var ex = issues[i].exact || [];
       var hit = false;
       for (var e = 0; e < ex.length; e++) { if (whole && whole === norm(ex[e])) { hit = true; break; } }
       if (hit) { out.push(issues[i]); continue; }
+      if (arts.length && lawHit(arts, issues[i].laws)) { out.push(issues[i]); continue; }
       var list = (issues[i].field || []).concat(issues[i].terms || []);
       for (var j = 0; j < list.length; j++) {
         var ps = pieces(norm(list[j]));
@@ -82,7 +113,7 @@
   function year(d) { return Number(String(d || '').replace(/\D/g, '').slice(0, 4)) || 0; }
   function dateKey(d) { return Number(String(d || '').replace(/\D/g, '').slice(0, 8)) || 0; }
 
-  // 정렬: 쟁점 일치 → 낱말 일치 → 대법원 → 최신. 점수는 내보내지 않는다.
+  // 정렬: 쟁점 일치 → 본문 표지 → 낱말 일치 → 대법원 → 최신. 점수는 내보내지 않는다.
   function rank(records, q) {
     q = q || {};
     var issueTerms = [];
@@ -98,7 +129,7 @@
       var r = records[i];
       if (q.courtOnly && r.court !== '대법원') continue;
       if (q.sinceYear && year(r.date) < q.sinceYear) continue;
-      var hay = norm((r.name || '') + ' ' + (r.text || ''));
+      var hay = norm((r.name || '') + ' ' + (r.text || '') + ' ' + (r.no || ''));
       var matched = [], issueHits = 0, wordHits = 0, tagHits = 0, tagged = [], j;
       var tags = Array.isArray(r.tags) ? r.tags : [];
       for (j = 0; j < issueTerms.length; j++) {
@@ -112,7 +143,7 @@
       }
       if (!issueHits && !wordHits && !tagHits) continue;
       scored.push({ record: r, matched: matched, tagged: tagged,
-        k: [issueHits, wordHits, tagHits, r.court === '대법원' ? 1 : 0, dateKey(r.date)], n: i });
+        k: [issueHits, tagHits, wordHits, r.court === '대법원' ? 1 : 0, dateKey(r.date)], n: i });
     }
     scored.sort(function (a, b) {
       for (var x = 0; x < 5; x++) if (a.k[x] !== b.k[x]) return b.k[x] - a.k[x];

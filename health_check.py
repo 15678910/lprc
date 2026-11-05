@@ -31,7 +31,21 @@ FRESH = [("news.json", "generated_at", 3), ("law_watch.json", "checked_at", 3),
          ("money_macro.json", "generated_at", 3), ("public_sector.json", "generated", 8),
          ("region.json", "generated_at", 8), ("industry_finance.json", "generated_at", 8),
          ("prec/meta.json", "generated_at", 8)]
+# 판례 찾기 화면이 불러오는 파일 — 사라지면 화면이 항상 '자료를 불러오지 못했습니다' 가 된다
+PREC_FILES = ["prec/index.json", "prec/terms.json"]
+PREC_FAIL_LIMIT = 100   # 상세 실패 + 다시 확인 실패가 이를 넘으면 문제
 KST = timezone(timedelta(hours=9))
+
+
+def prec_fail_problem(meta):
+    """meta.json 의 실패 건수 합이 한도를 넘으면 설명 문장, 아니면 None."""
+    try:
+        n = int(meta.get("failed", 0)) + int(meta.get("recheck_failed", 0))
+    except (TypeError, ValueError):
+        return "prec/meta.json — 실패 건수를 읽지 못함"
+    if n > PREC_FAIL_LIMIT:
+        return f"prec/meta.json — 상세 실패·다시 확인 실패 {n}건 (기준 {PREC_FAIL_LIMIT}건)"
+    return None
 UA = {"User-Agent": "lprc-health-check (+https://github.com/15678910/lprc)"}
 
 
@@ -75,6 +89,21 @@ def main():
             (ok if age <= days else bad).append(msg)
         except Exception as e:
             bad.append(f"{f} — 불러오지 못함 ({e})")
+
+    for f in PREC_FILES:
+        try:
+            st, body = get(f + "?v=" + now.strftime("%H%M%S"))
+            json.loads(body)
+            (ok if st == 200 else bad).append(f"{f} — {st}")
+        except Exception as e:
+            bad.append(f"{f} — 불러오지 못함 ({e})")
+    try:
+        st, body = get("prec/meta.json?v=" + now.strftime("%H%M%S"))
+        msg = prec_fail_problem(json.loads(body))
+        if msg:
+            bad.append(msg)
+    except Exception:
+        pass  # 열리지 않는 경우는 위 신선도 검사가 이미 보고한다
 
     try:
         ctx = ssl.create_default_context()
