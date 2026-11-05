@@ -76,6 +76,17 @@ test('시나리오: 기대 쟁점 90% 이상 감지, 금지 쟁점 0건, 함정 
   assert.ok(traps >= 20, `함정 문장 ${traps}건 (필요 20)`);
 });
 
+test('시나리오: 쟁점 없는 문장(expect 빈 배열, forbid 없음)에 칩이 붙는 비율 10% 이하', () => {
+  const terms = JSON.parse(fs.readFileSync(path.join(__dirname, '../docs/prec/terms.json'), 'utf8')).issues;
+  const sc = JSON.parse(fs.readFileSync(path.join(__dirname, 'prec_scenarios.json'), 'utf8'));
+  const none = sc.filter((s) => (!s.expect || !s.expect.length) && (!s.forbid || !s.forbid.length));
+  const noisy = none.filter((s) => detectIssues(s.text, terms).length > 0);
+  assert.ok(none.length >= 20, `쟁점 없는 문장 ${none.length}건 (필요 20)`);
+  const limit = Math.floor(none.length * 0.1);
+  assert.ok(noisy.length <= limit, `칩이 붙은 쟁점 없는 문장 ${noisy.length}/${none.length} (허용 ${limit})\n` +
+    noisy.map((s) => s.text + ' | ' + ids(detectIssues(s.text, terms))).join('\n'));
+});
+
 const { matchPhrase } = require('../docs/prec-search.js');
 test('어절 경계를 넘는 오탐은 일치하지 않는다', () => {
   assert.equal(matchPhrase('대해 고용', '해고'), false);

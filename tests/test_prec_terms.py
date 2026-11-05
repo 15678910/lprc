@@ -55,6 +55,7 @@ def test_scenarios_use_known_ids():
         for e in s.get("expect", []) + s.get("forbid", []):
             if e not in IDS:
                 bad.append((s["text"], e))
-        if not s.get("expect") and not s.get("forbid"):
-            bad.append((s["text"], "expect 도 forbid 도 없음"))
+        # 쟁점 없는 문장은 expect 가 빈 배열이다(키는 있어야 한다)
+        if "expect" not in s:
+            bad.append((s["text"], "expect 키 없음"))
     assert not bad, bad
