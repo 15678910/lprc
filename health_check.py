@@ -29,7 +29,8 @@ PAGES = ["", "guide.html", "measure.html", "labor.html", "news.html", "ilo.html"
 # (파일, 시각 필드, 허용 일수) — 매일 도는 수집은 하루 빠져도 경보가 울리지 않게 3일
 FRESH = [("news.json", "generated_at", 3), ("law_watch.json", "checked_at", 3),
          ("money_macro.json", "generated_at", 3), ("public_sector.json", "generated", 8),
-         ("region.json", "generated_at", 8), ("industry_finance.json", "generated_at", 8)]
+         ("region.json", "generated_at", 8), ("industry_finance.json", "generated_at", 8),
+         ("prec/meta.json", "generated_at", 8)]
 KST = timezone(timedelta(hours=9))
 UA = {"User-Agent": "lprc-health-check (+https://github.com/15678910/lprc)"}
 
