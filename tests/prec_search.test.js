@@ -239,3 +239,26 @@ test('쟁점이 하나면 전과 같이 표현을 많이 맞힌 판례가 앞선
   ];
   assert.equal(rank(rows, { issues, text: '' })[0].record.id, 2);
 });
+
+
+test('본문 표지 둘이 요지 일치 하나를 앞지르지 않는다', () => {
+  const issues = [
+    { id: 'a', name: 'A', field: [], terms: ['원청'], laws: [] },
+    { id: 'b', name: 'B', field: [], terms: ['괴롭힘'], laws: [] },
+  ];
+  const rows = [
+    { id: 1, no: '1', name: '', court: '대법원', date: '2024.01.01', text: '무관', tags: ['원청', '괴롭힘'] },
+    { id: 2, no: '2', name: '', court: '서울고등법원', date: '2020.01.01', text: '원청', tags: [] },
+  ];
+  assert.equal(rank(rows, { issues, text: '' })[0].record.id, 2);
+});
+
+test('날짜가 빈 판례는 다른 조건이 같으면 뒤로 가고 최근 조건에서는 빠진다', () => {
+  const issues = [{ id: 'a', name: 'A', field: [], terms: ['요양'], laws: [] }];
+  const rows = [
+    { id: 1, no: '1', name: '요양', court: '서울고등법원', date: '', text: '' },
+    { id: 2, no: '2', name: '요양', court: '서울고등법원', date: '2020.01.01', text: '' },
+  ];
+  assert.equal(rank(rows, { issues, text: '' })[0].record.id, 2);
+  assert.deepEqual(rank(rows, { issues, text: '', sinceYear: 2015 }).map(x => x.record.id), [2]);
+});

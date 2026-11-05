@@ -235,3 +235,26 @@ def test_needs_recheck():
     assert not prec_watch.needs_recheck(ITEM, {"tv": "t1"}, "t1")
     assert prec_watch.needs_recheck(BLANK, {"tv": "t1"}, "t1")  # 상세 정보를 아직 안 받음
     assert not prec_watch.needs_recheck(BLANK, {"tv": "t1", "사건번호": ""}, "t1")  # 받았지만 비어 있음: 매주 묻지 않는다
+
+
+def test_court_only_blank_survives_the_next_run(tmp_path):
+    """사건번호는 있고 법원만 빈 목록 응답도, 상세의 법원을 잃지 않고 매주 다시 묻지도 않는다."""
+    item = dict(ITEM, 법원명="")
+    assert prec_watch.needs_recheck(item, {"tv": "t1"}, "t1")
+    r = prec_watch.to_record(item, dict(DETAIL, 사건번호="x", 법원명="서울고등법원"), ["근로기준법"])
+    _, shards = prec_watch.build_outputs([r])
+    entry = shards[prec_watch.shard_of(r["id"])][str(r["id"])]
+    (tmp_path / "d").mkdir()
+    (tmp_path / "d" / "00.json").write_text(json.dumps({str(r["id"]): entry}), encoding="utf-8")
+    details, _ = prec_watch.load_existing(str(tmp_path))
+    det = details[str(r["id"])]
+    assert prec_watch.to_record(item, det, ["근로기준법"])["court"] == "서울고등법원"
+    assert not prec_watch.needs_recheck(item, dict(det, tv="t1"), "t1")
+
+
+def test_internal_flag_is_not_published():
+    r = prec_watch.to_record(BLANK, BLANK_DETAIL, ["근로기준법"])
+    assert r["meta_from_detail"]
+    idx, shards = prec_watch.build_outputs([r])
+    assert "meta_from_detail" not in idx["records"][0]
+    assert "meta_from_detail" not in shards[prec_watch.shard_of(r["id"])][str(r["id"])]

@@ -129,7 +129,7 @@ def to_record(item, detail, laws):
         "tags": list(d.get("tags") or []),
         "tv": d.get("tv") or "",
     }
-    if not no and "사건번호" in d:
+    if (not no or not strip_html(item.get("법원명", ""))) and "사건번호" in d:
         rec["meta_from_detail"] = True  # 내부 표시. 색인에는 나가지 않고 조각 기록에만 쓴다
     return rec
 
@@ -238,17 +238,11 @@ def list_law(name, oc, limit=None):
 
 
 def needs_recheck(item, det, tv):
-    """표지 판이 다르거나, 목록에 사건번호가 없는데 상세에서 받아 둔 적도 없으면 다시 조회한다."""
+    """표지 판이 다르거나, 목록에 사건번호·법원이 비었는데 상세에서 받아 둔 적도 없으면 다시 조회한다."""
     if det.get("tv") != tv:
         return True
-    return not strip_html(item.get("사건번호", "")) and "사건번호" not in det
-
-
-def needs_recheck(item, det, tv):
-    """표지 판이 다르거나, 목록에 사건번호가 없는데 상세에서 받아 둔 적도 없으면 다시 조회한다."""
-    if det.get("tv") != tv:
-        return True
-    return not strip_html(item.get("사건번호", "")) and "사건번호" not in det
+    blank = not strip_html(item.get("사건번호", "")) or not strip_html(item.get("법원명", ""))
+    return blank and "사건번호" not in det
 
 
 def load_existing(out):
@@ -346,7 +340,6 @@ def main(argv=None):
                 if not isinstance(d, dict) or not any(k in d for k in ("판시사항", "판결요지", "참조조문")):
                     raise RuntimeError("상세 응답 형식 이상")
                 nd = {k: d.get(k, "") for k in ("판시사항", "판결요지", "참조조문")}
-                nd["사건번호"], nd["법원명"] = d.get("사건번호") or "", d.get("법원명") or ""
                 nd["사건번호"], nd["법원명"] = d.get("사건번호") or "", d.get("법원명") or ""
                 nd["tags"] = body_tags(" ".join(str(d.get(k) or "") for k in ("판례내용", "판시사항", "판결요지")),
                                        phrases)
