@@ -103,15 +103,24 @@ def shard_of(pid):
     return "%02d" % (pid % 100)
 
 
+def clean_date(s):
+    """법제처의 '0001.01.01' 은 선고일 없음의 표시다. 화면에 날짜처럼 내보내지 않는다."""
+    s = strip_html(s)
+    digits = re.sub(r"\D", "", s)
+    return "" if not digits or digits.startswith("0001") else s
+
+
 def to_record(item, detail, laws):
-    """allowlist 로만 필드를 옮긴다(판례상세링크 등 나머지는 버린다)."""
+    """allowlist 로만 필드를 옮긴다(판례상세링크 등 나머지는 버린다).
+    근로복지공단 산재판례는 목록에 사건번호·법원이 비어 있고 상세에만 있어 상세로 채운다."""
     d = detail or {}
-    return {
+    no = strip_html(item.get("사건번호", ""))
+    rec = {
         "id": int(item.get("판례일련번호")),
-        "no": strip_html(item.get("사건번호", "")),
+        "no": no or strip_html(d.get("사건번호", "")),
         "name": strip_html(item.get("사건명", "")),
-        "court": strip_html(item.get("법원명", "")),
-        "date": strip_html(item.get("선고일자", "")),
+        "court": strip_html(item.get("법원명", "")) or strip_html(d.get("법원명", "")),
+        "date": clean_date(item.get("선고일자", "")),
         "type": strip_html(item.get("판결유형", "")),
         "issue": strip_html(d.get("판시사항", "")),
         "gist": strip_html(d.get("판결요지", "")),
@@ -120,6 +129,9 @@ def to_record(item, detail, laws):
         "tags": list(d.get("tags") or []),
         "tv": d.get("tv") or "",
     }
+    if not no and "사건번호" in d:
+        rec["meta_from_detail"] = True  # 내부 표시. 색인에는 나가지 않고 조각 기록에만 쓴다
+    return rec
 
 
 def build_outputs(records, failed=()):
@@ -138,8 +150,10 @@ def build_outputs(records, failed=()):
         index["records"].append(row)
         if r["id"] in failed:
             continue
-        shards.setdefault(shard_of(r["id"]), {})[str(r["id"])] = {
-            "issue": r["issue"], "gist": r["gist"], "refs": r["refs"], "tags": r["tags"], "tv": r["tv"]}
+        entry = {"issue": r["issue"], "gist": r["gist"], "refs": r["refs"], "tags": r["tags"], "tv": r["tv"]}
+        if r.get("meta_from_detail"):  # 목록에 없는 값이라 조각에 남겨야 다음 실행에서 사라지지 않는다
+            entry["no"], entry["court"] = r["no"], r["court"]
+        shards.setdefault(shard_of(r["id"]), {})[str(r["id"])] = entry
     return index, shards
 
 
@@ -223,6 +237,20 @@ def list_law(name, oc, limit=None):
         page += 1
 
 
+def needs_recheck(item, det, tv):
+    """표지 판이 다르거나, 목록에 사건번호가 없는데 상세에서 받아 둔 적도 없으면 다시 조회한다."""
+    if det.get("tv") != tv:
+        return True
+    return not strip_html(item.get("사건번호", "")) and "사건번호" not in det
+
+
+def needs_recheck(item, det, tv):
+    """표지 판이 다르거나, 목록에 사건번호가 없는데 상세에서 받아 둔 적도 없으면 다시 조회한다."""
+    if det.get("tv") != tv:
+        return True
+    return not strip_html(item.get("사건번호", "")) and "사건번호" not in det
+
+
 def load_existing(out):
     details = {}
     for p in glob.glob(os.path.join(out, "d", "*.json")):
@@ -230,6 +258,8 @@ def load_existing(out):
             for k, v in json.load(f).items():  # 조각의 영문 키를 응답의 한글 키로 되돌린다
                 details[k] = {"판시사항": v.get("issue", ""), "판결요지": v.get("gist", ""),
                            "참조조문": v.get("refs", ""), "tags": v.get("tags", []), "tv": v.get("tv", "")}
+                if "no" in v:
+                    details[k]["사건번호"], details[k]["법원명"] = v["no"], v.get("court", "")
     total = 0
     mp = os.path.join(out, "meta.json")
     if os.path.exists(mp):
@@ -303,7 +333,7 @@ def main(argv=None):
         details, old_total = load_existing(out)
         todo = [i for i in sorted(items, reverse=True) if str(i) not in details]
         recheck = [i for i in sorted(items, reverse=True)
-                   if str(i) in details and details[str(i)].get("tv") != tv]
+                   if str(i) in details and needs_recheck(items[i], details[str(i)], tv)]
         print("전체 %d건, 상세 조회 대상 %d건, 본문 표지 다시 확인 대상 %d건" % (len(items), len(todo), len(recheck)),
               flush=True)
         failed, done, recheck_failed, no_body = set(), 0, 0, 0
@@ -316,6 +346,8 @@ def main(argv=None):
                 if not isinstance(d, dict) or not any(k in d for k in ("판시사항", "판결요지", "참조조문")):
                     raise RuntimeError("상세 응답 형식 이상")
                 nd = {k: d.get(k, "") for k in ("판시사항", "판결요지", "참조조문")}
+                nd["사건번호"], nd["법원명"] = d.get("사건번호") or "", d.get("법원명") or ""
+                nd["사건번호"], nd["법원명"] = d.get("사건번호") or "", d.get("법원명") or ""
                 nd["tags"] = body_tags(" ".join(str(d.get(k) or "") for k in ("판례내용", "판시사항", "판결요지")),
                                        phrases)
                 if str(d.get("판례내용") or "").strip():

@@ -34,7 +34,7 @@
     return t.length > max ? t.slice(0, max) + '…' : t;
   }
   function titleLine(r) {
-    return [r.court, r.no].filter(Boolean).join(' ') + ' · ' + (r.date || '') + ' · ' + (r.name || '');
+    return [[r.court, r.no].filter(Boolean).join(' '), r.date, r.name].filter(Boolean).join(' · ');
   }
   // 일치한 낱말(중복 제거, 최대 max 개). 조문은 lawsLine 으로 따로 보인다.
   function matchedLine(matched, issues, max) {

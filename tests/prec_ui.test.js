@@ -108,3 +108,11 @@ test('prec.html: 한계 문구와 입력 한도 알림', () => {
   assert.match(html, /id="lim"/);
   assert.match(html, /id="status"[^>]*aria-live="polite"/);
 });
+
+
+test('선고일이 없는 판례의 제목 줄에 빈 칸이나 가짜 날짜가 나오지 않는다', () => {
+  const { titleLine } = require('../docs/prec-ui.js');
+  assert.equal(titleLine({ court: '서울고등법원', no: '2023누39177', date: '', name: '요양불승인처분취소' }),
+    '서울고등법원 2023누39177 · 요양불승인처분취소');
+  assert.equal(titleLine({ court: '대법원', no: '1', date: '2024.01.01', name: '임금' }), '대법원 1 · 2024.01.01 · 임금');
+});

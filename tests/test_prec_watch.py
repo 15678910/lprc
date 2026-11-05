@@ -190,3 +190,48 @@ def test_main_refreshes_meta_even_without_new_cases(tmp_path, monkeypatch):
     assert prec_watch.main([]) == 0
     meta = json.loads(mp.read_text(encoding="utf-8"))
     assert meta["generated_at"] != "2000-01-01T00:00:00Z" and meta["total"] == 1
+
+
+BLANK = dict(ITEM, 사건번호="", 법원명="", 선고일자="0001.01.01", 판결유형="")
+BLANK_DETAIL = {"판시사항": "", "판결요지": "", "참조조문": "", "tags": [], "tv": "t1",
+                "사건번호": "2023누39177", "법원명": "서울고등법원"}
+
+
+def test_blank_list_item_takes_case_no_and_court_from_detail():
+    """근로복지공단 산재판례: 목록에는 비어 있고 상세에만 있다. 선고일은 어디에도 없다."""
+    r = prec_watch.to_record(BLANK, BLANK_DETAIL, ["근로기준법"])
+    assert (r["no"], r["court"], r["date"]) == ("2023누39177", "서울고등법원", "")
+
+
+def test_placeholder_date_is_never_published():
+    assert prec_watch.clean_date("0001.01.01") == ""
+    assert prec_watch.clean_date("00010101") == ""
+    assert prec_watch.clean_date("") == ""
+    assert prec_watch.clean_date("2026.01.29") == "2026.01.29"
+
+
+def test_detail_meta_survives_the_next_run(tmp_path):
+    """상세에서 얻은 사건번호는 조각에 남아, 다음 실행의 빈 목록 응답으로 사라지지 않는다."""
+    r = prec_watch.to_record(BLANK, BLANK_DETAIL, ["근로기준법"])
+    idx, shards = prec_watch.build_outputs([r])
+    assert idx["records"][0]["no"] == "2023누39177"
+    entry = shards[prec_watch.shard_of(r["id"])][str(r["id"])]
+    assert entry["no"] == "2023누39177" and entry["court"] == "서울고등법원"
+    (tmp_path / "d").mkdir()
+    (tmp_path / "d" / "00.json").write_text(json.dumps({str(r["id"]): entry}), encoding="utf-8")
+    details, _ = prec_watch.load_existing(str(tmp_path))
+    again = prec_watch.to_record(BLANK, details[str(r["id"])], ["근로기준법"])
+    assert (again["no"], again["court"]) == ("2023누39177", "서울고등법원")
+
+
+def test_normal_records_add_nothing_to_shards():
+    r = prec_watch.to_record(ITEM, dict(DETAIL, 사건번호="x", 법원명="y"), ["근로기준법"])
+    _, shards = prec_watch.build_outputs([r])
+    assert "no" not in shards[prec_watch.shard_of(r["id"])][str(r["id"])]
+
+
+def test_needs_recheck():
+    assert prec_watch.needs_recheck(ITEM, {"tv": "old"}, "t1")
+    assert not prec_watch.needs_recheck(ITEM, {"tv": "t1"}, "t1")
+    assert prec_watch.needs_recheck(BLANK, {"tv": "t1"}, "t1")  # 상세 정보를 아직 안 받음
+    assert not prec_watch.needs_recheck(BLANK, {"tv": "t1", "사건번호": ""}, "t1")  # 받았지만 비어 있음: 매주 묻지 않는다

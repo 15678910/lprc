@@ -113,14 +113,15 @@
   function year(d) { return Number(String(d || '').replace(/\D/g, '').slice(0, 4)) || 0; }
   function dateKey(d) { return Number(String(d || '').replace(/\D/g, '').slice(0, 8)) || 0; }
 
-  // 정렬: 쟁점 일치 → 본문 표지 → 낱말 일치 → 대법원 → 최신. 점수는 내보내지 않는다.
+  // 정렬: 함께 맞힌 쟁점 수 → 쟁점 표현 수 → 본문 표지 → 낱말 → 대법원 → 최신. 점수는 내보내지 않는다.
+  // 쟁점 수가 먼저인 까닭: 표현이 많은 쟁점이 함께 잡힌 작은 쟁점을 밀어내지 않게 한다.
   function rank(records, q) {
     q = q || {};
     var issueTerms = [];
-    (q.issues || []).forEach(function (is) {
+    (q.issues || []).forEach(function (is, at) {
       (is.terms || []).forEach(function (x) {
         var ps = pieces(norm(x));
-        if (ps.length) issueTerms.push([x, ps]);
+        if (ps.length) issueTerms.push([x, ps, at]);
       });
     });
     var ws = words(q.text);
@@ -130,10 +131,13 @@
       if (q.courtOnly && r.court !== '대법원') continue;
       if (q.sinceYear && year(r.date) < q.sinceYear) continue;
       var hay = norm((r.name || '') + ' ' + (r.text || '') + ' ' + (r.no || ''));
-      var matched = [], issueHits = 0, wordHits = 0, tagHits = 0, tagged = [], j;
+      var matched = [], issueHits = 0, wordHits = 0, tagHits = 0, tagged = [], hitIssues = {}, issuesHit = 0, j;
       var tags = Array.isArray(r.tags) ? r.tags : [];
       for (j = 0; j < issueTerms.length; j++) {
-        if (matchPieces(hay, issueTerms[j][1])) { issueHits++; matched.push(issueTerms[j][0]); }
+        if (matchPieces(hay, issueTerms[j][1])) {
+          issueHits++; matched.push(issueTerms[j][0]);
+          if (!hitIssues[issueTerms[j][2]]) { hitIssues[issueTerms[j][2]] = 1; issuesHit++; }
+        }
         else if (tags.indexOf(issueTerms[j][0]) !== -1 && tagged.indexOf(issueTerms[j][0]) === -1) {
           tagHits++; tagged.push(issueTerms[j][0]); matched.push(issueTerms[j][0]);
         }
@@ -143,10 +147,10 @@
       }
       if (!issueHits && !wordHits && !tagHits) continue;
       scored.push({ record: r, matched: matched, tagged: tagged,
-        k: [issueHits, tagHits, wordHits, r.court === '대법원' ? 1 : 0, dateKey(r.date)], n: i });
+        k: [issuesHit, issueHits, tagHits, wordHits, r.court === '대법원' ? 1 : 0, dateKey(r.date)], n: i });
     }
     scored.sort(function (a, b) {
-      for (var x = 0; x < 5; x++) if (a.k[x] !== b.k[x]) return b.k[x] - a.k[x];
+      for (var x = 0; x < a.k.length; x++) if (a.k[x] !== b.k[x]) return b.k[x] - a.k[x];
       return a.n - b.n;
     });
     return scored.map(function (s) { return { record: s.record, matched: s.matched, tagged: s.tagged }; });

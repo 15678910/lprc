@@ -217,3 +217,25 @@ test('I6: 조문이 없는 일반 문장의 감지는 그대로', () => {
   assert.deepEqual(lid('부당해고 당했어요'), ['dis']);
   assert.deepEqual(lid('오늘 날씨'), []);
 });
+
+
+test('여러 쟁점이 잡히면 쟁점을 더 많이 함께 맞힌 판례가, 한 쟁점의 표현만 많이 맞힌 판례보다 앞선다', () => {
+  const issues = [
+    { id: 'a', name: 'A', field: [], terms: ['원청', '단체교섭'], laws: [] },
+    { id: 'b', name: 'B', field: [], terms: ['취업규칙', '불이익 변경', '근로조건'], laws: [] },
+  ];
+  const rows = [
+    { id: 1, no: '1', name: '임금', court: '대법원', date: '2024.01.01', text: '취업규칙 불이익 변경 근로조건' },
+    { id: 2, no: '2', name: '교섭', court: '서울고등법원', date: '2020.01.01', text: '원청의 단체교섭 의무와 근로조건' },
+  ];
+  assert.equal(rank(rows, { issues, text: '' })[0].record.id, 2);
+});
+
+test('쟁점이 하나면 전과 같이 표현을 많이 맞힌 판례가 앞선다', () => {
+  const issues = [{ id: 'b', name: 'B', field: [], terms: ['취업규칙', '불이익 변경'], laws: [] }];
+  const rows = [
+    { id: 1, no: '1', name: '', court: '대법원', date: '2024.01.01', text: '취업규칙' },
+    { id: 2, no: '2', name: '', court: '서울고등법원', date: '2020.01.01', text: '취업규칙 불이익 변경' },
+  ];
+  assert.equal(rank(rows, { issues, text: '' })[0].record.id, 2);
+});
