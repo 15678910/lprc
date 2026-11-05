@@ -290,7 +290,15 @@ test('쟁점을 함께 맞힌 판례는 번갈아 보여 주기보다 앞이고,
     { id: 3, no: '3', name: '', court: '대법원', date: '2022.01.01', text: '교섭' },
     { id: 4, no: '4', name: '', court: '서울고등법원', date: '2020.01.01', text: '원청 교섭' },
   ];
-  const ids = rank(rows, { issues, text: '' }).map(x => x.record.id);
-  assert.equal(ids[0], 4);
-  assert.equal(ids[ids.length - 1], 1);
+  assert.deepEqual(rank(rows, { issues, text: '' }).map(x => x.record.id), [4, 2, 3, 1]);
+});
+
+test('쟁점이 하나면 번갈아 놓기가 순서를 바꾸지 않는다', () => {
+  const issues = [{ id: 'a', name: 'A', field: [], terms: ['원청', '하청'], laws: [] }];
+  const rows = [
+    { id: 1, no: '1', name: '', court: '서울고등법원', date: '2024.01.01', text: '원청' },
+    { id: 2, no: '2', name: '', court: '대법원', date: '2020.01.01', text: '원청' },
+    { id: 3, no: '3', name: '', court: '서울고등법원', date: '2019.01.01', text: '원청 하청' },
+  ];
+  assert.deepEqual(rank(rows, { issues, text: '' }).map(x => x.record.id), [3, 2, 1]);
 });

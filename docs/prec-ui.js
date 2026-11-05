@@ -137,7 +137,7 @@
     $('out').hidden = false;
     renderChips();
     var m = data.meta || {};
-    var total = Number(m.total);
+    var total = Number(m.shown != null ? m.shown : m.total);
     var day = String(m.generated_at || '').slice(0, 10);
     $('meta').textContent = '수록 ' + (isFinite(total) ? total.toLocaleString('ko-KR') : '?') + '건 · 기준 ' + (day || '?') + ' · 산재·노동위 결정은 아직 없음';
     var res = PrecSearch.rank(data.records, {

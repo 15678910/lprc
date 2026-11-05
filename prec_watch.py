@@ -135,20 +135,21 @@ def to_record(item, detail, laws):
 
 
 def same_case_ids(records):
-    """같은 판결이 법제처에 두 일련번호로 실린 경우 화면에서 뺄 id.
+    """같은 판결이 법제처에 두 일련번호로 실린 경우 {화면에서 뺄 id: 남기는 id}.
     법원·사건번호가 같고 선고일이 같거나 한쪽에 없으면 같은 판결이다.
     선고일이 있고 글이 긴 쪽을 남긴다. 사건번호가 없으면 판단하지 않는다."""
     best = sorted(records, key=lambda r: (bool(r["date"]), len(r["issue"]) + len(r["gist"]), len(r["tags"]), r["id"]),
                   reverse=True)
-    kept, hide = {}, set()
+    kept, hide = {}, {}
     for r in best:
         if not r["no"]:
             continue
-        dates = kept.setdefault((r["court"], r["no"]), [])
-        if any(d == r["date"] or not r["date"] for d in dates):
-            hide.add(r["id"])
+        group = kept.setdefault((r["court"], r["no"]), [])
+        twin = next((k for d, k in group if d == r["date"] or not r["date"]), None)
+        if twin is None:
+            group.append((r["date"], r["id"]))
         else:
-            dates.append(r["date"])
+            hide[r["id"]] = twin
     return hide
 
 
@@ -157,6 +158,10 @@ def build_outputs(records, failed=()):
     같은 판결의 겹친 기록은 색인에서만 뺀다. 조각에 두어야 다음 실행에서 상세를 다시 받지 않는다."""
     recs = sorted(records, key=lambda r: -r["id"])
     hide = same_case_ids(recs)
+    twins = {}
+    for r in recs:
+        if r["id"] in hide:
+            twins.setdefault(hide[r["id"]], []).append(r)
     index = {"records": []}
     shards = {}
     for r in recs:
@@ -164,9 +169,13 @@ def build_outputs(records, failed=()):
         if GIST_IN_INDEX > 0 and r["gist"]:
             text = (text + " " + r["gist"][:GIST_IN_INDEX]).strip()
         row = {"id": r["id"], "no": r["no"], "name": r["name"], "court": r["court"],
-               "date": r["date"], "type": r["type"], "text": text, "laws": r["laws"]}
-        if r["tags"]:
-            row["tags"] = r["tags"]
+               "date": r["date"], "type": r["type"], "text": text, "laws": list(r["laws"])}
+        tags = list(r["tags"])
+        for twin in twins.get(r["id"], ()):  # 빼는 쪽으로만 찾히던 법·표지를 잃지 않게 옮긴다
+            row["laws"] += [x for x in twin["laws"] if x not in row["laws"]]
+            tags += [x for x in twin["tags"] if x not in tags]
+        if tags:
+            row["tags"] = tags
         if r["id"] not in hide:
             index["records"].append(row)
         if r["id"] in failed:

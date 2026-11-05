@@ -278,10 +278,26 @@ def test_same_judgment_listed_twice_shows_once_but_keeps_its_detail():
 def test_duplicate_keeps_the_record_with_a_date_and_more_text():
     dated = _rec(1, no="2023누1", date="2024.01.01", issue="", gist="")
     undated = _rec(2, no="2023누1", date="", issue="긴 요지" * 5, gist="")
-    assert prec_watch.same_case_ids([dated, undated]) == {2}
+    assert prec_watch.same_case_ids([dated, undated]) == {2: 1}
     short = _rec(3, no="2023누2", date="2024.01.01", issue="짧음", gist="")
     long_ = _rec(4, no="2023누2", date="2024.01.01", issue="훨씬 긴 판시사항", gist="")
-    assert prec_watch.same_case_ids([short, long_]) == {3}
+    assert prec_watch.same_case_ids([short, long_]) == {3: 4}
+
+
+def test_shown_record_inherits_laws_and_tags_of_the_hidden_twin():
+    """빼는 쪽으로만 찾히던 판례가 검색에서 사라지지 않는다."""
+    keep = _rec(1, no="2023누1", date="2024.01.01", laws=["근로기준법"], tags=[])
+    gone = _rec(2, no="2023누1", date="", laws=["산업재해보상보험법"], tags=["직장 내 괴롭힘"])
+    idx, _ = prec_watch.build_outputs([keep, gone])
+    assert [r["id"] for r in idx["records"]] == [1]
+    assert idx["records"][0]["laws"] == ["근로기준법", "산업재해보상보험법"]
+    assert idx["records"][0]["tags"] == ["직장 내 괴롭힘"]
+    assert keep["laws"] == ["근로기준법"]
+
+
+def test_three_records_of_one_judgment_show_once():
+    recs = [_rec(i, no="2023누1", date="2024.01.01") for i in (1, 2, 3)]
+    assert sorted(prec_watch.same_case_ids(recs)) == [1, 2]
 
 
 def test_different_judgments_are_not_merged():
@@ -290,4 +306,4 @@ def test_different_judgments_are_not_merged():
             _rec(2, no="2001다1", court="서울고등법원", date="2002.01.01"),
             _rec(3, no="2001다1", court="대법원", date="2003.01.01"),
             _rec(4, no="", date="2002.01.01"), _rec(5, no="", date="2002.01.01")]
-    assert prec_watch.same_case_ids(recs) == set()
+    assert prec_watch.same_case_ids(recs) == {}
