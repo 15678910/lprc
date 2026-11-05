@@ -37,3 +37,8 @@ test('matchedLine: 일치 낱말 + 쟁점 조문, 중복 제거, 개수 제한',
 test('sinceYearFor: 10년 전', () => {
   assert.equal(u.sinceYearFor(new Date('2026-11-05')), 2016);
 });
+
+test('prec.html: hidden 속성이 display 규칙에 덮이지 않게 한다', () => {
+  const html = require('node:fs').readFileSync(require('node:path').join(__dirname, '../docs/prec.html'), 'utf8');
+  assert.match(html, /\[hidden\]\s*\{\s*display:\s*none\s*!important/);
+});

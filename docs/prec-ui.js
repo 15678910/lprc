@@ -195,7 +195,7 @@
         full.dataset.ok = '1';
       }, function () {
         full.textContent = '요지를 불러오지 못했습니다. 다시 눌러 보거나 원문을 보세요.';
-        open = false; tg.textContent = '요지 펼치기';
+        delete full.dataset.ok; // 칸이 열린 채이므로 라벨('요지 접기')·aria-expanded 도 열림 그대로. 접었다 다시 펼치면 재시도
       });
     });
     acts.appendChild(tg);
