@@ -66,6 +66,11 @@ def main():
     # Windows 콘솔(cp949)에서도 죽지 않게 — 워크플로에선 PYTHONIOENCODING 이 처리한다
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    try:
+        law_oc()   # 키 누락은 일시 실패가 아니다 — 조용히 0 으로 끝내지 않는다
+    except RuntimeError as e:
+        print(f"{e} — 기존 파일을 보존하고 실패(1)로 종료한다")
+        return 1
     kst = timezone(timedelta(hours=9))
     rows = []
     for name, short, base_no, base_eff in BASELINE:

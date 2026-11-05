@@ -2,6 +2,7 @@
 .env
 .env.*
 *.local
+*.local.md
 *.pem
 *.key
 secrets/

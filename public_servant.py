@@ -53,7 +53,7 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timezone, timedelta
 
-from law_api import check_auth, law_oc
+from law_api import check_auth, law_oc, redact
 
 KST = timezone(timedelta(hours=9))
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -113,6 +113,25 @@ def _get(url, referer=None, timeout=TIMEOUT, tries=TRIES):
     for i in range(tries):
         try:
             r = urllib.request.Request(url, headers=h)
+            return urllib.request.urlopen(r, context=ctx, timeout=timeout).read()
+        except Exception as e:
+            last = e
+            if i + 1 < tries:
+                time.sleep(1.0)
+    raise last
+
+
+def _get_verified(url, timeout=TIMEOUT, tries=TRIES):
+    """인증서·호스트명 검증을 켠 요청 — 키가 URL 에 실리는 법제처 호출 전용.
+
+    _get 은 일부 출처의 인증서 문제 때문에 검증을 끈다. 키를 싣는 호출까지 그러면
+    중간자에게 키를 평문으로 내주므로 갈라 둔다.
+    """
+    ctx = ssl.create_default_context()
+    last = None
+    for i in range(tries):
+        try:
+            r = urllib.request.Request(url, headers=dict(UA))
             return urllib.request.urlopen(r, context=ctx, timeout=timeout).read()
         except Exception as e:
             last = e
@@ -294,7 +313,7 @@ def _law(path, **params):
     params.setdefault("OC", law_oc())
     params.setdefault("type", "JSON")
     return check_auth(json.loads(
-        _get("%s/%s.do?%s" % (LAW_API, path, urllib.parse.urlencode(params)))
+        _get_verified("%s/%s.do?%s" % (LAW_API, path, urllib.parse.urlencode(params)))
         .decode("utf-8", "replace")))
 
 
@@ -317,8 +336,10 @@ def allowance():
         L = d["LawSearch"].get("law", [])
         L = L if isinstance(L, list) else [L]
         L = [x for x in L if x.get("법령명한글") == LAW_NAME]
+    except RuntimeError:
+        raise  # 키 없음·키 거부(LawAuthError)는 삼키지 않는다 — main 이 기존 파일을 보존한다
     except Exception as e:
-        diag("WARN", "법령 연혁 조회 실패: %s" % str(e)[:60])
+        diag("WARN", "법령 연혁 조회 실패: %s" % redact(str(e))[:60])
         return None
     if not L:
         diag("WARN", "「%s」을 찾지 못했다." % LAW_NAME)
@@ -332,6 +353,8 @@ def allowance():
             continue
         try:
             b = _law("lawService", target="eflaw", MST=x["법령일련번호"], efYd=ef)
+        except RuntimeError:
+            raise
         except Exception:
             continue
         amt, r = _meal_amount((b.get("법령", {}).get("조문", {}) or {}).get("조문단위", []))
@@ -359,7 +382,7 @@ def allowance():
         r["years"] = int(r["to"]) - int(r["from"]) + 1
     return {"name": "정액급식비", "article": ALLOWANCE_ART,
             "unit": "만원/월", "series": ser, "runs": runs, "revisions": rev,
-            "source": "국가법령정보센터 「%s」 (law.go.kr, 키 불필요)" % LAW_NAME,
+            "source": "국가법령정보센터 「%s」 (law.go.kr, 법제처 API 키 사용)" % LAW_NAME,
             "note": ("금액이 조문 본문에 직접 있는 수당은 정액급식비뿐이다. "
                      "위험근무수당(별표8)·특수업무수당(별표11)·직급보조비(별표15)는 별표에 있고, "
                      "별표는 API 로 본문이 오지 않아(첨부파일 링크만) 자동으로 가져올 수 없다."),
@@ -418,7 +441,11 @@ def main():
         diag("ERROR", "봉급표를 한 해도 받지 못했다 — 기존 파일을 보존하고 끝낸다.")
         return 1
 
-    alw = allowance()
+    try:
+        alw = allowance()
+    except RuntimeError as e:   # LAW_OC 없음 또는 법제처가 키를 거부 — 공개 파일을 덮어쓰지 않는다
+        diag("ERROR", "법제처 키 문제: %s — 기존 파일을 보존하고 실패(1)로 끝낸다." % redact(str(e))[:80])
+        return 1
     if alw:
         for r in alw["runs"]:
             log("  정액급식비 %d만원 · %s~%s (%d년)"
@@ -455,7 +482,7 @@ def main():
         "sources": {
             "pay": "인사혁신처 공무원 봉급표 (mpm.go.kr) — 키 불필요",
             "index": "지표누리 e-나라지표 1021 (index.go.kr) — 키 불필요",
-            "allowance": "국가법령정보센터 「공무원수당 등에 관한 규정」 (law.go.kr) — 키 불필요",
+            "allowance": "국가법령정보센터 「공무원수당 등에 관한 규정」 (law.go.kr) — 법제처 API 키 사용",
             "cpi": "OECD SDMX DSD_PRICES@DF_PRICES_ALL (한국 CPI 지수, 연) — 키 불필요",
             "oecd": "OECD Government at a Glance DF_GOV_TRANSACTION (D1/GDP) — 키 불필요",
         },

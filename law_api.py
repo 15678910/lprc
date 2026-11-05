@@ -6,6 +6,8 @@
 응답 본문의 'result' 문구로 알아채 예외로 올린다 — 조용한 실패를 없애는 것이 목적이다.
 """
 import os
+import re
+import urllib.parse
 
 
 class LawAuthError(RuntimeError):
@@ -31,7 +33,11 @@ def check_auth(data):
 
 def redact(text):
     """문자열 안의 키 값을 가린다(예외 메시지·로그용)."""
+    text = re.sub(r"OC=[^&\s'\"]+", "OC=***", text)
     oc = os.environ.get("LAW_OC", "").strip()
     if oc:
-        text = text.replace(oc, "***")
+        for form in {oc, urllib.parse.quote(oc), urllib.parse.quote(oc, safe=""),
+                     urllib.parse.quote_plus(oc)}:
+            if form:
+                text = text.replace(form, "***")
     return text
