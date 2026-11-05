@@ -7,7 +7,35 @@
 """
 import os
 import re
+import ssl
 import urllib.parse
+import urllib.request
+
+LAW_PREFIX = "https://www.law.go.kr/"
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """리다이렉트를 따라가지 않는다 — 키가 실린 URL 이 다른 서버로 넘어가는 것을 막는다."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+def _build_opener(context=None):
+    return urllib.request.build_opener(
+        _NoRedirect, urllib.request.HTTPSHandler(context=context or ssl.create_default_context()))
+
+
+def open_law(url, headers=None, timeout=30):
+    """키가 실리는 법제처 요청 전용. law.go.kr https 만 허용, 리다이렉트 불가, 인증서 검증 켬.
+
+    응답 bytes 를 돌려준다. 예외 메시지에는 URL(키 포함)을 넣지 않는다.
+    """
+    if not isinstance(url, str) or not url.startswith(LAW_PREFIX):
+        raise RuntimeError("법제처(https://www.law.go.kr/) 주소만 허용한다")
+    req = urllib.request.Request(url, headers=dict(headers or {}))
+    with _build_opener().open(req, timeout=timeout) as r:
+        return r.read()
 
 
 class LawAuthError(RuntimeError):

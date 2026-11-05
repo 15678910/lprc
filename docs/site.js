@@ -163,7 +163,7 @@
      토큰은 비밀이 아니다(페이지 소스에 그대로 보이는 공개 값). 비어 있으면 아무것도 불러오지 않는다.
      켜고 끄는 일은 .claude/tools/enable_analytics.py 로 — 출처·면책 페이지의 약속 문구와 함께 바뀐다. */
   var CF_BEACON_TOKEN = 'a496442817324a4baf88aa6666cae2bb';
-  if (CF_BEACON_TOKEN) {
+  if (CF_BEACON_TOKEN && !document.documentElement.hasAttribute('data-no-beacon')) {
     var cf = document.createElement('script');
     cf.defer = true; cf.src = 'https://static.cloudflareinsights.com/beacon.min.js';
     cf.setAttribute('data-cf-beacon', JSON.stringify({token: CF_BEACON_TOKEN}));

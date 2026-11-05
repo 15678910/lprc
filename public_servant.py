@@ -53,7 +53,7 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timezone, timedelta
 
-from law_api import check_auth, law_oc, redact
+from law_api import check_auth, law_oc, open_law, redact
 
 KST = timezone(timedelta(hours=9))
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -127,12 +127,10 @@ def _get_verified(url, timeout=TIMEOUT, tries=TRIES):
     _get 은 일부 출처의 인증서 문제 때문에 검증을 끈다. 키를 싣는 호출까지 그러면
     중간자에게 키를 평문으로 내주므로 갈라 둔다.
     """
-    ctx = ssl.create_default_context()
     last = None
     for i in range(tries):
         try:
-            r = urllib.request.Request(url, headers=dict(UA))
-            return urllib.request.urlopen(r, context=ctx, timeout=timeout).read()
+            return open_law(url, dict(UA), timeout)
         except Exception as e:
             last = e
             if i + 1 < tries:

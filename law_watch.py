@@ -17,7 +17,7 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timezone, timedelta
 
-from law_api import LawAuthError, check_auth, law_oc, redact
+from law_api import LawAuthError, check_auth, law_oc, open_law, redact
 
 OUT = "docs/law_watch.json"
 TIMEOUT = 30
@@ -39,10 +39,10 @@ def fetch_current(name, tries=4):
     """
     url = ("https://www.law.go.kr/DRF/lawSearch.do?OC=" + urllib.parse.quote(law_oc())
            + "&target=law&type=JSON&display=20&query=" + urllib.parse.quote(name))
-    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    hdrs = {"User-Agent": "Mozilla/5.0"}
     for i in range(tries):
         try:
-            data = check_auth(json.loads(urllib.request.urlopen(req, timeout=TIMEOUT).read()))
+            data = check_auth(json.loads(open_law(url, hdrs, TIMEOUT)))
             break
         except LawAuthError:
             raise  # 키 문제는 다시 물어도 소용없다

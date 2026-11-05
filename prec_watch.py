@@ -136,9 +136,7 @@ def write_if_changed(path, obj):
 
 
 def _open(url):
-    ctx = ssl.create_default_context()
-    r = urllib.request.Request(url, headers=dict(UA))
-    return urllib.request.urlopen(r, context=ctx, timeout=TIMEOUT).read()
+    return law_api.open_law(url, dict(UA), TIMEOUT)
 
 
 def fetch_json(url, oc):

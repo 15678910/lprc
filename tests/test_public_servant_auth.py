@@ -12,17 +12,29 @@ class _Resp:
     def read(self):
         return b'{"LawSearch": {"law": []}}'
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
 
 def test_law_uses_verified_tls(monkeypatch):
     """_law 는 인증서·호스트명 검증을 끈 컨텍스트를 쓰면 안 된다(키가 URL 에 실린다)."""
     monkeypatch.setenv("LAW_OC", "abc123")
     seen = {}
 
-    def fake_urlopen(req, context=None, timeout=None):
-        seen["ctx"] = context
-        return _Resp()
+    class FakeOpener:
+        def open(self, req, timeout=None):
+            return _Resp()
 
-    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    def fake_build_opener(*handlers):
+        for h in handlers:
+            if isinstance(h, urllib.request.HTTPSHandler):
+                seen["ctx"] = h._context
+        return FakeOpener()
+
+    monkeypatch.setattr(urllib.request, "build_opener", fake_build_opener)
     public_servant._law("lawSearch", target="eflaw")
     ctx = seen["ctx"]
     assert ctx.verify_mode == ssl.CERT_REQUIRED

@@ -42,3 +42,14 @@ test('prec.html: hidden 속성이 display 규칙에 덮이지 않게 한다', ()
   const html = require('node:fs').readFileSync(require('node:path').join(__dirname, '../docs/prec.html'), 'utf8');
   assert.match(html, /\[hidden\]\s*\{\s*display:\s*none\s*!important/);
 });
+
+test('prec.html: 비콘 끔·CSP·인라인 이벤트 없음', () => {
+  const html = require('node:fs').readFileSync(require('node:path').join(__dirname, '../docs/prec.html'), 'utf8');
+  assert.match(html, /<html[^>]*\sdata-no-beacon/);
+  assert.match(html, /http-equiv="Content-Security-Policy"[^>]*script-src 'self'/);
+  assert.ok(html.indexOf('Content-Security-Policy') < html.indexOf('<script'));
+  assert.ok(!/\sonsubmit\s*=/i.test(html));
+  assert.ok(!/<[^>]+\son[a-z]+\s*=/i.test(html), '인라인 on* 이벤트');
+  assert.ok(!/<script(?![^>]*\ssrc=)[^>]*>/i.test(html), '인라인 script');
+  assert.match(html, /접속 기록에 남을 수 있습니다/);
+});
