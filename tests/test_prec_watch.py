@@ -258,3 +258,36 @@ def test_internal_flag_is_not_published():
     idx, shards = prec_watch.build_outputs([r])
     assert "meta_from_detail" not in idx["records"][0]
     assert "meta_from_detail" not in shards[prec_watch.shard_of(r["id"])][str(r["id"])]
+
+
+def _rec(i, **kw):
+    r = prec_watch.to_record(dict(ITEM, 판례일련번호=str(i)), DETAIL, ["근로기준법"])
+    r.update(kw)
+    return r
+
+
+def test_same_judgment_listed_twice_shows_once_but_keeps_its_detail():
+    """같은 판결이 두 일련번호로 실린 경우 화면에는 하나만, 조각은 둘 다 둬서 매주 다시 받지 않는다."""
+    a, b = _rec(190296, no="2001가합7708", date="2002.05.16"), _rec(624197, no="2001가합7708", date="2002.05.16")
+    idx, shards = prec_watch.build_outputs([a, b])
+    assert len(idx["records"]) == 1
+    assert str(a["id"]) in shards[prec_watch.shard_of(a["id"])]
+    assert str(b["id"]) in shards[prec_watch.shard_of(b["id"])]
+
+
+def test_duplicate_keeps_the_record_with_a_date_and_more_text():
+    dated = _rec(1, no="2023누1", date="2024.01.01", issue="", gist="")
+    undated = _rec(2, no="2023누1", date="", issue="긴 요지" * 5, gist="")
+    assert prec_watch.same_case_ids([dated, undated]) == {2}
+    short = _rec(3, no="2023누2", date="2024.01.01", issue="짧음", gist="")
+    long_ = _rec(4, no="2023누2", date="2024.01.01", issue="훨씬 긴 판시사항", gist="")
+    assert prec_watch.same_case_ids([short, long_]) == {3}
+
+
+def test_different_judgments_are_not_merged():
+    """다른 법원, 다른 선고일, 사건번호 없는 기록은 합치지 않는다."""
+    recs = [_rec(1, no="2001다1", court="대법원", date="2002.01.01"),
+            _rec(2, no="2001다1", court="서울고등법원", date="2002.01.01"),
+            _rec(3, no="2001다1", court="대법원", date="2003.01.01"),
+            _rec(4, no="", date="2002.01.01"), _rec(5, no="", date="2002.01.01")]
+    assert prec_watch.same_case_ids(recs) == set()

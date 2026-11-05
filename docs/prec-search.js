@@ -116,6 +116,7 @@
   // 정렬: 함께 맞힌 쟁점 수 → 쟁점 표현 수 → 본문 표지 → 낱말 → 대법원 → 최신. 점수는 내보내지 않는다.
   // 쟁점 수가 먼저인 까닭: 표현이 많은 쟁점이 함께 잡힌 작은 쟁점을 밀어내지 않게 한다.
   // 본문 표지는 쟁점 수에 세지 않는다. 표지 둘이 요지 일치 하나를 앞지르지 않게 하려는 것이다.
+  // 같은 쟁점 수 안에서는 쟁점별로 번갈아 놓는다(takeTurns). 쟁점이 하나면 순서는 그대로다.
   function rank(records, q) {
     q = q || {};
     var issueTerms = [];
@@ -148,13 +149,40 @@
       }
       if (!issueHits && !wordHits && !tagHits) continue;
       scored.push({ record: r, matched: matched, tagged: tagged,
-        k: [issuesHit, issueHits, tagHits, wordHits, r.court === '대법원' ? 1 : 0, dateKey(r.date)], n: i });
+        k: [issuesHit, issueHits, tagHits, wordHits, r.court === '대법원' ? 1 : 0, dateKey(r.date)], n: i,
+        ats: Object.keys(hitIssues).map(Number) });
     }
     scored.sort(function (a, b) {
       for (var x = 0; x < a.k.length; x++) if (a.k[x] !== b.k[x]) return b.k[x] - a.k[x];
       return a.n - b.n;
     });
-    return scored.map(function (s) { return { record: s.record, matched: s.matched, tagged: s.tagged }; });
+    return takeTurns(scored).map(function (s) { return { record: s.record, matched: s.matched, tagged: s.tagged }; });
+  }
+
+  // 판례가 많은 쟁점이 첫 쪽을 독차지하면 함께 잡힌 작은 쟁점의 판례가 보이지 않는다.
+  // 그래서 같은 쟁점 수 안에서 판례를 '맞힌 쟁점 중 가장 작은 쟁점'으로 묶고, 작은 쟁점부터 하나씩 번갈아 놓는다.
+  // scored 는 이미 정렬돼 있고, 쟁점을 맞히지 않은 판례는 맨 뒤에 그대로 둔다.
+  function takeTurns(scored) {
+    var size = {}, out = [], i = 0;
+    function smaller(a, b) { return size[a] - size[b] || a - b; }
+    scored.forEach(function (s) {
+      s.ats.forEach(function (at) { size[at] = (size[at] || 0) + 1; });
+    });
+    while (i < scored.length && scored[i].k[0]) {
+      var level = scored[i].k[0], queues = {}, order = [];
+      for (; i < scored.length && scored[i].k[0] === level; i++) {
+        var at = scored[i].ats.slice().sort(smaller)[0];
+        if (!queues[at]) { queues[at] = []; order.push(at); }
+        queues[at].push(scored[i]);
+      }
+      order.sort(smaller);
+      for (var turn = 0; out.length < i; turn++) {
+        for (var q = 0; q < order.length; q++) {
+          if (queues[order[q]][turn]) out.push(queues[order[q]][turn]);
+        }
+      }
+    }
+    return out.concat(scored.slice(i));
   }
 
   var api = { detectIssues: detectIssues, rank: rank, matchPhrase: matchPhrase };

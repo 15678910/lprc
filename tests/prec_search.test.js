@@ -262,3 +262,35 @@ test('날짜가 빈 판례는 다른 조건이 같으면 뒤로 가고 최근 �
   assert.equal(rank(rows, { issues, text: '' })[0].record.id, 2);
   assert.deepEqual(rank(rows, { issues, text: '', sinceYear: 2015 }).map(x => x.record.id), [2]);
 });
+
+
+test('여러 쟁점이 잡히면 같은 쟁점 수 안에서 드문 쟁점부터 번갈아 보여 준다', () => {
+  const issues = [
+    { id: 'big', name: 'B', field: [], terms: ['취업규칙', '불이익 변경'], laws: [] },
+    { id: 'small', name: 'S', field: [], terms: ['원청'], laws: [] },
+  ];
+  const rows = [
+    { id: 1, no: '1', name: '', court: '대법원', date: '2024.01.01', text: '취업규칙 불이익 변경' },
+    { id: 2, no: '2', name: '', court: '대법원', date: '2023.01.01', text: '취업규칙 불이익 변경' },
+    { id: 3, no: '3', name: '', court: '대법원', date: '2022.01.01', text: '취업규칙 불이익 변경' },
+    { id: 4, no: '4', name: '', court: '서울고등법원', date: '2020.01.01', text: '원청' },
+    { id: 5, no: '5', name: '', court: '서울고등법원', date: '2019.01.01', text: '원청' },
+  ];
+  assert.deepEqual(rank(rows, { issues, text: '' }).map(x => x.record.id), [4, 1, 5, 2, 3]);
+});
+
+test('쟁점을 함께 맞힌 판례는 번갈아 보여 주기보다 앞이고, 표지만 맞은 판례는 맨 뒤다', () => {
+  const issues = [
+    { id: 'a', name: 'A', field: [], terms: ['원청'], laws: [] },
+    { id: 'b', name: 'B', field: [], terms: ['교섭'], laws: [] },
+  ];
+  const rows = [
+    { id: 1, no: '1', name: '', court: '대법원', date: '2024.01.01', text: '무관', tags: ['원청'] },
+    { id: 2, no: '2', name: '', court: '대법원', date: '2023.01.01', text: '원청' },
+    { id: 3, no: '3', name: '', court: '대법원', date: '2022.01.01', text: '교섭' },
+    { id: 4, no: '4', name: '', court: '서울고등법원', date: '2020.01.01', text: '원청 교섭' },
+  ];
+  const ids = rank(rows, { issues, text: '' }).map(x => x.record.id);
+  assert.equal(ids[0], 4);
+  assert.equal(ids[ids.length - 1], 1);
+});

@@ -134,9 +134,29 @@ def to_record(item, detail, laws):
     return rec
 
 
+def same_case_ids(records):
+    """같은 판결이 법제처에 두 일련번호로 실린 경우 화면에서 뺄 id.
+    법원·사건번호가 같고 선고일이 같거나 한쪽에 없으면 같은 판결이다.
+    선고일이 있고 글이 긴 쪽을 남긴다. 사건번호가 없으면 판단하지 않는다."""
+    best = sorted(records, key=lambda r: (bool(r["date"]), len(r["issue"]) + len(r["gist"]), len(r["tags"]), r["id"]),
+                  reverse=True)
+    kept, hide = {}, set()
+    for r in best:
+        if not r["no"]:
+            continue
+        dates = kept.setdefault((r["court"], r["no"]), [])
+        if any(d == r["date"] or not r["date"] for d in dates):
+            hide.add(r["id"])
+        else:
+            dates.append(r["date"])
+    return hide
+
+
 def build_outputs(records, failed=()):
-    """(index, {shard: {id: {issue,gist,refs,tags,tv}}}). failed 의 id 는 d 조각에 넣지 않는다."""
+    """(index, {shard: {id: {issue,gist,refs,tags,tv}}}). failed 의 id 는 d 조각에 넣지 않는다.
+    같은 판결의 겹친 기록은 색인에서만 뺀다. 조각에 두어야 다음 실행에서 상세를 다시 받지 않는다."""
     recs = sorted(records, key=lambda r: -r["id"])
+    hide = same_case_ids(recs)
     index = {"records": []}
     shards = {}
     for r in recs:
@@ -147,7 +167,8 @@ def build_outputs(records, failed=()):
                "date": r["date"], "type": r["type"], "text": text, "laws": r["laws"]}
         if r["tags"]:
             row["tags"] = r["tags"]
-        index["records"].append(row)
+        if r["id"] not in hide:
+            index["records"].append(row)
         if r["id"] in failed:
             continue
         entry = {"issue": r["issue"], "gist": r["gist"], "refs": r["refs"], "tags": r["tags"], "tv": r["tv"]}
@@ -271,7 +292,7 @@ def save(out, oc, items, laws_of, details, failed, old_total, check_shrink=True,
         for lw in r["laws"]:
             by_law[lw] = by_law.get(lw, 0) + 1
     meta = {"generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "total": len(records), "by_law": by_law,
+            "total": len(records), "shown": len(idx["records"]), "by_law": by_law,
             "failed": len(failed), "recheck_failed": recheck_failed}
     files = {os.path.join(out, "index.json"): idx}
     for sh, obj in shards.items():
