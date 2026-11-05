@@ -76,13 +76,22 @@ test('시나리오: 기대 쟁점 90% 이상 감지, 금지 쟁점 0건, 함정 
   assert.ok(traps >= 20, `함정 문장 ${traps}건 (필요 20)`);
 });
 
-test('시나리오: 쟁점 없는 문장(expect 빈 배열, forbid 없음)에 칩이 붙는 비율 10% 이하', () => {
+test('시나리오: 문장마다 종류가 분명하다(expect / forbid / none:true 중 하나)', () => {
+  const sc = JSON.parse(fs.readFileSync(path.join(__dirname, 'prec_scenarios.json'), 'utf8'));
+  const bad = sc.filter((s) => {
+    const e = (s.expect || []).length > 0, f = (s.forbid || []).length > 0, n = s.none === true;
+    return n ? (e || f) : !(e || f);
+  });
+  assert.equal(bad.length, 0, 'expect·forbid 가 모두 비었는데 none:true 가 아니거나, none:true 인데 expect·forbid 가 있는 문장:\n' + bad.map((s) => s.text).join('\n'));
+});
+
+test('시나리오: 쟁점 없는 문장(none:true)에 칩이 붙는 비율 10% 이하(최대 3건)', () => {
   const terms = JSON.parse(fs.readFileSync(path.join(__dirname, '../docs/prec/terms.json'), 'utf8')).issues;
   const sc = JSON.parse(fs.readFileSync(path.join(__dirname, 'prec_scenarios.json'), 'utf8'));
-  const none = sc.filter((s) => (!s.expect || !s.expect.length) && (!s.forbid || !s.forbid.length));
+  const none = sc.filter((s) => s.none === true);
   const noisy = none.filter((s) => detectIssues(s.text, terms).length > 0);
   assert.ok(none.length >= 20, `쟁점 없는 문장 ${none.length}건 (필요 20)`);
-  const limit = Math.floor(none.length * 0.1);
+  const limit = Math.min(Math.floor(none.length * 0.1), 3);
   assert.ok(noisy.length <= limit, `칩이 붙은 쟁점 없는 문장 ${noisy.length}/${none.length} (허용 ${limit})\n` +
     noisy.map((s) => s.text + ' | ' + ids(detectIssues(s.text, terms))).join('\n'));
 });
