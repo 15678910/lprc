@@ -5,10 +5,10 @@
 기계가 알 수 있다 — 본문이 기준으로 삼은 법령 3종의 공포번호가 국가법령정보센터에서
 바뀌었는지만 대조하면 된다. 바뀌었으면 labor.html 이 화면에 경고를 띄운다.
 
-- 조회: 법제처 DRF lawSearch (OC=test 로 열려 있음, 키 불필요)
+- 조회: 법제처 DRF lawSearch (환경변수 LAW_OC 키 필요 — law_api.py)
 - 판례·통계·행정해석의 변동은 이 방식으로 감지할 수 없다. 그 한계는 화면에 적어 두었다.
 - 실패 시: 기존 docs/law_watch.json 을 건드리지 않고 그대로 종료한다(exit 0).
-  워크플로의 다른 수집을 막지 않는다.
+  워크플로의 다른 수집을 막지 않는다. 단 법제처가 키를 거부하면(인증 실패) exit 1 로 드러낸다.
 """
 import json
 import time
@@ -16,6 +16,8 @@ import sys
 import urllib.parse
 import urllib.request
 from datetime import datetime, timezone, timedelta
+
+from law_api import LawAuthError, check_auth, law_oc, redact
 
 OUT = "docs/law_watch.json"
 TIMEOUT = 30
@@ -35,18 +37,20 @@ def fetch_current(name, tries=4):
     GitHub Actions(미국 서버)에서 law.go.kr 이 가끔 시간 초과를 낸다(2026-09-28 실측 — 그날 점검이
     조용히 건너뛰어졌다). 20·40·60초 간격으로 다시 묻고, 그래도 안 되면 예외를 올린다.
     """
-    url = ("http://www.law.go.kr/DRF/lawSearch.do?OC=test&target=law&type=JSON"
-           "&display=20&query=" + urllib.parse.quote(name))
+    url = ("https://www.law.go.kr/DRF/lawSearch.do?OC=" + urllib.parse.quote(law_oc())
+           + "&target=law&type=JSON&display=20&query=" + urllib.parse.quote(name))
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
     for i in range(tries):
         try:
-            data = json.loads(urllib.request.urlopen(req, timeout=TIMEOUT).read())
+            data = check_auth(json.loads(urllib.request.urlopen(req, timeout=TIMEOUT).read()))
             break
+        except LawAuthError:
+            raise  # 키 문제는 다시 물어도 소용없다
         except Exception as e:
             if i == tries - 1:
                 raise
             wait = 20 * (i + 1)
-            print(f"  {name}: {e} — {wait}초 뒤 다시 ({i + 2}/{tries})")
+            print(f"  {name}: {redact(str(e))} — {wait}초 뒤 다시 ({i + 2}/{tries})")
             time.sleep(wait)
     laws = data.get("LawSearch", {}).get("law", [])
     if isinstance(laws, dict):
@@ -67,8 +71,11 @@ def main():
     for name, short, base_no, base_eff in BASELINE:
         try:
             cur = fetch_current(name)
+        except LawAuthError as e:
+            print(f"법제처 인증 실패({name}): {redact(str(e))} — 기존 파일을 보존하고 실패(1)로 종료한다")
+            return 1
         except Exception as e:
-            print(f"조회 실패({name}): {e} — 기존 파일을 보존하고 종료한다")
+            print(f"조회 실패({name}): {redact(str(e))} — 기존 파일을 보존하고 종료한다")
             return 0
         if cur is None:
             print(f"'{name}' 현행 항목을 못 찾았다 — 기존 파일을 보존하고 종료한다")

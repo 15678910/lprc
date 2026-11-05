@@ -8,6 +8,7 @@ name: Update data
 #   BOK_API_KEY   없으면 서울 아파트 실질가격·한국 분배지표가 빠짐    (ecos.bok.or.kr)
 #   FRED_API_KEY  없으면 일부 미국 계열이 빠짐                        (fred.stlouisfed.org)
 #   KOSIS_API_KEY 없으면 평균 가구원 수(1인당 주거부담 환산)가 빠짐   (kosis.kr)
+#   LAW_OC        없으면 법령 개정 점검·공무원 수당이 멈춤(로그에 실패)   (open.law.go.kr — 사용자 OC)
 #   TELEGRAM_BOT_TOKEN·TELEGRAM_CHAT_ID 없으면 노동뉴스를 모으기만 하고 텔레그램 발송은 건너뜀
 # 넷 다 없어도 OECD 기반 블록(물가·노동몫·격차·임시직 비중)과
 # 공공부문(⑩ 알리오)은 그대로 수집된다 — 알리오는 키가 필요 없다.
@@ -104,12 +105,13 @@ jobs:
           PYTHONIOENCODING: utf-8
         run: python public_sector.py || echo "public_sector had errors, continuing..."
 
-      # 공무원 봉급표(인사혁신처) + 민간 대비 보수수준(지표누리). 둘 다 키가 필요 없다.
+      # 공무원 봉급표(인사혁신처) + 민간 대비 보수수준(지표누리) + 수당(법제처, LAW_OC 필요).
       # 봉급표는 연 1회, 접근율도 연 1회 갱신이라 매일 돌아도 대개 '변경 없음'이다.
       - name: Collect public servant data
         timeout-minutes: 10
         env:
           PYTHONIOENCODING: utf-8
+          LAW_OC: ${{ secrets.LAW_OC }}
         run: python public_servant.py || echo "public_servant had errors, continuing..."
 
       # ⑫ 우리 지역 — 시도별 지역소득(KOSIS). 연 1회 발표라 대개 '변경 없음'.
@@ -146,12 +148,13 @@ jobs:
         run: python telegram_send.py || echo "telegram_send had errors, continuing..."
 
       # 원청교섭 가이드(labor.html)의 기준 법령 3종이 개정됐는지 법제처와 대조한다.
-      # 키 불필요, 몇 초면 끝난다. 개정이 감지되면 labor.html 이 화면에 경고를 띄운다.
+      # LAW_OC 키 필요, 몇 초면 끝난다. 키가 거부되면 단계가 실패(exit 1)로 로그에 남는다. 개정이 감지되면 labor.html 이 화면에 경고를 띄운다.
       # 본문을 새 법령에 맞춰 고친 뒤에는 law_watch.py 의 BASELINE 도 같이 올릴 것.
       - name: Check law revisions
         timeout-minutes: 8    # law.go.kr 시간 초과 대비 재시도(20·40·60초)가 들어 있다
         env:
           PYTHONIOENCODING: utf-8
+          LAW_OC: ${{ secrets.LAW_OC }}
         run: python law_watch.py || echo "law_watch had errors, continuing..."
 
       - name: Commit results

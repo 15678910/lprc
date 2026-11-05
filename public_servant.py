@@ -53,6 +53,8 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timezone, timedelta
 
+from law_api import check_auth, law_oc
+
 KST = timezone(timedelta(hours=9))
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 OUTPUT_FILE = os.path.join(BASE_DIR, "docs", "public_servant.json")
@@ -65,7 +67,7 @@ IDX_URL = ("https://www.index.go.kr/unity/potal/eNara/sub/showStblGams3.do"
            "?stts_cd=102101&idx_cd=1021&freq=Y&period=N")
 UA = {"User-Agent": "Mozilla/5.0 (compatible; lprc-public-servant)"}
 
-# 수당 — 국가법령정보센터. OC 는 이메일 ID 자리인데 'test' 로 열려 있다(키 신청 불필요).
+# 수당 — 국가법령정보센터. OC 는 환경변수 LAW_OC(사용자 키)로 준다 — 공유 계정 'test' 는 막혔다.
 #
 # 「공무원수당 등에 관한 규정」에서 **금액이 조문 본문에 직접 박힌 것은 정액급식비뿐**이다.
 # 위험근무수당(별표8)·특수업무수당(별표11)·직급보조비(별표15)는 별표에 있고,
@@ -289,10 +291,11 @@ def oecd_gov_pay():
 
 
 def _law(path, **params):
-    params.setdefault("OC", "test")
+    params.setdefault("OC", law_oc())
     params.setdefault("type", "JSON")
-    return json.loads(_get("%s/%s.do?%s" % (LAW_API, path, urllib.parse.urlencode(params)))
-                      .decode("utf-8", "replace"))
+    return check_auth(json.loads(
+        _get("%s/%s.do?%s" % (LAW_API, path, urllib.parse.urlencode(params)))
+        .decode("utf-8", "replace")))
 
 
 def _meal_amount(arts):
