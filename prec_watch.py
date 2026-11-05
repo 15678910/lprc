@@ -200,7 +200,7 @@ def load_existing(out):
     return details, total
 
 
-def save(out, oc, items, laws_of, details, failed, old_total, check_shrink=True):
+def save(out, oc, items, laws_of, details, failed, old_total, check_shrink=True, force_meta=False):
     records = [to_record(items[i], details.get(str(i)), laws_of[i]) for i in sorted(items)]
     idx, shards = build_outputs(records, failed)
     by_law = {}
@@ -222,7 +222,8 @@ def save(out, oc, items, laws_of, details, failed, old_total, check_shrink=True)
     changed = [write_if_changed(p, o) for p, o in files.items()]
     # 내용이 같으면 meta 의 generated_at 만 바뀌지 않게 건너뛴다
     mp = os.path.join(out, "meta.json")
-    if any(changed) or not os.path.exists(mp):
+    # force_meta: 끝까지 확인했으면 새 판례가 없어도 '확인한 시각'을 남긴다(건강 검진 신선도)
+    if force_meta or any(changed) or not os.path.exists(mp):
         write_if_changed(mp, meta)
     return len(records)
 
@@ -277,7 +278,7 @@ def main(argv=None):
                 save(out, oc, items, laws_of, details, pending, old_total, not a.limit)
                 print("중간 저장 %d/%d" % (done, len(todo)), flush=True)
         failed |= {i for i in items if str(i) not in details}
-        n = save(out, oc, items, laws_of, details, failed, old_total, not a.limit)
+        n = save(out, oc, items, laws_of, details, failed, old_total, not a.limit, force_meta=True)
         print("저장 %d건 (상세 실패·미조회 %d건)" % (n, len(failed)), flush=True)
         return 0
     except RuntimeError as e:  # LawAuthError 포함

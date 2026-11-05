@@ -150,3 +150,43 @@ def test_main_end_to_end_with_fake_api(tmp_path, monkeypatch):
     before = os.path.getmtime(tmp_path / "index.json")
     assert prec_watch.main([]) == 0
     assert os.path.getmtime(tmp_path / "index.json") == before
+
+
+def _save_once(tmp_path, **kw):
+    rec_items = {616245: dict(ITEM)}
+    return prec_watch.save(str(tmp_path), "secret123", rec_items, {616245: {"근로기준법"}},
+                           {"616245": DETAIL}, set(), 0, **kw)
+
+
+def test_save_force_meta_rewrites_meta_when_content_same(tmp_path):
+    _save_once(tmp_path)
+    mp = tmp_path / "meta.json"
+    mp.write_text(json.dumps({"generated_at": "2000-01-01T00:00:00Z", "total": 1,
+                              "by_law": {"근로기준법": 1}}), encoding="utf-8")
+    _save_once(tmp_path)  # 기본값: 내용이 같으면 건드리지 않는다
+    assert json.loads(mp.read_text(encoding="utf-8"))["generated_at"] == "2000-01-01T00:00:00Z"
+    _save_once(tmp_path, force_meta=True)
+    meta = json.loads(mp.read_text(encoding="utf-8"))
+    assert meta["generated_at"] != "2000-01-01T00:00:00Z" and meta["total"] == 1
+
+
+def test_main_refreshes_meta_even_without_new_cases(tmp_path, monkeypatch):
+    monkeypatch.setenv("LAW_OC", "secret123")
+    monkeypatch.setattr(prec_watch, "OUT", str(tmp_path))
+    monkeypatch.setattr(prec_watch, "VARIANTS", {"근로기준법": ["근로기준법"]})
+
+    def fake(url, oc):
+        if "lawSearch" in url:
+            if "page=1" in url:
+                return {"PrecSearch": {"totalCnt": "1", "prec": [dict(ITEM)]}}
+            return {"PrecSearch": {"totalCnt": "1", "prec": []}}
+        return {"PrecService": {"판시사항": "쟁점<br/>", "판결요지": "요지", "참조조문": "조문"}}
+
+    monkeypatch.setattr(prec_watch, "fetch_json", fake)
+    assert prec_watch.main([]) == 0
+    mp = tmp_path / "meta.json"
+    mp.write_text(json.dumps({"generated_at": "2000-01-01T00:00:00Z", "total": 1,
+                              "by_law": {"근로기준법": 1}}), encoding="utf-8")
+    assert prec_watch.main([]) == 0
+    meta = json.loads(mp.read_text(encoding="utf-8"))
+    assert meta["generated_at"] != "2000-01-01T00:00:00Z" and meta["total"] == 1
