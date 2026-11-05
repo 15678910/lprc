@@ -99,21 +99,26 @@
       if (q.courtOnly && r.court !== '대법원') continue;
       if (q.sinceYear && year(r.date) < q.sinceYear) continue;
       var hay = norm((r.name || '') + ' ' + (r.text || ''));
-      var matched = [], issueHits = 0, wordHits = 0, j;
+      var matched = [], issueHits = 0, wordHits = 0, tagHits = 0, tagged = [], j;
+      var tags = Array.isArray(r.tags) ? r.tags : [];
       for (j = 0; j < issueTerms.length; j++) {
         if (matchPieces(hay, issueTerms[j][1])) { issueHits++; matched.push(issueTerms[j][0]); }
+        else if (tags.indexOf(issueTerms[j][0]) !== -1 && tagged.indexOf(issueTerms[j][0]) === -1) {
+          tagHits++; tagged.push(issueTerms[j][0]); matched.push(issueTerms[j][0]);
+        }
       }
       for (j = 0; j < ws.length; j++) {
         if (hay.indexOf(ws[j]) !== -1) { wordHits++; if (matched.indexOf(ws[j]) === -1) matched.push(ws[j]); }
       }
-      if (!issueHits && !wordHits) continue;
-      scored.push({ record: r, matched: matched, k: [issueHits, wordHits, r.court === '대법원' ? 1 : 0, dateKey(r.date)], n: i });
+      if (!issueHits && !wordHits && !tagHits) continue;
+      scored.push({ record: r, matched: matched, tagged: tagged,
+        k: [issueHits, wordHits, tagHits, r.court === '대법원' ? 1 : 0, dateKey(r.date)], n: i });
     }
     scored.sort(function (a, b) {
-      for (var x = 0; x < 4; x++) if (a.k[x] !== b.k[x]) return b.k[x] - a.k[x];
+      for (var x = 0; x < 5; x++) if (a.k[x] !== b.k[x]) return b.k[x] - a.k[x];
       return a.n - b.n;
     });
-    return scored.map(function (s) { return { record: s.record, matched: s.matched }; });
+    return scored.map(function (s) { return { record: s.record, matched: s.matched, tagged: s.tagged }; });
   }
 
   var api = { detectIssues: detectIssues, rank: rank, matchPhrase: matchPhrase };

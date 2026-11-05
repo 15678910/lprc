@@ -16,7 +16,7 @@ DETAIL = {"판시사항": "<br/> [1] 근로자 판단 기준", "판결요지": "
 
 def test_record_is_allowlisted():
     r = prec_watch.to_record(ITEM, DETAIL, ["근로기준법"])
-    assert set(r) == {"id", "no", "name", "court", "date", "type", "issue", "gist", "refs", "laws"}
+    assert set(r) == {"id", "no", "name", "court", "date", "type", "issue", "gist", "refs", "laws", "tags", "tv"}
     assert "secret123" not in json.dumps(r, ensure_ascii=False)
     assert "판례상세링크" not in json.dumps(r, ensure_ascii=False)
 

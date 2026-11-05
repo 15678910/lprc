@@ -43,10 +43,16 @@
     });
     return out.slice(0, max || 6);
   }
+  // 요지에는 없고 판결문 본문에서만 확인된 표현. 없으면 빈 문자열.
+  function taggedLine(tagged) {
+    var t = (Array.isArray(tagged) ? tagged : []).filter(function (x) { return typeof x === 'string' && x; });
+    return t.length ? '판결문 본문에 나오는 표현: ' + t.join(', ') : '';
+  }
   function sinceYearFor(now) { return now.getFullYear() - 10; }
 
   var logic = { shardName: shardName, lawUrl: lawUrl, pickGist: pickGist, preview: preview,
-                titleLine: titleLine, matchedLine: matchedLine, sinceYearFor: sinceYearFor, NO_GIST: NO_GIST };
+                titleLine: titleLine, matchedLine: matchedLine, taggedLine: taggedLine,
+                sinceYearFor: sinceYearFor, NO_GIST: NO_GIST };
   if (typeof module !== 'undefined' && module.exports) { module.exports = logic; return; }
   if (typeof document === 'undefined') return;
 
@@ -172,6 +178,8 @@
     if (ml.length) c.appendChild(el('div', 'rm', '일치: ' + ml.join(' · ')));
     var body = el('div', 'rb', preview(r, 140));
     c.appendChild(body);
+    var tl = taggedLine(x.tagged);
+    if (tl) c.appendChild(el('div', 'rm', tl));
     var acts = el('div', 'ra');
     var tg = el('button', 'btn', '요지 펼치기');
     tg.type = 'button';

@@ -27,6 +27,32 @@ test('5만 자도 1초 안에', () => {
   rank(R, { issues: I, text: '해고 '.repeat(20000) });
   assert.ok(Date.now() - t0 < 1000);
 });
+// ---- 판결문 본문 표지(tags) ----
+const H = { id: 'harass', name: '직장 내 괴롭힘', field: ['괴롭'], terms: ['직장 내 괴롭힘'], laws: [] };
+const T1 = { id: 11, no: 't1', name: '손해배상', court: '대법원', date: '2024.01.01', type: '판결', text: '손해배상 청구', tags: ['직장 내 괴롭힘'], laws: [] };
+const T2 = { id: 12, no: 't2', name: '징계', court: '서울고등법원', date: '2020.01.01', type: '판결', text: '직장 내 괴롭힘 행위의 징계', laws: [] };
+test('표지만 있는 판례도 잡히고 tagged 에 표현이 담긴다', () => {
+  const out = rank([T1], { issues: [H], text: '' });
+  assert.equal(out.length, 1);
+  assert.deepEqual(out[0].tagged, ['직장 내 괴롭힘']);
+  assert.deepEqual(out[0].matched, ['직장 내 괴롭힘']);
+});
+test('요지 일치 판례가 표지만 있는 판례보다 앞선다(대법원·최신이어도)', () => {
+  const out = rank([T1, T2], { issues: [H], text: '' });
+  assert.deepEqual(out.map((x) => x.record.id), [12, 11]);
+  assert.deepEqual(out[0].tagged, []);
+});
+test('tags 없는 레코드는 오류 없이 동작', () => {
+  assert.doesNotThrow(() => rank(R, { issues: [H], text: '해고' }));
+  assert.equal(rank([T2], { issues: [H] })[0].tagged.length, 0);
+});
+test('쟁점 없이 낱말만 넣으면 표지로 잡히지 않는다', () => {
+  assert.deepEqual(rank([T1], { issues: [], text: '직장 내 괴롭힘' }), []);
+});
+test('다른 쟁점의 표현은 표지로 세지 않는다', () => {
+  assert.deepEqual(rank([T1], { issues: [I[0]], text: '' }), []);
+});
+
 test('쟁점 일치가 낱말 일치보다 앞선다', () => {
   const out = rank(R, { issues: [I[0]], text: '근로자 낱말만' });
   assert.equal(out[0].record.id, 3);

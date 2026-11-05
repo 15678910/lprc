@@ -34,6 +34,13 @@ test('matchedLine: 일치 낱말 + 쟁점 조문, 중복 제거, 개수 제한',
   assert.equal(u.matchedLine(['a', 'b', 'c'], [], 2).length, 2);
 });
 
+test('taggedLine: 표현이 있으면 한 줄, 없으면 빈 문자열', () => {
+  assert.equal(u.taggedLine(['직장 내 괴롭힘', '불법파견']), '판결문 본문에 나오는 표현: 직장 내 괴롭힘, 불법파견');
+  assert.equal(u.taggedLine([]), '');
+  assert.equal(u.taggedLine(undefined), '');
+  assert.equal(u.taggedLine([null, '']), '');
+});
+
 test('sinceYearFor: 10년 전', () => {
   assert.equal(u.sinceYearFor(new Date('2026-11-05')), 2016);
 });

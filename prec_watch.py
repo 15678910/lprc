@@ -5,10 +5,13 @@
 흐름: 법별(표기 변형별) 전체 목록 훑기 → 일련번호로 합치기 → d/ 조각에 없는 판례만 상세 조회
 (200건마다 저장 = 이어 받기) → 키·판례상세링크 검사와 축소 방지 후 쓰기.
 상세 조회에 실패한 판례는 색인에 목록 필드로만 넣고 d 조각에는 넣지 않아 다음 실행에서 다시 시도한다.
+판결문 본문(판례내용)은 terms.json 의 body 표현이 들어 있는지만 확인해 tags 로 남기고, 원문은 어떤 산출물에도 넣지 않는다.
+표현 목록이 바뀌면(tv 불일치) 상세를 다시 받아 확인한다. 다시 확인 실패는 기존 상세를 그대로 둔다.
 인증 실패·키 누락은 재시도 없이 기존 파일을 보존하고 종료 코드 1.
 """
 import argparse
 import glob
+import hashlib
 import gzip
 import json
 import os
@@ -24,6 +27,7 @@ import law_api
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(ROOT, "docs", "prec")
+TERMS = os.path.join(OUT, "terms.json")
 BASE = "https://www.law.go.kr/DRF/"
 INTERVAL = 1.2          # 요청 간격(초) — 하한
 TIMEOUT = 40
@@ -64,6 +68,37 @@ def strip_html(s):
     return re.sub(r"[ \t]+", " ", re.sub(r"\s*\n\s*", "\n", s)).strip()
 
 
+def body_phrases(path):
+    """terms.json 의 body 표현을 중복 없이 정렬해 모은다. 파일이 없거나 0개면 RuntimeError(대체값 없음)."""
+    try:
+        with open(path, encoding="utf-8") as f:
+            issues = json.load(f).get("issues", [])
+    except (OSError, ValueError) as e:
+        raise RuntimeError("terms.json 을 읽지 못했다: %s" % e.__class__.__name__)
+    out = set()
+    for i in issues:
+        for b in i.get("body") or []:
+            if isinstance(b, str) and b.strip():
+                out.add(b)
+    if not out:
+        raise RuntimeError("terms.json 에 body 표현이 없다")
+    return sorted(out)
+
+
+def tags_version(phrases):
+    return hashlib.sha1("\n".join(phrases).encode("utf-8")).hexdigest()[:8]
+
+
+def _squash(s):
+    return re.sub(r"\s+", "", s)
+
+
+def body_tags(text, phrases):
+    """text(판례내용·판시사항·판결요지를 이은 글)에 들어 있는 표현을 terms.json 표기 그대로 정렬해 돌려준다."""
+    t = _squash(strip_html(text))
+    return sorted(p for p in phrases if _squash(p) and _squash(p) in t)
+
+
 def shard_of(pid):
     return "%02d" % (pid % 100)
 
@@ -82,11 +117,13 @@ def to_record(item, detail, laws):
         "gist": strip_html(d.get("판결요지", "")),
         "refs": strip_html(d.get("참조조문", "")),
         "laws": sorted(laws),
+        "tags": list(d.get("tags") or []),
+        "tv": d.get("tv") or "",
     }
 
 
 def build_outputs(records, failed=()):
-    """(index, {shard: {id: {issue,gist,refs}}}). failed 의 id 는 d 조각에 넣지 않는다."""
+    """(index, {shard: {id: {issue,gist,refs,tags,tv}}}). failed 의 id 는 d 조각에 넣지 않는다."""
     recs = sorted(records, key=lambda r: -r["id"])
     index = {"records": []}
     shards = {}
@@ -94,12 +131,15 @@ def build_outputs(records, failed=()):
         text = r["issue"]
         if GIST_IN_INDEX > 0 and r["gist"]:
             text = (text + " " + r["gist"][:GIST_IN_INDEX]).strip()
-        index["records"].append({"id": r["id"], "no": r["no"], "name": r["name"], "court": r["court"],
-                                 "date": r["date"], "type": r["type"], "text": text, "laws": r["laws"]})
+        row = {"id": r["id"], "no": r["no"], "name": r["name"], "court": r["court"],
+               "date": r["date"], "type": r["type"], "text": text, "laws": r["laws"]}
+        if r["tags"]:
+            row["tags"] = r["tags"]
+        index["records"].append(row)
         if r["id"] in failed:
             continue
         shards.setdefault(shard_of(r["id"]), {})[str(r["id"])] = {
-            "issue": r["issue"], "gist": r["gist"], "refs": r["refs"]}
+            "issue": r["issue"], "gist": r["gist"], "refs": r["refs"], "tags": r["tags"], "tv": r["tv"]}
     return index, shards
 
 
@@ -189,7 +229,7 @@ def load_existing(out):
         with open(p, encoding="utf-8") as f:
             for k, v in json.load(f).items():  # 조각의 영문 키를 응답의 한글 키로 되돌린다
                 details[k] = {"판시사항": v.get("issue", ""), "판결요지": v.get("gist", ""),
-                           "참조조문": v.get("refs", "")}
+                           "참조조문": v.get("refs", ""), "tags": v.get("tags", []), "tv": v.get("tv", "")}
     total = 0
     mp = os.path.join(out, "meta.json")
     if os.path.exists(mp):
@@ -234,6 +274,8 @@ def main(argv=None):
     out = a.out or OUT
     try:
         oc = law_api.law_oc()
+        phrases = body_phrases(TERMS)
+        tv = tags_version(phrases)
         items, laws_of = {}, {}
         for law, names in VARIANTS.items():
             ids_law = set()
@@ -256,28 +298,41 @@ def main(argv=None):
             laws_of = {i: laws_of[i] for i in keep}
         details, old_total = load_existing(out)
         todo = [i for i in sorted(items, reverse=True) if str(i) not in details]
-        print("전체 %d건, 상세 조회 대상 %d건" % (len(items), len(todo)), flush=True)
-        failed, done = set(), 0
-        for pid in todo:
+        recheck = [i for i in sorted(items, reverse=True)
+                   if str(i) in details and details[str(i)].get("tv") != tv]
+        print("전체 %d건, 상세 조회 대상 %d건, 본문 표지 다시 확인 대상 %d건" % (len(items), len(todo), len(recheck)),
+              flush=True)
+        failed, done, recheck_failed = set(), 0, 0
+        recheck_set = set(recheck)
+        queue = todo + recheck
+        for pid in queue:
             try:
                 data = fetch_json(_url("lawService.do", oc, ID=pid), oc)
                 d = data.get("PrecService") or data
                 if not isinstance(d, dict) or not any(k in d for k in ("판시사항", "판결요지", "참조조문")):
                     raise RuntimeError("상세 응답 형식 이상")
-                details[str(pid)] = {k: d.get(k, "") for k in ("판시사항", "판결요지", "참조조문")}
+                nd = {k: d.get(k, "") for k in ("판시사항", "판결요지", "참조조문")}
+                nd["tags"] = body_tags(" ".join(str(d.get(k) or "") for k in ("판례내용", "판시사항", "판결요지")),
+                                       phrases)
+                nd["tv"] = tv
+                details[str(pid)] = nd
             except law_api.LawAuthError:
                 raise
             except RuntimeError as e:
-                failed.add(pid)
-                print("상세 실패 %d: %s" % (pid, law_api.redact(str(e))), flush=True)
+                if pid in recheck_set:  # 기존 상세를 그대로 두고, 다음 실행에서 다시 확인한다
+                    recheck_failed += 1
+                else:
+                    failed.add(pid)
+                print("상세 실패 %d%s: %s" % (pid, "(다시 확인)" if pid in recheck_set else "",
+                                          law_api.redact(str(e))), flush=True)
             done += 1
             if done % SAVE_EVERY == 0:
                 pending = failed | {i for i in todo if str(i) not in details}
                 save(out, oc, items, laws_of, details, pending, old_total, not a.limit)
-                print("중간 저장 %d/%d" % (done, len(todo)), flush=True)
+                print("중간 저장 %d/%d" % (done, len(queue)), flush=True)
         failed |= {i for i in items if str(i) not in details}
         n = save(out, oc, items, laws_of, details, failed, old_total, not a.limit, force_meta=True)
-        print("저장 %d건 (상세 실패·미조회 %d건)" % (n, len(failed)), flush=True)
+        print("저장 %d건 (상세 실패·미조회 %d건, 다시 확인 실패 %d건)" % (n, len(failed), recheck_failed), flush=True)
         return 0
     except RuntimeError as e:  # LawAuthError 포함
         print("중단: " + law_api.redact(str(e)), file=sys.stderr)
