@@ -68,3 +68,34 @@ test('시나리오 90% 이상이 기대 쟁점을 잡는다', () => {
   const need = Math.ceil(sc.length * 0.9);
   assert.ok(ok >= need, `${ok}/${sc.length} (필요 ${need})\n${fails.join('\n')}`);
 });
+
+const { matchPhrase } = require('../docs/prec-search.js');
+test('어절 경계를 넘는 오탐은 일치하지 않는다', () => {
+  assert.equal(matchPhrase('대해 고용', '해고'), false);
+  assert.equal(matchPhrase('협력업체 불법', '체불'), false);
+  assert.equal(matchPhrase('이전 보다', '전보'), false);
+  assert.equal(matchPhrase('일부 도급', '부도'), false);
+  assert.equal(matchPhrase('부산 재직', '산재'), false);
+  assert.equal(matchPhrase('연차 별도', '차별'), false);
+});
+test('조각 사이 공백은 있어도 없어도 맞는다', () => {
+  assert.equal(matchPhrase('부당해고', '부당 해고'), true);
+  assert.equal(matchPhrase('부당 해고', '부당 해고'), true);
+  assert.equal(matchPhrase('부당  해고', '부당 해고'), true);
+  assert.equal(matchPhrase('부당\n해고', '부당 해고'), true);
+  assert.equal(matchPhrase('부당한 해고', '부당 해고'), false);
+});
+test('첫 조각이 여러 곳이면 모두 시도한다', () => {
+  assert.equal(matchPhrase('해고는 안 됐고 해고 통보를', '해고 통보'), true);
+});
+test('가운뎃점은 양쪽에서 무시한다', () => {
+  assert.equal(matchPhrase('일·가정 양립', '일ㆍ가정'), true);
+  assert.equal(matchPhrase('일ㆍ가정 양립', '일·가정'), true);
+  assert.equal(matchPhrase('일가정', '일・가정'), true);
+});
+test('빈 표현은 false', () => { assert.equal(matchPhrase('abc', ''), false); assert.equal(matchPhrase('abc', '  '), false); });
+test('긴 본문에서도 빠르다', () => {
+  const t0 = Date.now();
+  matchPhrase('해고 '.repeat(100000) + '끝', '해고 통보');
+  assert.ok(Date.now() - t0 < 1000);
+});
