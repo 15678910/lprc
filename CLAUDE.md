@@ -47,6 +47,7 @@ https://단체교섭.kr (퓨니코드 `xn--9d0b29hf1nhhl.kr`) · GitHub Pages(`m
 | 푸시 실패 | 4 | 매일 자동 커밋이 끼어든다 → `pull --rebase` 후 push. 자격증명 오류면 `git -c credential.helper= -c "credential.helper=!gh auth git-credential" push` |
 | 외부 서버 429·403 (NORMLEX·언론사) | 5 | 연속 요청 금지. 브라우저 창으로 한 번 읽거나 다른 공식 경로로 대조 |
 | 법제처 API `OC=test` | — | 막혀 있다(공용 시험 키 거부). 본인 `LAW_OC` 키가 필요 — 코드·대화에 넣지 말고 GitHub Secrets 에만 |
+| Pages 배포 시간 초과 | 1 | 빌드 성공인데 deploy 가 `updating_pages` 에서 10분 넘기면 취소되고 사이트는 이전 판 유지. 코드 문제로 몰지 말고 다음 커밋으로 재배포되는지 본다(2026-11-06) |
 | 조용한 실패 | — | 수집기가 실패해도 exit 0 으로 넘어가는 단계가 있다(2026-09-28 law_watch). **건강 검진이 잡는다** |
 
 ## 작업 템플릿
