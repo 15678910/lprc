@@ -55,18 +55,25 @@ test('점수를 결과에 내보내지 않는다', () => {
 });
 test('일치가 전혀 없으면 결과도 없다', () => assert.deepEqual(rank(R, { issues: [], text: '전혀무관' }), []));
 
-test('시나리오 90% 이상이 기대 쟁점을 잡는다', () => {
+test('시나리오: 기대 쟁점 90% 이상 감지, 금지 쟁점 0건, 함정 문장 20건 이상', () => {
   const terms = JSON.parse(fs.readFileSync(path.join(__dirname, '../docs/prec/terms.json'), 'utf8')).issues;
   const sc = JSON.parse(fs.readFileSync(path.join(__dirname, 'prec_scenarios.json'), 'utf8'));
-  const fails = [];
-  let ok = 0;
+  const missed = [], violated = [];
+  let pos = 0, ok = 0, traps = 0;
   for (const s of sc) {
     const got = ids(detectIssues(s.text, terms));
-    if (s.expect.every((e) => got.includes(e))) ok++;
-    else fails.push(`${s.text} | 기대 ${s.expect} | 실제 ${got}`);
+    if (s.expect && s.expect.length) {
+      pos++;
+      if (s.expect.every((e) => got.includes(e))) ok++;
+      else missed.push(`${s.text} | 기대 ${s.expect} | 실제 ${got}`);
+    } else if (s.forbid && s.forbid.length) traps++;
+    const bad = (s.forbid || []).filter((f) => got.includes(f));
+    if (bad.length) violated.push(`${s.text} | 금지 ${bad}`);
   }
-  const need = Math.ceil(sc.length * 0.9);
-  assert.ok(ok >= need, `${ok}/${sc.length} (필요 ${need})\n${fails.join('\n')}`);
+  const need = Math.ceil(pos * 0.9);
+  assert.ok(ok >= need, '기대 ' + ok + '/' + pos + ' (필요 ' + need + ')\n' + missed.join('\n'));
+  assert.equal(violated.length, 0, '금지 쟁점이 잡힌 문장:\n' + violated.join('\n'));
+  assert.ok(traps >= 20, `함정 문장 ${traps}건 (필요 20)`);
 });
 
 const { matchPhrase } = require('../docs/prec-search.js');

@@ -1,4 +1,5 @@
-"""판례 찾기 용어 사전·시나리오 형식 시험."""
+"""판례 찾기 용어 사전·시나리오 형식 시험.
+(시나리오가 실제로 잡히는지는 tests/prec_search.test.js 가 본다.)"""
 import json
 import os
 import re
@@ -17,7 +18,7 @@ IDS = [i["id"] for i in TERMS]
 
 
 def test_issue_count():
-    assert 25 <= len(TERMS) <= 35
+    assert 25 <= len(TERMS) <= 40
 
 
 def test_ids_unique_lowercase():
@@ -36,10 +37,24 @@ def test_issue_fields():
             assert re.match(r"^.+ 제\d+조(의\d+)?$", law), (i["id"], law)
 
 
-def test_scenarios():
+def test_phrases_clean():
+    bad = []
+    for i in TERMS:
+        for k in ("field", "terms"):
+            for p in i[k]:
+                if not isinstance(p, str) or not p or p != p.strip():
+                    bad.append((i["id"], k, p))
+    assert not bad, bad
+
+
+def test_scenarios_use_known_ids():
     assert len(SCEN) >= 20
+    bad = []
     for s in SCEN:
         assert s["text"].strip()
-        assert s["expect"], s["text"]
-        for e in s["expect"]:
-            assert e in IDS, (s["text"], e)
+        for e in s.get("expect", []) + s.get("forbid", []):
+            if e not in IDS:
+                bad.append((s["text"], e))
+        if not s.get("expect") and not s.get("forbid"):
+            bad.append((s["text"], "expect 도 forbid 도 없음"))
+    assert not bad, bad
